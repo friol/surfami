@@ -159,6 +159,13 @@ unsigned int cpu5a22::getAbsoluteAddress16()
 	return (dbr << 16) | addr;
 }
 
+unsigned int cpu5a22::getLongAddress()
+{
+	// TODO check this
+	// unsigned char dbr = regDBR;
+	return ((pMMU->read8(regPC+3)) << 16) | (pMMU->read8(regPC + 2) << 8) | pMMU->read8(regPC+1);
+}
+
 int cpu5a22::stepOne()
 {
 	unsigned char nextOpcode = pMMU->read8(regPC);
@@ -257,7 +264,7 @@ int cpu5a22::stepOne()
 		regP.setCarry(C);
 
 		regPC += 2;
-		cycles += 3;
+		cycles= 3;
 	}
 	else if (nextOpcode == 0xa2)
 	{
@@ -293,6 +300,41 @@ int cpu5a22::stepOne()
 		if (regP.getIndexSize() == 0) cycAdder += 1;
 		regPC+=2+pcadder;
 		cycles+=2+cycAdder;
+	}
+	else if (nextOpcode == 0xa0)
+	{
+		// LDY - Load Index Register Y from Memory
+		int pcadder = 0;
+		unsigned int addr;
+
+		if (regP.getIndexSize())
+		{
+			// 8-bit regs
+			addr = getImmediateAddress8();
+			unsigned char lo = pMMU->read8(addr);
+			regY_lo = lo;
+			regP.setZero(lo == 0);
+			regP.setNegative(lo >> 7);
+		}
+		else
+		{
+			// 16-bit regs
+			pcadder += 1;
+			addr = getImmediateAddress16();
+			unsigned char lo = pMMU->read8(addr);
+			unsigned char hi = pMMU->read8(addr + 1);
+			unsigned int val = (hi << 8) | lo;
+
+			regY_lo = (val & 0xff);
+			regY_hi = (unsigned char)(val >> 8);
+			regP.setZero(val == 0);
+			regP.setNegative(val >> 15);
+		}
+
+		int cycAdder = 0;
+		if (regP.getIndexSize() == 0) cycAdder += 1;
+		regPC += 2 + pcadder;
+		cycles= 2 + cycAdder;
 	}
 	else if (nextOpcode == 0x9a)
 	{
@@ -343,7 +385,7 @@ int cpu5a22::stepOne()
 		int cycAdder = 0;
 		if (regP.getAccuMemSize() == 0) cycAdder += 1;
 		regPC += 2 + pcadder;
-		cycles += 2 + cycAdder;
+		cycles= 2 + cycAdder;
 	}
 	else if (nextOpcode == 0x5b)
 	{
@@ -394,6 +436,22 @@ int cpu5a22::stepOne()
 		regPC+=2;
 		cycles=3;
 	}
+	else if (nextOpcode == 0x8c)
+	{
+		// STY - Store Y to Memory - Absolute
+		int cycleAdder = 0;
+		int addr = getAbsoluteAddress16();
+
+		pMMU->write8(addr, regY_lo);
+		if (regP.getIndexSize() == false)
+		{
+			pMMU->write8(addr + 1, regY_hi);
+			cycleAdder += 1;
+		}
+
+		regPC += 3;
+		cycles= 4 + cycleAdder;
+	}
 	else if (nextOpcode == 0x8d)
 	{
 		// STA - Store Accumulator to Memory - Absolute
@@ -408,7 +466,23 @@ int cpu5a22::stepOne()
 		}
 
 		regPC += 3;
-		cycles += 4 + cycleAdder;
+		cycles= 4 + cycleAdder;
+	}
+	else if (nextOpcode == 0x8e)
+	{
+		// STX - Store X to Memory - Absolute
+		int cycleAdder = 0;
+		int addr = getAbsoluteAddress16();
+
+		pMMU->write8(addr, regX_lo);
+		if (regP.getIndexSize() == false)
+		{
+			pMMU->write8(addr + 1, regX_hi);
+			cycleAdder += 1;
+		}
+
+		regPC += 3;
+		cycles= 4 + cycleAdder;
 	}
 	else if (nextOpcode == 0x9c)
 	{
@@ -424,7 +498,7 @@ int cpu5a22::stepOne()
 		}
 
 		regPC += 3;
-		cycles += 4 + cycleAdder;
+		cycles= 4 + cycleAdder;
 	}
 	else if (nextOpcode == 0xca)
 	{
@@ -462,6 +536,24 @@ int cpu5a22::stepOne()
 		}
 		
 		cycles=2+branch_taken;
+	}
+	else if (nextOpcode == 0xea)
+	{
+		// NOPpy
+
+		regPC += 1;
+		cycles= 2;
+	}
+	else if (nextOpcode == 0x5c)
+	{
+		// JML - jump long
+		int addr = getLongAddress();
+
+		unsigned char bnk = (addr >> 16) & 0xff;
+		regPC = addr;
+		regPB = bnk;
+
+		cycles = 4;
 	}
 	else
 	{

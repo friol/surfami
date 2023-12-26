@@ -5,21 +5,26 @@
 
 static const debugInfoRec debugInstrList[] =
 {
-	{0x78,1,"SEI",None,false,false},
 	{0x18,1,"CLC",None,false,false},
 	{0xFB,1,"XCE",None,false,false},
 	{0x4B,1,"PHK",None,false,false},
+	{0x5b,1,"TCD",None,false,false},
+	{0x5c,4,"JML param0",AbsoluteLong,false,false},
+	{0x78,1,"SEI",None,false,false},
+	{0x8c,3,"STY param0",Absolute16,false,false},
+	{0x8d,3,"STA param0",Absolute16,false,false},
+	{0x8e,3,"STX param0",Absolute16,false,false},
+	{0x9c,3,"STZ param0",Absolute16,false,false},
 	{0x9A,1,"TXS",None,false,false},
-	{0xAB,1,"PLB",None,false,false},
-	{0xCA,1,"DEX",None,false,false},
-	{0xD0,2,"BNE param0",Immediate8,false,false},
-	{0xC2,2,"REP param0",Immediate,false,false},
+	{0xA0,2,"LDY param0",Immediate,true,false},
 	{0xA2,2,"LDX param0",Immediate,true,false},
 	{0xA9,2,"LDA param0",Immediate,false,true},
-	{0x5b,1,"TCD",None,false,false},
+	{0xAB,1,"PLB",None,false,false},
+	{0xC2,2,"REP param0",Immediate8,false,false},
+	{0xCA,1,"DEX",None,false,false},
+	{0xD0,2,"BNE param0",Immediate8,false,false},
 	{0xe2,2,"SEP param0",Immediate8,false,false},
-	{0x8d,3,"STA param0",Absolute16,false,false},
-	{0x9c,3,"STZ param0",Absolute16,false,false},
+	{0xea,1,"NOP",None,false,false},
 };
 
 int debugger5a22::findOpcode(unsigned char opcode)
@@ -124,6 +129,20 @@ std::string debugger5a22::processDisasmTemplate(std::string disasmTmpl,const deb
 		unsigned short int mem = bytez[1];
 		mem |= ((int)bytez[2]) << 8;
 		strr << std::hex << std::setw(4) << std::setfill('0') << mem;
+		hexPaddedConst = strr.str();
+
+		hexPaddedConst = "$$" + hexPaddedConst;
+		res = std::regex_replace(res, std::regex("param0"), hexPaddedConst);
+	}
+	else if (debugInfo.addressingMode == AbsoluteLong)
+	{
+		std::stringstream strr;
+		std::string hexPaddedConst;
+
+		unsigned short int mem = bytez[1];
+		mem |= ((int)bytez[2]) << 8;
+		mem |= ((int)bytez[3]) << 16;
+		strr << std::hex << std::setw(6) << std::setfill('0') << mem;
 		hexPaddedConst = strr.str();
 
 		hexPaddedConst = "$$" + hexPaddedConst;

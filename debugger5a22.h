@@ -16,6 +16,7 @@ enum AddressingMode
 	Immediate, 
 	Immediate8,
 	Absolute16,
+	AbsoluteLong,
 	Relative,
 	RelativeLong, 
 	Direct 

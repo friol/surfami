@@ -120,7 +120,7 @@ void displayRegistersWindow(cpu5a22& theCPU)
     ImGui::End();
 }
 
-void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& theMMU,bool& isDebugWindowFocused)
+void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& theMMU,bool& isDebugWindowFocused,bool& rush,int& rushAddress,char* jumpToAppoBuf)
 {
     std::vector<disasmInfoRec> disasmed = theDebugger5a22.debugCode(theCPU.getPC(), 20, &theCPU, &theMMU);
 
@@ -147,7 +147,68 @@ void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& the
             }*/
         }
         else ImGui::Selectable(instr.disasmed.c_str(), false);
+
+        std::string curAddress = instr.disasmed.substr(0, 6);
+        std::string cmd = "Run to address:" + curAddress;
+
+        std::string curElement = "CtxMenu" + std::to_string(iidx);
+        if (ImGui::BeginPopupContextItem(curElement.c_str()))
+        {
+            if (ImGui::Selectable(cmd.c_str()))
+            {
+                rush = true;
+                
+                int iAddr;
+                std::stringstream ss;
+                ss << std::hex << curAddress;
+                ss >> iAddr;
+                rushAddress = iAddr;
+            }
+            ImGui::EndPopup();
+        }
+
         iidx += 1;
+    }
+
+    ImGui::Text(" ");
+    ImGui::Text(" ");
+
+    // jumpto
+    ImGui::InputText("Step to", jumpToAppoBuf,256); ImGui::SameLine();
+    if (ImGui::Button("StepTo!"))
+    {
+        if (strlen(jumpToAppoBuf) == 0)
+        {
+            ImGui::OpenPopup("MsgBox");
+        }
+        else
+        {
+            rush = true;
+
+            int iAddr;
+            std::stringstream ss;
+            ss << std::hex << jumpToAppoBuf;
+            ss >> iAddr;
+            rushAddress = iAddr;
+        }
+
+    }
+
+    // step button
+    ImGui::Text(" ");
+    if (ImGui::Button("StepOne"))
+    {
+        theCPU.stepOne();
+    }
+
+    // error message box
+    bool open = true;
+    if (ImGui::BeginPopupModal("MsgBox", &open))
+    {
+        ImGui::Text("Must enter a value");
+        if (ImGui::Button("Close"))
+            ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
     }
 
     ImGui::End();
@@ -225,6 +286,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
 
     bool done = false;
     bool isDebugWindowFocused = false;
+    char jumpToAppoBuf[256];
+    jumpToAppoBuf[0] = '\0';
 
     while (!done)
     {
@@ -252,19 +315,37 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
             }
         }
 
-        // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
+        // window we don't know why it's there
         ImGui::Begin("Appo window");
-        ImGui::Text("This is some useful text.");
+        ImGui::Text("surFami emu: Super Nintendo lives");
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
         ImGui::End();
 
         displayRomLoadingLogWindow(romLoadingLog);
-        displayDebugWindow(theCPU, theDebugger5a22,theMMU,isDebugWindowFocused);
+
+        bool rush = false;
+        int rushToAddress = 0;
+        displayDebugWindow(theCPU, theDebugger5a22,theMMU,isDebugWindowFocused,rush,rushToAddress,jumpToAppoBuf);
+        
         displayRegistersWindow(theCPU);
+
+        // rush there if needed
+        while (rush)
+        {
+            int curPC = theCPU.getPC();
+            if (curPC == rushToAddress)
+            {
+                rush = false;
+            }
+            else
+            {
+                theCPU.stepOne();
+            }
+        }
 
         // Rendering
         ImGui::Render();
