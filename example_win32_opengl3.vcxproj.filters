@@ -46,6 +46,12 @@
     <ClCompile Include="debugger5a22.cpp">
       <Filter>sources</Filter>
     </ClCompile>
+    <ClCompile Include="logger.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="ppu.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\imconfig.h">
@@ -76,6 +82,12 @@
       <Filter>sources</Filter>
     </ClInclude>
     <ClInclude Include="debugger5a22.h">
+      <Filter>sources</Filter>
+    </ClInclude>
+    <ClInclude Include="logger.h">
+      <Filter>sources</Filter>
+    </ClInclude>
+    <ClInclude Include="ppu.h">
       <Filter>sources</Filter>
     </ClInclude>
   </ItemGroup>

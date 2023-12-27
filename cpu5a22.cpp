@@ -555,6 +555,21 @@ int cpu5a22::stepOne()
 
 		cycles = 4;
 	}
+	else if (nextOpcode == 0x2c)
+	{
+		// BIT - Test bits Absolute
+		int cycleAdder = 0;
+
+		if (regP.getAccuMemSize() == 0)
+		{
+			cycleAdder += 1;
+		}
+
+
+
+		regPC += 3;
+		cycles = 4 + cycleAdder;
+	}
 	else
 	{
 		// unknown opcode, do something

@@ -21,8 +21,10 @@
 
 #include "romLoader.h"
 #include "mmu.h"
+#include "ppu.h"
 #include "cpu5a22.h"
 #include "debugger5a22.h"
+#include "logger.h"
 
 struct WGL_WindowData { HDC hDC; };
 
@@ -37,6 +39,8 @@ bool CreateDeviceWGL(HWND hWnd, WGL_WindowData* data);
 void CleanupDeviceWGL(HWND hWnd, WGL_WindowData* data);
 void ResetDeviceWGL();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+logger glbTheLogger;
 
 // Helper functions
 bool CreateDeviceWGL(HWND hWnd, WGL_WindowData* data)
@@ -94,6 +98,61 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     }
     return ::DefWindowProcW(hWnd, msg, wParam, lParam);
 }
+
+//
+//
+//
+
+void prepareVRAMViewerTexture(GLuint& image_texture, ppu& thePPU)
+{
+    // Create a OpenGL texture identifier
+    glGenTextures(1, &image_texture);
+    glBindTexture(GL_TEXTURE_2D, image_texture);
+
+    // Setup filtering parameters for display
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // This is required on WebGL for non power-of-two textures
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
+
+    // Upload pixels into texture
+#if defined(GL_UNPACK_ROW_LENGTH) && !defined(__EMSCRIPTEN__)
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+#endif
+
+    int image_width = thePPU.getVRAMViewerXsize();
+    int image_height = thePPU.getVRAMViewerYsize();
+    unsigned char* image_data = thePPU.getVRAMViewerBitmap();
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image_width, image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
+}
+
+void renderToTexture(GLuint image_texture, ppu& thePPU)
+{
+    glBindTexture(GL_TEXTURE_2D, image_texture);
+
+    int image_width = thePPU.getVRAMViewerXsize();
+    int image_height = thePPU.getVRAMViewerYsize();
+    unsigned char* image_data = thePPU.getVRAMViewerBitmap();
+
+    glTexSubImage2D(
+        GL_TEXTURE_2D,
+        0,
+        0,
+        0,
+        image_width,
+        image_height,
+        GL_RGBA,
+        GL_UNSIGNED_BYTE,
+        image_data
+    );
+
+    ImGui::Image((void*)(intptr_t)image_texture, ImVec2(image_width, image_height));
+}
+
+//
+//
+//
 
 void displayRomLoadingLogWindow(std::vector<std::string>& romLoadingLog)
 {
@@ -214,6 +273,75 @@ void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& the
     ImGui::End();
 }
 
+void displayLogWindow()
+{
+    ImGui::Begin("Log window");
+
+    const int nmsgToDisplay = 7;
+
+    if (glbTheLogger.getMessages().size() < nmsgToDisplay)
+    {
+        for (auto& msg : glbTheLogger.getMessages())
+        {
+            ImGui::Text(msg.c_str());
+        }
+    }
+    else
+    {
+        for (int msg = (glbTheLogger.getMessages().size() - nmsgToDisplay);msg < glbTheLogger.getMessages().size();msg++)
+        {
+            std::string mex = glbTheLogger.getMessages()[msg];
+            ImGui::Text(mex.c_str());
+        }
+    }
+
+    ImGui::End();
+}
+
+void displayPaletteWindow(ppu& thePPU)
+{
+    ImGui::Begin("Palette Window");
+
+    unsigned char palArr[512];
+    thePPU.getPalette(palArr);
+
+    ImGui::Text("SNES palette colors");
+    int colidx = 0;
+    for (int i = 0; i < 32; i++)
+    {
+        if ((i > 0) && (i != 16)) ImGui::SameLine();
+        // palette entry is ?bbbbbgg gggrrrrr
+        unsigned int palcol = (((int)(palArr[colidx+1]&0x7f)) << 8) | palArr[colidx];
+        int red = palcol & 0x1f; red <<= 3;
+        int green = (palcol >> 5) & 0x1f; green <<= 3;
+        int blue = (palcol >> 10) & 0x1f; blue <<= 3;
+
+        ImGui::PushID(i);
+        ImVec4 colf = ImVec4(((float)(red)) / 255.0f, ((float)((green) & 0xff)) / 255.0f, ((float)((blue) & 0xff)) / 255.0f, 1.0f);
+
+        ImGui::PushStyleColor(ImGuiCol_Button, colf);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, colf);
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, colf);
+        ImGui::Button(" ");
+        ImGui::PopStyleColor(3);
+        ImGui::PopID();
+
+        colidx += 2;
+    }
+
+    ImGui::End();
+}
+
+void displayVRAMViewerWindow(GLuint renderTexture,ppu& thePPU)
+{
+    ImGui::Begin("VRAM viewer");
+
+    thePPU.tileViewerRenderTiles();
+    renderToTexture(renderTexture,thePPU);
+
+    ImGui::End();
+}
+
 //
 //
 //
@@ -226,6 +354,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         HINSTANCE dummyInstance = hPrevInstance;
         HINSTANCE dummyhInst = hInstance;
     }
+
+    glbTheLogger.logMsg("surFami starting...");
 
     // Create application window
     //ImGui_ImplWin32_EnableDpiAwareness();
@@ -259,10 +389,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
 
     //
 
-    mmu theMMU;
+    ppu thePPU;
+    mmu theMMU(thePPU);
     std::vector<std::string> romLoadingLog;
     romLoader theRomLoader;
-    std::string romName = "d:\\prova\\snes\\HelloWorld.sfc";
+    //std::string romName = "d:\\prova\\snes\\HelloWorld.sfc";
+    std::string romName = "d:\\prova\\snes\\CPUDEC.sfc";
     if (theRomLoader.loadRom(romName,theMMU,romLoadingLog) != 0)
     {
         ImGui_ImplOpenGL3_Shutdown();
@@ -281,6 +413,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     theCPU.reset();
 
     debugger5a22 theDebugger5a22;
+
+    //
+
+    GLuint vramRenderTexture;
+    prepareVRAMViewerTexture(vramRenderTexture,thePPU);
 
     //
 
@@ -332,6 +469,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         displayDebugWindow(theCPU, theDebugger5a22,theMMU,isDebugWindowFocused,rush,rushToAddress,jumpToAppoBuf);
         
         displayRegistersWindow(theCPU);
+        displayPaletteWindow(thePPU);
+        displayLogWindow();
+        displayVRAMViewerWindow(vramRenderTexture, thePPU);
 
         // rush there if needed
         while (rush)

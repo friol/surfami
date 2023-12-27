@@ -159,8 +159,10 @@
     <ClCompile Include="..\..\backends\imgui_impl_win32.cpp" />
     <ClCompile Include="cpu5a22.cpp" />
     <ClCompile Include="debugger5a22.cpp" />
+    <ClCompile Include="logger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mmu.cpp" />
+    <ClCompile Include="ppu.cpp" />
     <ClCompile Include="romLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -172,7 +174,9 @@
     <ClInclude Include="..\..\backends\imgui_impl_win32.h" />
     <ClInclude Include="cpu5a22.h" />
     <ClInclude Include="debugger5a22.h" />
+    <ClInclude Include="logger.h" />
     <ClInclude Include="mmu.h" />
+    <ClInclude Include="ppu.h" />
     <ClInclude Include="romLoader.h" />
   </ItemGroup>
   <ItemGroup>

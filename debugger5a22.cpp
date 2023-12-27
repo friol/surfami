@@ -6,6 +6,7 @@
 static const debugInfoRec debugInstrList[] =
 {
 	{0x18,1,"CLC",None,false,false},
+	{0x2c,3,"BIT param0",Absolute16,false,false},
 	{0xFB,1,"XCE",None,false,false},
 	{0x4B,1,"PHK",None,false,false},
 	{0x5b,1,"TCD",None,false,false},
