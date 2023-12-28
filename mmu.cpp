@@ -78,6 +78,34 @@ void mmu::DMAstart(unsigned char val)
 					targetAddr += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
 				}
 			}
+			else if (dma_mode == 1)
+			{
+				//  001 -> transfer 2 bytes (xx, xx + 1) (e.g. VRAM)
+				while (((snesRAM[0x4306 + (dmaChannel * 0x10)] << 8) | snesRAM[0x4305 + (dmaChannel * 0x10)]) > 0)
+				{
+					if (!dma_dir) 
+					{
+						write8(0x2100 + BBusAddr, snesRAM[targetAddr]);
+						if (!--byteCount) return;
+						write8(0x2100 + BBusAddr + 1, snesRAM[targetAddr + 1]);
+						if (!--byteCount) return;
+					}
+					else 
+					{
+						write8(targetAddr, read8(0x2100 + BBusAddr));
+						if (!--byteCount) return;
+						write8(targetAddr + 1, read8(0x2100 + BBusAddr + 1));
+						if (!--byteCount) return;
+					}
+					snesRAM[0x4306 + (dmaChannel * 0x10)] = byteCount >> 8;
+					snesRAM[0x4305 + (dmaChannel * 0x10)] = byteCount & 0xff;
+					targetAddr += (dma_step == 0) ? 2 : ((dma_step == 2) ? -2 : 0);
+				}
+			}
+			else
+			{
+				glbTheLogger.logMsg("Error: unsupported dma mode " + std::to_string(dma_mode));
+			}
 
 
 		}
@@ -86,6 +114,9 @@ void mmu::DMAstart(unsigned char val)
 
 void mmu::write8(unsigned int address, unsigned char val)
 {
+	std::stringstream strr;
+	strr << std::hex << std::setw(2) << std::setfill('0') << (int)val;
+
 	if (address == 0x420B) // DMA start reg
 	{
 		DMAstart(val);
@@ -94,6 +125,11 @@ void mmu::write8(unsigned int address, unsigned char val)
 	{
 		glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2105 (BG Mode and Character Size Register)");
 		pPPU->writeRegister(0x2105, val);
+	}
+	else if (address == 0x2107)
+	{
+		glbTheLogger.logMsg("Writing [" + strr.str() + "] to 0x2107 (BG1 Screen Base and Screen Size)");
+		pPPU->writeRegister(0x2107, val);
 	}
 	else if (address == 0x2121)
 	{
@@ -112,12 +148,12 @@ void mmu::write8(unsigned int address, unsigned char val)
 	}
 	else if (address == 0x2116)
 	{
-		glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2116 (VRAM Address Lower)");
+		glbTheLogger.logMsg("Writing [" + strr.str() + "] to 0x2116 (VRAM Address Lower)");
 		pPPU->writeRegister(0x2116, val);
 	}
 	else if (address == 0x2117)
 	{
-		glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2117 (VRAM Address Upper)");
+		glbTheLogger.logMsg("Writing [" + strr.str() + "] to 0x2117 (VRAM Address Upper)");
 		pPPU->writeRegister(0x2117, val);
 	}
 	else if (address == 0x2118)

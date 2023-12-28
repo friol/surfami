@@ -103,7 +103,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 //
 //
 
-void prepareVRAMViewerTexture(GLuint& image_texture, ppu& thePPU)
+void prepareVRAMViewerTexture(GLuint& image_texture, int image_width, int image_height, unsigned char* image_data)
 {
     // Create a OpenGL texture identifier
     glGenTextures(1, &image_texture);
@@ -120,20 +120,12 @@ void prepareVRAMViewerTexture(GLuint& image_texture, ppu& thePPU)
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 #endif
 
-    int image_width = thePPU.getVRAMViewerXsize();
-    int image_height = thePPU.getVRAMViewerYsize();
-    unsigned char* image_data = thePPU.getVRAMViewerBitmap();
-
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image_width, image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
 }
 
-void renderToTexture(GLuint image_texture, ppu& thePPU)
+void renderToTexture(GLuint image_texture,int image_width,int image_height,unsigned char* image_data)
 {
     glBindTexture(GL_TEXTURE_2D, image_texture);
-
-    int image_width = thePPU.getVRAMViewerXsize();
-    int image_height = thePPU.getVRAMViewerYsize();
-    unsigned char* image_data = thePPU.getVRAMViewerBitmap();
 
     glTexSubImage2D(
         GL_TEXTURE_2D,
@@ -332,12 +324,22 @@ void displayPaletteWindow(ppu& thePPU)
     ImGui::End();
 }
 
-void displayVRAMViewerWindow(GLuint renderTexture,ppu& thePPU)
+void displayVRAMViewerWindow(GLuint renderTexture,int image_width,int image_height,unsigned char* parr,ppu& thePPU)
 {
     ImGui::Begin("VRAM viewer");
 
     thePPU.tileViewerRenderTiles();
-    renderToTexture(renderTexture,thePPU);
+    renderToTexture(renderTexture,image_width,image_height,parr);
+
+    ImGui::End();
+}
+
+void displaySNESScreenWindow(GLuint renderTexture, int image_width, int image_height, unsigned char* parr, ppu& thePPU)
+{
+    ImGui::Begin("SNES TV Output");
+
+    thePPU.renderScreen();
+    renderToTexture(renderTexture, image_width, image_height, parr);
 
     ImGui::End();
 }
@@ -392,9 +394,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     ppu thePPU;
     mmu theMMU(thePPU);
     std::vector<std::string> romLoadingLog;
+
     romLoader theRomLoader;
     //std::string romName = "d:\\prova\\snes\\HelloWorld.sfc";
     std::string romName = "d:\\prova\\snes\\CPUDEC.sfc";
+    //std::string romName = "d:\\prova\\snes\\8x8BG1Map2BPP32x328PAL.sfc";
+    
     if (theRomLoader.loadRom(romName,theMMU,romLoadingLog) != 0)
     {
         ImGui_ImplOpenGL3_Shutdown();
@@ -417,7 +422,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //
 
     GLuint vramRenderTexture;
-    prepareVRAMViewerTexture(vramRenderTexture,thePPU);
+    prepareVRAMViewerTexture(vramRenderTexture,thePPU.getVRAMViewerXsize(), thePPU.getVRAMViewerYsize(), thePPU.getVRAMViewerBitmap());
+    GLuint screenRenderTexture;
+    prepareVRAMViewerTexture(screenRenderTexture, thePPU.getPPUResolutionX(), thePPU.getPPUResolutionY(), thePPU.getPPUFramebuffer());
 
     //
 
@@ -471,7 +478,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         displayRegistersWindow(theCPU);
         displayPaletteWindow(thePPU);
         displayLogWindow();
-        displayVRAMViewerWindow(vramRenderTexture, thePPU);
+        displayVRAMViewerWindow(vramRenderTexture, thePPU.getVRAMViewerXsize(), thePPU.getVRAMViewerYsize(), thePPU.getVRAMViewerBitmap(),thePPU);
+        displaySNESScreenWindow(screenRenderTexture, thePPU.getPPUResolutionX(), thePPU.getPPUResolutionY(), thePPU.getPPUFramebuffer(), thePPU);
 
         // rush there if needed
         while (rush)

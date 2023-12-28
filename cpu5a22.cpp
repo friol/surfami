@@ -182,6 +182,11 @@ unsigned int cpu5a22::getLongAddress()
 	return ((pMMU->read8(regPC+3)) << 16) | (pMMU->read8(regPC + 2) << 8) | pMMU->read8(regPC+1);
 }
 
+unsigned int cpu5a22::getDirectPageAddress()
+{
+	return regD | pMMU->read8(regPC+1);
+}
+
 int cpu5a22::stepOne()
 {
 	unsigned char nextOpcode = pMMU->read8(regPC);
@@ -621,17 +626,26 @@ int cpu5a22::stepOne()
 	else if (nextOpcode == 0xbd)
 	{
 		// LDA addr,X
-		// TODO this is only 16 bits, right?
 
 		int addr = getAbsoluteAddress16IndexedX();
-		unsigned char lo = pMMU->read8(addr);
-		unsigned char hi = pMMU->read8(addr + 1);
-		unsigned int val = (hi << 8) | lo;
-
-		regA_lo = (val & 0xff);
-		regA_hi = (val >> 8);
-		regP.setZero(val == 0);
-		regP.setNegative(val >> 15);
+		
+		if (regP.getAccuMemSize()) 
+		{
+			unsigned char lo = pMMU->read8(addr);
+			regA_lo = lo;
+			regP.setZero(lo == 0);
+			regP.setNegative(lo >> 7);
+		}
+		else 
+		{
+			unsigned char lo = pMMU->read8(addr);
+			unsigned char hi = pMMU->read8(addr + 1);
+			unsigned int val = (hi << 8) | lo;
+			regA_lo = (val & 0xff);
+			regA_hi = (val >> 8);
+			regP.setZero(val == 0);
+			regP.setNegative(val >> 15);
+		}
 
 		regPC += 3;
 		cycles = 4;
@@ -687,6 +701,120 @@ int cpu5a22::stepOne()
 			regP.setNegative(val >> 7);
 			regP.setZero(val == 0);
 			regP.setCarry((regX_lo | (regX_hi << 8)) >= m);
+			regPC += 3;
+			cycAdder = 1;
+		}
+
+		cycles = 2 + cycAdder;
+	}
+	else if (nextOpcode == 0xb8)
+	{
+		// CLV - Clear overflow flag
+		regP.setOverflow(0);
+
+		regPC += 1;
+		cycles = 2;
+	}
+	else if (nextOpcode == 0x3a)
+	{
+		// DEC A
+
+		if (regP.getAccuMemSize()) 
+		{
+			unsigned char val = regA_lo;
+			val--;
+			regA_lo = val;
+			regP.setNegative(val >> 7);
+			regP.setZero(val == 0);
+		}
+		else 
+		{
+			unsigned short int val = regA_lo | (regA_hi << 8);
+			val--;
+			
+			regA_lo = val & 0xff;
+			regA_hi = val >> 8;
+			
+			regP.setNegative(val >> 15);
+			regP.setZero(val == 0);
+		}
+
+		regPC += 1;
+		cycles = 2;
+	}
+	else if (nextOpcode == 0x85)
+	{
+		// STA dp
+
+		int cycAdder = 0;
+		int addr = getDirectPageAddress();
+
+		pMMU->write8(addr,regA_lo);
+		if (regP.getAccuMemSize()==0)
+		{
+			pMMU->write8(addr + 1,regA_hi);
+			cycAdder += 1;
+		}
+
+		if (regP.isDPLowNotZero()) cycAdder += 1;
+
+		regPC += 2;
+		cycles = 3 + cycAdder;
+	}
+	else if (nextOpcode == 0x8a)
+	{
+		// TXA - Transfer Index Register X to Accumulator
+
+		if (regP.getAccuMemSize()) 
+		{
+			unsigned char val = regX_lo;
+			regA_lo=val;
+			regP.setNegative(val >> 7);
+			regP.setZero(val == 0);
+		}
+		else 
+		{
+			unsigned short int val = regX_lo | (regX_hi << 8);
+			regA_lo = regX_lo;
+			regA_hi = regX_hi;
+			regP.setNegative(val >> 15);
+			regP.setZero(val == 0);
+		}
+
+		regPC += 1;
+		cycles = 2;
+	}
+	else if (nextOpcode == 0xc9)
+	{
+		// CMP #const - Compare accu with memory
+
+		int addr;
+		int cycAdder = 0;
+
+		if (regP.getAccuMemSize())
+		{
+			addr = getImmediateAddress8();
+			
+			unsigned char m = pMMU->read8(addr);
+			unsigned char val = regA_lo - m;
+			regP.setNegative(val >> 7);
+			regP.setZero(val == 0);
+			regP.setCarry(regA_lo >= m);
+
+			regPC += 2;
+		}
+		else
+		{
+			addr = getImmediateAddress16();
+
+			unsigned char lo = pMMU->read8(addr);
+			unsigned char hi = pMMU->read8(addr + 1);
+			unsigned short int m = (hi << 8) | lo;
+			unsigned short int val = (regA_lo|(regA_hi<<8)) - m;
+			regP.setNegative(val >> 7);
+			regP.setZero(val == 0);
+			regP.setCarry((regA_lo | (regA_hi << 8)) >= m);
+
 			regPC += 3;
 			cycAdder = 1;
 		}

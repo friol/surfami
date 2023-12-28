@@ -24,6 +24,11 @@ private:
 
 public:
 
+	bool isDPLowNotZero() 
+	{
+		return (D & 0xff) != 0x00;
+	}
+
 	void setEmulation(int val)
 	{
 		E = val & 1;
@@ -156,6 +161,7 @@ private:
 	unsigned int getAbsoluteAddress16();
 	unsigned int getAbsoluteAddress16IndexedX();
 	unsigned int getLongAddress();
+	unsigned int getDirectPageAddress();
 
 public:
 
