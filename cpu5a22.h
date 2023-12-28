@@ -154,6 +154,7 @@ private:
 	unsigned int getImmediateAddress8();
 	unsigned int getImmediateAddress16();
 	unsigned int getAbsoluteAddress16();
+	unsigned int getAbsoluteAddress16IndexedX();
 	unsigned int getLongAddress();
 
 public:

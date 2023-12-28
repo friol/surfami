@@ -5,6 +5,7 @@
 
 static const debugInfoRec debugInstrList[] =
 {
+	{0x10,2,"BPL param0",Immediate8,false,false},
 	{0x18,1,"CLC",None,false,false},
 	{0x2c,3,"BIT param0",Absolute16,false,false},
 	{0xFB,1,"XCE",None,false,false},
@@ -21,10 +22,13 @@ static const debugInfoRec debugInstrList[] =
 	{0xA2,2,"LDX param0",Immediate,true,false},
 	{0xA9,2,"LDA param0",Immediate,false,true},
 	{0xAB,1,"PLB",None,false,false},
+	{0xBD,3,"LDA param0,X",Absolute16,false,false},
 	{0xC2,2,"REP param0",Immediate8,false,false},
 	{0xCA,1,"DEX",None,false,false},
 	{0xD0,2,"BNE param0",Immediate8,false,false},
+	{0xE0,2,"CPX param0",Immediate,true,false},
 	{0xe2,2,"SEP param0",Immediate8,false,false},
+	{0xe8,1,"INX",None,false,false},
 	{0xea,1,"NOP",None,false,false},
 };
 

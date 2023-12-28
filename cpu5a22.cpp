@@ -9,6 +9,13 @@
 
 #include "cpu5a22.h"
 #include "debugger5a22.h"
+#include "logger.h"
+
+extern logger glbTheLogger;
+
+//
+//
+//
 
 cpu5a22::cpu5a22(mmu* theMMU)
 {
@@ -156,6 +163,15 @@ unsigned int cpu5a22::getAbsoluteAddress16()
 {
 	unsigned char dbr = regDBR;
 	unsigned short int addr = ((pMMU->read8(regPC+2) << 8) | pMMU->read8(regPC+1));
+	return (dbr << 16) | addr;
+}
+
+unsigned int cpu5a22::getAbsoluteAddress16IndexedX()
+{
+	unsigned char dbr = regDBR;
+	unsigned short int addr = ((pMMU->read8(regPC + 2) << 8) | pMMU->read8(regPC + 1));
+	int pbr = (addr & 0xff00) != ((addr + (regX_lo|(regX_hi<<8))) & 0xff00);
+	addr = addr + (regX_lo | (regX_hi << 8));
 	return (dbr << 16) | addr;
 }
 
@@ -557,22 +573,133 @@ int cpu5a22::stepOne()
 	}
 	else if (nextOpcode == 0x2c)
 	{
-		// BIT - Test bits Absolute
+		// BIT - Test bits against accu Absolute
 		int cycleAdder = 0;
+		int addr = getAbsoluteAddress16();
 
 		if (regP.getAccuMemSize() == 0)
 		{
 			cycleAdder += 1;
+
+			unsigned char lo = pMMU->read8(addr);
+			unsigned char hi = pMMU->read8(addr + 1);
+			unsigned short int val = (hi << 8) | lo;
+			regP.setNegative(val >> 15);
+			regP.setOverflow((val >> 14) & 1);
+			regP.setZero((val & (regA_lo|(regA_hi<<8)) == 0x0000));
 		}
-
-
+		else
+		{
+			unsigned char val = pMMU->read8(addr);
+			regP.setNegative(val >> 7);
+			regP.setOverflow((val >> 6) & 1);
+			regP.setZero((val & regA_lo) == 0x00);
+		}
 
 		regPC += 3;
 		cycles = 4 + cycleAdder;
 	}
+	else if (nextOpcode == 0x10)
+	{
+		// BPL - branch if plus
+
+		int branch_taken = 0;
+		signed char offset = (signed char)pMMU->read8(regPC + 1);
+
+		if (regP.getNegative() == 0)
+		{
+			regPC += offset + 2;
+			branch_taken = 1;
+		}
+		else
+		{
+			regPC += 2;
+		}
+
+		cycles = 2 + branch_taken;
+	}
+	else if (nextOpcode == 0xbd)
+	{
+		// LDA addr,X
+		// TODO this is only 16 bits, right?
+
+		int addr = getAbsoluteAddress16IndexedX();
+		unsigned char lo = pMMU->read8(addr);
+		unsigned char hi = pMMU->read8(addr + 1);
+		unsigned int val = (hi << 8) | lo;
+
+		regA_lo = (val & 0xff);
+		regA_hi = (val >> 8);
+		regP.setZero(val == 0);
+		regP.setNegative(val >> 15);
+
+		regPC += 3;
+		cycles = 4;
+		if (regP.getAccuMemSize() == 0) cycles += 1;
+		if (regPB) { regPB = 0; cycles += 1; }
+	}
+	else if (nextOpcode == 0xe8)
+	{
+		// INX
+
+		if (regP.getIndexSize()) 
+		{
+			regX_lo = (regX_lo + 1) & 0xff;
+			regP.setZero(regX_lo == 0);
+			regP.setNegative(regX_lo >> 7);
+		}
+		else 
+		{
+			int regX = (regX_lo | (regX_hi << 8));
+			regX += 1;
+			regX &= 0xffff;
+			regX_lo = regX & 0xff; regX_hi = (regX >> 8);
+
+			regP.setZero((regX_lo|(regX_hi<<8)) == 0);
+			regP.setNegative((regX_lo | (regX_hi << 8)) >> 15);
+		}
+
+		regPC += 1;
+		cycles += 2;
+	}
+	else if (nextOpcode == 0xe0)
+	{
+		// CPX - Compare Index Register X with Memory
+		int cycAdder = 0;
+
+		if (regP.getIndexSize()) 
+		{
+			unsigned int addr = getImmediateAddress8();
+			unsigned char m = pMMU->read8(addr);
+			unsigned char val = regX_lo - m;
+			regP.setNegative(val >> 7);
+			regP.setZero(val == 0);
+			regP.setCarry(regX_lo >= m);
+			regPC += 2;
+		}
+		else 
+		{
+			unsigned int addr = getImmediateAddress16();
+			unsigned char lo = pMMU->read8(addr);
+			unsigned char hi = pMMU->read8(addr + 1);
+			unsigned short int m = (hi << 8) | lo;
+			unsigned short int val = (regX_lo|(regX_hi<<8)) - m;
+			regP.setNegative(val >> 7);
+			regP.setZero(val == 0);
+			regP.setCarry((regX_lo | (regX_hi << 8)) >= m);
+			regPC += 3;
+			cycAdder = 1;
+		}
+
+		cycles = 2 + cycAdder;
+	}
 	else
 	{
-		// unknown opcode, do something
+		// unknown opcode
+
+		std::stringstream strr;
+		strr << std::hex << std::setw(2) << std::setfill('0') << (int)nextOpcode;
+		glbTheLogger.logMsg("Unknown opcode " + strr.str());
 	}
 
 	return cycles;
