@@ -139,7 +139,7 @@ void renderToTexture(GLuint image_texture,int image_width,int image_height,unsig
         image_data
     );
 
-    ImGui::Image((void*)(intptr_t)image_texture, ImVec2(image_width, image_height));
+    ImGui::Image((void*)(intptr_t)image_texture, ImVec2(image_width*2, image_height*2));
 }
 
 //
@@ -363,7 +363,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEXW wc = { sizeof(wc), CS_OWNDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr, L"SurFami", nullptr };
     ::RegisterClassExW(&wc);
-    HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"SurFami", WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, nullptr, nullptr, wc.hInstance, nullptr);
+    HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"SurFami", WS_OVERLAPPEDWINDOW, 100, 100, 1580, 800, nullptr, nullptr, wc.hInstance, nullptr);
 
     // Initialize OpenGL
     if (!CreateDeviceWGL(hwnd, &g_MainWindow))
@@ -397,7 +397,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
 
     romLoader theRomLoader;
     //std::string romName = "d:\\prova\\snes\\HelloWorld.sfc";
-    std::string romName = "d:\\prova\\snes\\CPUDEC.sfc";
+    std::string romName = "d:\\prova\\snes\\CPUMOV.sfc";
+    //std::string romName = "d:\\prova\\snes\\CPUDEC.sfc";
     //std::string romName = "d:\\prova\\snes\\8x8BG1Map2BPP32x328PAL.sfc";
     
     if (theRomLoader.loadRom(romName,theMMU,romLoadingLog) != 0)

@@ -129,6 +129,16 @@ public:
 		return E;
 	}
 
+	unsigned char getByte() 
+	{
+		if (!E) 
+		{
+			return (N << 7) | (V << 6) | (M << 5) | (X << 4) | (D << 3) | (I << 2) | (Z << 1) | (unsigned char)C;
+		}
+
+		return  (N << 7) | (V << 6) | (1 << 5) | (B << 4) | (D << 3) | (I << 2) | (Z << 1) | (unsigned char)C;
+	}
+
 
 };
 
@@ -162,6 +172,7 @@ private:
 	unsigned int getAbsoluteAddress16IndexedX();
 	unsigned int getLongAddress();
 	unsigned int getDirectPageAddress();
+	unsigned int getDirectPageIndexedXAddress();
 
 public:
 
