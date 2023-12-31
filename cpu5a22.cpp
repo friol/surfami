@@ -1342,6 +1342,167 @@ int cpu5a22::stepOne()
 		regPC += 2;
 		cycles = 6 + cycAdder;
 	}
+	else if (nextOpcode == 0x4c)
+	{
+		// JMP Absolute
+		int addr = getAbsoluteAddress16();
+		regPC = addr;
+		cycles = 3;
+	}
+	else if (nextOpcode == 0x86)
+	{
+		// STX dp - Store Index Register X to Memory
+		int cycAdder = 0;
+		int addr = getDirectPageAddress();
+
+		pMMU->write8(addr,regX_lo);
+		if (regP.getIndexSize()==false)
+		{
+			pMMU->write8(addr + 1, regX_hi);
+			cycAdder += 1;
+		}
+
+		if (regP.isDPLowNotZero()) cycAdder += 1;
+
+		regPC += 2;
+		cycles = 3 + cycAdder;
+	}
+	else if (nextOpcode == 0x84)
+	{
+		// STY dp
+		int cycAdder = 0;
+		int addr = getDirectPageAddress();
+
+		pMMU->write8(addr, regY_lo);
+		if (regP.getIndexSize() == false)
+		{
+			pMMU->write8(addr + 1, regY_hi);
+			cycAdder += 1;
+		}
+
+		if (regP.isDPLowNotZero()) cycAdder += 1;
+
+		regPC += 2;
+		cycles = 3 + cycAdder;
+	}
+	else if (nextOpcode == 0x54)
+	{
+		// MVN xx,xx
+
+		unsigned char dst_bank = pMMU->read8(regPC + 1);
+		unsigned char src_bank = pMMU->read8(regPC + 2);
+		
+		regDBR = dst_bank;
+
+		unsigned int dst = (dst_bank << 16) | (regY_lo|(regY_hi<<8));
+		unsigned int src = (src_bank << 16) | (regX_lo | (regX_hi << 8));
+
+		unsigned char val = pMMU->read8(src);
+		pMMU->write8(dst, val);
+		
+		unsigned short int accu = regA_lo | (regA_hi << 8);
+		accu -= 1;
+		regA_lo = accu & 0xff;
+		regA_hi = accu >> 8;
+
+		unsigned short int regX = regX_lo | (regX_hi << 8);
+		unsigned short int regY = regY_lo | (regY_hi << 8);
+		regX += 1; regY += 1;
+
+		regX_lo = regX & 0xff; regY_lo = regY & 0xff;
+		regX_hi = regX >>8; regY_hi = regY >>8;
+		
+		if (accu == 0xffff) regPC += 3;
+		cycles = 7; // TODO verify this
+	}
+	else if (nextOpcode == 0xb5)
+	{
+		// LDA dp,X
+		int addr = getDirectPageIndexedXAddress();
+		int cycAdder = 0;
+
+		if (regP.getAccuMemSize())
+		{
+			unsigned char lo = pMMU->read8(addr);
+			regA_lo = lo;
+			regP.setZero(lo == 0);
+			regP.setNegative(lo >> 7);
+		}
+		else
+		{
+			unsigned char lo = pMMU->read8(addr);
+			unsigned char hi = pMMU->read8(addr + 1);
+			unsigned int val = (hi << 8) | lo;
+
+			regA_lo = (val & 0xff);
+			regA_hi = (val >> 8);
+			regP.setZero(val == 0);
+			regP.setNegative(val >> 15);
+			cycAdder += 1;
+		}
+
+		if (regP.isDPLowNotZero()) cycAdder += 1;
+
+		regPC += 2;
+		cycles = 4 + cycAdder;
+	}
+	else if (nextOpcode == 0xdd)
+	{
+		// CMP absolute,X
+		int addr = getAbsoluteAddress16IndexedX();
+		int cycAdder = 0;
+
+		if (regP.getAccuMemSize())
+		{
+			unsigned char m = pMMU->read8(addr);
+			unsigned char val = regA_lo - m;
+			regP.setNegative(val >> 7);
+			regP.setZero(val == 0);
+			regP.setCarry(regA_lo >= m);
+		}
+		else
+		{
+			unsigned char lo = pMMU->read8(addr);
+			unsigned char hi = pMMU->read8(addr + 1);
+			unsigned short int m = (hi << 8) | lo;
+			unsigned short int val = (regA_lo | (regA_hi << 8)) - m;
+			regP.setNegative(val >> 7);
+			regP.setZero(val == 0);
+			regP.setCarry((regA_lo | (regA_hi << 8)) >= m);
+		}
+
+		regPC += 3;
+		cycles = 4 + cycAdder; // TODO: check pageboundarycrossed
+	}
+	else if (nextOpcode == 0x44)
+	{
+		// MVP - block move positive
+		unsigned char dst_bank = pMMU->read8(regPC + 1);
+		unsigned char src_bank = pMMU->read8(regPC + 2);
+
+		regDBR = dst_bank;
+
+		unsigned int dst = (dst_bank << 16) | (regY_lo | (regY_hi << 8));
+		unsigned int src = (src_bank << 16) | (regX_lo | (regX_hi << 8));
+
+		unsigned char val = pMMU->read8(src);
+		pMMU->write8(dst, val);
+
+		unsigned short int accu = regA_lo | (regA_hi << 8);
+		accu -= 1;
+		regA_lo = accu & 0xff;
+		regA_hi = accu >> 8;
+
+		unsigned short int regX = regX_lo | (regX_hi << 8);
+		unsigned short int regY = regY_lo | (regY_hi << 8);
+		regX -= 1; regY -= 1;
+
+		regX_lo = regX & 0xff; regY_lo = regY & 0xff;
+		regX_hi = regX >> 8; regY_hi = regY >> 8;
+
+		if (accu == 0xffff) regPC += 3;
+		cycles = 7; // TODO verify this
+	}
 	else
 	{
 		// unknown opcode
@@ -1349,6 +1510,7 @@ int cpu5a22::stepOne()
 		std::stringstream strr;
 		strr << std::hex << std::setw(2) << std::setfill('0') << (int)nextOpcode;
 		glbTheLogger.logMsg("Unknown opcode " + strr.str());
+		return -1;
 	}
 
 	return cycles;

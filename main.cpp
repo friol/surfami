@@ -251,6 +251,29 @@ void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& the
     {
         theCPU.stepOne();
     }
+    
+    ImGui::SameLine();
+    // step until UNK
+    if (ImGui::Button("Step to UNK"))
+    {
+        int res = 0;
+        while (res != -1)
+        {
+            res = theCPU.stepOne();
+        }
+    }
+
+    ImGui::SameLine();
+    // step 100
+    if (ImGui::Button("Step 100"))
+    {
+        int res = 0;
+        while (res <100)
+        {
+            theCPU.stepOne();
+            res += 1;
+        }
+    }
 
     // error message box
     bool open = true;
