@@ -8,9 +8,11 @@ extern logger glbTheLogger;
 
 //
 
-mmu::mmu(ppu& thePPU)
+mmu::mmu(ppu& thePPU,apu& theAPU)
 {
 	pPPU = &thePPU;
+	pAPU = &theAPU;
+	snesRAM = new unsigned char[0x1000000];
 }
 
 void mmu::DMAstart(unsigned char val)
@@ -106,8 +108,6 @@ void mmu::DMAstart(unsigned char val)
 			{
 				glbTheLogger.logMsg("Error: unsupported dma mode " + std::to_string(dma_mode));
 			}
-
-
 		}
 	}
 }
@@ -126,10 +126,10 @@ void mmu::write8(unsigned int address, unsigned char val)
 		glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2105 (BG Mode and Character Size Register)");
 		pPPU->writeRegister(0x2105, val);
 	}
-	else if (address == 0x2107)
+	else if ((address == 0x2107)|| (address == 0x2108) || (address == 0x2109) || (address == 0x210A))
 	{
-		glbTheLogger.logMsg("Writing [" + strr.str() + "] to 0x2107 (BG1 Screen Base and Screen Size)");
-		pPPU->writeRegister(0x2107, val);
+		glbTheLogger.logMsg("Writing [" + strr.str() + "] to 0x2107/8/9/A (BGx Screen Base and Screen Size)");
+		pPPU->writeRegister(address, val);
 	}
 	else if (address == 0x2121)
 	{
@@ -177,16 +177,20 @@ void mmu::write8(unsigned int address, unsigned char val)
 		pPPU->writeRegister(0x210C, val);
 	}
 
-
-
 	snesRAM[address] = val;
 }
 
 unsigned char mmu::read8(unsigned int address)
 {
+	if ((address == 0x2140)|| (address == 0x2141))
+	{
+		return pAPU->read8(address);
+	}
+
 	return snesRAM[address];
 }
 
 mmu::~mmu()
 {
+	delete(snesRAM);
 }

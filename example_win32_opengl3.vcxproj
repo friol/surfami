@@ -157,6 +157,7 @@
     <ClCompile Include="..\..\imgui_widgets.cpp" />
     <ClCompile Include="..\..\backends\imgui_impl_opengl3.cpp" />
     <ClCompile Include="..\..\backends\imgui_impl_win32.cpp" />
+    <ClCompile Include="apu.cpp" />
     <ClCompile Include="cpu5a22.cpp" />
     <ClCompile Include="debugger5a22.cpp" />
     <ClCompile Include="logger.cpp" />
@@ -172,6 +173,7 @@
     <ClInclude Include="..\..\backends\imgui_impl_opengl3.h" />
     <ClInclude Include="..\..\backends\imgui_impl_opengl3_loader.h" />
     <ClInclude Include="..\..\backends\imgui_impl_win32.h" />
+    <ClInclude Include="apu.h" />
     <ClInclude Include="cpu5a22.h" />
     <ClInclude Include="debugger5a22.h" />
     <ClInclude Include="logger.h" />

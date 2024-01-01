@@ -52,6 +52,9 @@
     <ClCompile Include="ppu.cpp">
       <Filter>sources</Filter>
     </ClCompile>
+    <ClCompile Include="apu.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\imconfig.h">
@@ -88,6 +91,9 @@
       <Filter>sources</Filter>
     </ClInclude>
     <ClInclude Include="ppu.h">
+      <Filter>sources</Filter>
+    </ClInclude>
+    <ClInclude Include="apu.h">
       <Filter>sources</Filter>
     </ClInclude>
   </ItemGroup>

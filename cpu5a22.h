@@ -157,7 +157,7 @@ private:
 	unsigned char regY_hi=0;	//	index Y - high byte
 	unsigned short int regSP;		//	Stack Pointer
 
-	unsigned short int regPC;
+	unsigned int regPC;
 	regStatus regP;
 
 	mmu* pMMU;
@@ -170,8 +170,12 @@ private:
 	unsigned int getImmediateAddress16();
 	unsigned int getAbsoluteAddress16();
 	unsigned int getAbsoluteAddress16IndexedX();
+	unsigned int getAbsoluteAddress16IndexedY();
 	unsigned int getLongAddress();
+	unsigned int getLongAddressIndexedX();
 	unsigned int getDirectPageAddress();
+	unsigned int getDirectPageIndirectLongAddress();
+	unsigned int getDirectPageIndirectAddress();
 	unsigned int getDirectPageIndexedXAddress();
 
 public:
@@ -179,7 +183,7 @@ public:
 	cpu5a22(mmu* theMMU);
 	void reset();
 	int stepOne();
-	unsigned short int getPC();
+	unsigned int getPC();
 	bool getIndexSize() { return regP.getIndexSize(); }
 	bool getAccuMemSize() { return regP.getAccuMemSize(); }
 	std::vector<std::string> getRegistersInfo();

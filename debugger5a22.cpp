@@ -8,12 +8,22 @@ static const debugInfoRec debugInstrList[] =
 	{0x08,1,"PHP",None,false,false},
 	{0x10,2,"BPL param0",Immediate8,false,false},
 	{0x18,1,"CLC",None,false,false},
+	{0x1B,1,"TCS",None,false,false},
 	{0x20,3,"JSR param0",Absolute16,false,false},
+	{0x22,4,"JSL param0",AbsoluteLong,false,false},
 	{0x24,2,"BIT param0",Immediate,false,false},
+	{0x25,2,"AND param0",Immediate8,false,false},
+	{0x27,2,"AND [param0]",Immediate8,false,false},
 	{0x29,2,"AND param0",Immediate,false,true},
 	{0x2c,3,"BIT param0",Absolute16,false,false},
+	{0x2d,3,"AND param0",Absolute16,false,false},
+	{0x2f,4,"AND param0",AbsoluteLong,false,false},
+	{0x30,2,"BMI param0",Immediate8,false,false},
+	{0x32,2,"AND (param0)",Immediate8,false,false},
+	{0x38,1,"SEC",None,false,false},
 	{0x3a,1,"DEC A",None,false,false},
 	{0x44,3,"MVP param0",Absolute16,false,false},
+	{0x48,1,"PHA",None,false,false},
 	{0x4a,1,"LSR A",None,false,false},
 	{0x4c,3,"JMP param0",Absolute16,false,false},
 	{0x4B,1,"PHK",None,false,false},
@@ -23,6 +33,7 @@ static const debugInfoRec debugInstrList[] =
 	{0x60,1,"RTS",None,false,false},
 	{0x68,1,"PLA",None,false,false},
 	{0x69,2,"ADC param0",Immediate,false,true},
+	{0x74,2,"STZ param0,X",Immediate8,false,false},
 	{0x78,1,"SEI",None,false,false},
 	{0x80,2,"BRA param0",Immediate8,false,false},
 	{0x84,2,"STY param0",Immediate8,false,false},
@@ -33,15 +44,21 @@ static const debugInfoRec debugInstrList[] =
 	{0x8c,3,"STY param0",Absolute16,false,false},
 	{0x8d,3,"STA param0",Absolute16,false,false},
 	{0x8e,3,"STX param0",Absolute16,false,false},
+	{0x8f,4,"STA param0",AbsoluteLong,false,false},
+	{0x98,1,"TYA",None,false,false},
+	{0x99,3,"STA param0,Y",Absolute16,false,false},
 	{0x9c,3,"STZ param0",Absolute16,false,false},
 	{0x9A,1,"TXS",None,false,false},
+	{0x9f,4,"STA param0,X",AbsoluteLong,false,false},
 	{0xA0,2,"LDY param0",Immediate,true,false},
 	{0xA2,2,"LDX param0",Immediate,true,false},
 	{0xA5,2,"LDA param0",Immediate8,false,false},
 	{0xA6,2,"LDX param0",Immediate8,false,false},
+	{0xA8,1,"TAY",None,false,false},
 	{0xA9,2,"LDA param0",Immediate,false,true},
 	{0xAB,1,"PLB",None,false,false},
 	{0xB5,2,"LDA param0,X",Immediate8,false,false},
+	{0xB9,3,"LDA param0,Y",Absolute16,false,false},
 	{0xB8,1,"CLV",None,false,false},
 	{0xBD,3,"LDA param0,X",Absolute16,false,false},
 	{0xC6,2,"DEC param0",Immediate8,false,false},
@@ -52,11 +69,14 @@ static const debugInfoRec debugInstrList[] =
 	{0xCE,3,"DEC param0",Absolute16,false,false},
 	{0xD0,2,"BNE param0",Immediate8,false,false},
 	{0xD6,2,"DEC param0,X",Immediate8,false,false},
+	{0xD9,3,"CMP param0,Y",Absolute16,false,false},
 	{0xDD,3,"CMP param0,X",Absolute16,false,false},
 	{0xDE,3,"DEC param0,X",Absolute16,false,false},
 	{0xE0,2,"CPX param0",Immediate,true,false},
 	{0xe2,2,"SEP param0",Immediate8,false,false},
 	{0xe8,1,"INX",None,false,false},
+	{0xe9,2,"SBC param0",Immediate,false,true},
+	{0xeb,1,"XBA",None,false,false},
 	{0xEC,3,"CPX param0",Absolute16,false,false},
 	{0xea,1,"NOP",None,false,false},
 	{0xf0,2,"BEQ param0",Immediate8,false,false},
@@ -175,7 +195,7 @@ std::string debugger5a22::processDisasmTemplate(std::string disasmTmpl,const deb
 		std::stringstream strr;
 		std::string hexPaddedConst;
 
-		unsigned short int mem = bytez[1];
+		unsigned int mem = bytez[1];
 		mem |= ((int)bytez[2]) << 8;
 		mem |= ((int)bytez[3]) << 16;
 		strr << std::hex << std::setw(6) << std::setfill('0') << mem;
@@ -253,7 +273,6 @@ std::vector<disasmInfoRec> debugger5a22::debugCode(unsigned int pc, unsigned int
 		curAddress += sizeBytes;
 		instrsProcessed += 1;
 	}
-
 
 	return retVec;
 }

@@ -5,6 +5,11 @@
 
 ppu::ppu()
 {
+	for (int bg = 0;bg < 3;bg++)
+	{
+		bgTileMapBaseAddress[bg] = 0;
+	}
+
 	for (int addr = 0;addr < 0x8000;addr++)
 	{
 		vram[addr] = 0;
@@ -103,10 +108,10 @@ void ppu::writeRegister(int reg, unsigned char val)
 	{
 		bgTileBaseAddress = (bgTileBaseAddress&0xff) | (val<<8);
 	}
-	else if (reg == 0x2107)
+	else if ((reg == 0x2107)|| (reg == 0x2108)|| (reg == 0x2109)|| (reg == 0x210A))
 	{
-		// BG1 Screen Base and Screen Size
-		bg1TileMapBaseAddress = val;
+		// BGx Screen Base and Screen Size
+		bgTileMapBaseAddress[reg-0x2107] = val;
 	}
 
 
@@ -201,23 +206,143 @@ void ppu::renderTile2bpp(int px, int py, int tileNum,int palId)
 
 }
 
+void ppu::renderTile4bpp(int px, int py, int tileNum, int palId)
+{
+	unsigned char* pBuf;
+	const int numCols = 16;
+	unsigned char palArr[3 * numCols];
+
+	int colidx = (palId * numCols) * 2;
+
+	for (int col = 0;col < numCols;col++)
+	{
+		unsigned int palcol = (((int)(cgram[colidx + 1] & 0x7f)) << 8) | cgram[colidx];
+		int red = palcol & 0x1f; red <<= 3;
+		int green = (palcol >> 5) & 0x1f; green <<= 3;
+		int blue = (palcol >> 10) & 0x1f; blue <<= 3;
+
+		palArr[(col * 3) + 0] = red;
+		palArr[(col * 3) + 1] = green;
+		palArr[(col * 3) + 2] = blue;
+
+		colidx += 2;
+	}
+
+	int tileAddr = tileNum * 16;
+
+	for (int y = 0;y < 8;y++)
+	{
+		pBuf = &screenFramebuffer[(px * 4) + ((py + y) * ppuResolutionX * 4)];
+
+		//int loByte = vram[tileAddr] & 0xff;
+		//int hiByte = vram[tileAddr] >> 8;
+
+		const unsigned char b_1 = vram[tileAddr] & 0xff;
+		const unsigned char b_2 = vram[tileAddr] >> 8;
+		const unsigned char b_3 = vram[tileAddr + 8] & 0xff;
+		const unsigned char b_4 = vram[tileAddr + 8] >> 8;
+
+
+		for (int x = 7;x >= 0;x--)
+		{
+			//int curCol = ((loByte >> x) & 1) + (((hiByte >> x) & 1) * 2);
+			const unsigned short int curCol = ((b_1 >> x) & 1) +
+				(2 * ((b_2 >> x) & 1)) +
+				(4 * ((b_3 >> x) & 1)) +
+				(8 * ((b_4 >> x) & 1));
+
+			*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
+			*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
+			*pBuf = palArr[(curCol * 3) + 2]; pBuf++;
+			*pBuf = 0xff; pBuf++;
+		}
+
+		tileAddr += 1;
+	}
+
+}
+
+void ppu::renderTile8bpp(int px, int py, int tileNum, int palId)
+{
+	unsigned char* pBuf;
+	const int numCols = 256;
+	unsigned char palArr[3 * numCols];
+
+	int colidx = (palId * numCols) * 2;
+
+	for (int col = 0;col < numCols;col++)
+	{
+		unsigned int palcol = (((int)(cgram[colidx + 1] & 0x7f)) << 8) | cgram[colidx];
+		int red = palcol & 0x1f; red <<= 3;
+		int green = (palcol >> 5) & 0x1f; green <<= 3;
+		int blue = (palcol >> 10) & 0x1f; blue <<= 3;
+
+		palArr[(col * 3) + 0] = red;
+		palArr[(col * 3) + 1] = green;
+		palArr[(col * 3) + 2] = blue;
+
+		colidx += 2;
+	}
+
+	int tileAddr = tileNum * 32;
+
+	for (int y = 0;y < 8;y++)
+	{
+		pBuf = &screenFramebuffer[(px * 4) + ((py + y) * ppuResolutionX * 4)];
+
+		//int loByte = vram[tileAddr] & 0xff;
+		//int hiByte = vram[tileAddr] >> 8;
+
+		const unsigned char b_1 = vram[tileAddr] & 0xff;
+		const unsigned char b_2 = vram[tileAddr] >> 8;
+		const unsigned char b_3 = vram[tileAddr + 8] & 0xff;
+		const unsigned char b_4 = vram[tileAddr + 8] >> 8;
+		const unsigned char b_5 = vram[tileAddr + 16] & 0xff;
+		const unsigned char b_6 = vram[tileAddr + 16] >> 8;
+		const unsigned char b_7 = vram[tileAddr + 24] & 0xff;
+		const unsigned char b_8 = vram[tileAddr + 24] >> 8;
+
+		for (int x = 7;x >= 0;x--)
+		{
+			const unsigned short int curCol = ((b_1 >> x) & 1) +
+				(2 * ((b_2 >> x) & 1)) +
+				(4 * ((b_3 >> x) & 1)) +
+				(8 * ((b_4 >> x) & 1)) +
+				(16 * ((b_5 >> x) & 1)) +
+				(32 * ((b_6 >> x) & 1)) +
+				(64 * ((b_7 >> x) & 1)) +
+				(128 * ((b_8 >> x) & 1));
+
+			*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
+			*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
+			*pBuf = palArr[(curCol * 3) + 2]; pBuf++;
+			*pBuf = 0xff; pBuf++;
+		}
+
+		tileAddr += 1;
+	}
+
+}
+
 void ppu::renderScreen()
 {
-	// rendering varies depending on screen mode
+	/*
+		7-2  SC Base Address in VRAM (in 1K-word steps, aka 2K-byte steps)
+		1-0  SC Size (0=One-Screen, 1=V-Mirror, 2=H-Mirror, 3=Four-Screen)
+						(0=32x32, 1=64x32, 2=32x64, 3=64x64 tiles)
+					(0: SC0 SC0    1: SC0 SC1  2: SC0 SC0  3: SC0 SC1   )
+					(   SC0 SC0       SC0 SC1     SC1 SC1     SC2 SC3   )
+		Specifies the BG Map addresses in VRAM. The "SCn" screens consists of 32x32 tiles each.
+	*/
+
+	// rendering depends on screen mode
 	int screenMode = (bgMode & 0x03);
 
 	if (screenMode == 0)
 	{
-		/*
-			7-2  SC Base Address in VRAM (in 1K-word steps, aka 2K-byte steps)
-			1-0  SC Size (0=One-Screen, 1=V-Mirror, 2=H-Mirror, 3=Four-Screen)
-							(0=32x32, 1=64x32, 2=32x64, 3=64x64 tiles)
-						(0: SC0 SC0    1: SC0 SC1  2: SC0 SC0  3: SC0 SC1   )
-						(   SC0 SC0       SC0 SC1     SC1 SC1     SC2 SC3   )
-			Specifies the BG Map addresses in VRAM. The "SCn" screens consists of 32x32 tiles each.
-		*/
+		// 0      4-color     4-color     4-color     4-color   ;Normal   
 
-		int tileBaseBG1 = ((bg1TileMapBaseAddress >> 2) << 10) & 0x7fff;
+		int tileBaseBG1 = ((bgTileMapBaseAddress[0] >> 2) << 10) & 0x7fff;
 		int tileAddr = tileBaseBG1;
 
 		for (int y = 0;y < 28;y++)
@@ -233,10 +358,46 @@ void ppu::renderScreen()
 			}
 		}
 	}
+	else if (screenMode == 0x03)
+	{
+		// 3      256-color   16-color    -           -         ;Normal   
+
+		/*
+		int tileAddr = ((bgTileMapBaseAddress[1] >> 2) << 10) & 0x7fff;
+		for (int y = 0;y < 28;y++)
+		{
+			for (int x = 0;x < 32;x++)
+			{
+				int vramWord = vram[tileAddr];
+				int tileNum = vramWord & 0x3ff;
+				int palId = (vramWord >> 10) & 0x7;
+
+				renderTile4bpp(x * 8, y * 8, tileNum, palId);
+				tileAddr++;
+			}
+		}
+		*/
+
+		int tileAddr = ((bgTileMapBaseAddress[0] >> 2) << 10) & 0x7fff;
+		for (int y = 0;y < 28;y++)
+		{
+			for (int x = 0;x < 32;x++)
+			{
+				int vramWord = vram[tileAddr];
+				int tileNum = vramWord & 0x3ff;
+				int palId = (vramWord >> 10) & 0x7;
+
+				renderTile8bpp(x * 8, y * 8, tileNum, palId);
+				tileAddr++;
+			}
+		}
+
+
+	}
 }
 
 ppu::~ppu()
 {
-	delete screenFramebuffer;
-	delete vramViewerBitmap;
+	delete(screenFramebuffer);
+	delete(vramViewerBitmap);
 }

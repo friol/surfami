@@ -17,7 +17,8 @@ private:
 	int bgMode;
 	int bgTileBaseAddress;
 	
-	int bg1TileMapBaseAddress = 0; // BG1
+	//int bg1TileMapBaseAddress = 0; // BG1
+	int bgTileMapBaseAddress[4];
 
 	const int vramViewerXsize = 256;
 	const int vramViewerYsize = 256;
@@ -28,6 +29,8 @@ private:
 	int ppuResolutionY = 224;
 	unsigned char* screenFramebuffer;
 	void renderTile2bpp(int px, int py, int tileNum, int palId);
+	void renderTile4bpp(int px, int py, int tileNum, int palId);
+	void renderTile8bpp(int px, int py, int tileNum, int palId);
 
 public:
 

@@ -14,7 +14,15 @@ std::vector<unsigned char> romLoader::readFile(std::string& filename)
 	std::streampos fileSize;
 	file.seekg(0, std::ios::end);
 	fileSize = file.tellg();
-	file.seekg(0, std::ios::beg);
+
+	if (strstr(filename.c_str(), ".smc"))
+	{
+		file.seekg(512, std::ios::beg);
+	}
+	else
+	{
+		file.seekg(0, std::ios::beg);
+	}
 
 	std::vector<unsigned char> vec;
 	vec.reserve(fileSize);
@@ -33,7 +41,7 @@ int romLoader::loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>
 
 	loadLog.push_back("ROM was read correctly. Size is " + std::to_string(romContents.size()/1024) + "kb.");
 
-	if (romContents.size() != 0x8000)
+	/*if (romContents.size() != 0x8000)
 	{
 		// other roms not supported for now
 		return 1;
@@ -42,6 +50,32 @@ int romLoader::loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>
 	for (int i = 0;i < 0x8000;i++)
 	{
 		theMMU.write8(i + 0x8000, romContents[i]);
+	}*/
+
+	unsigned char* pSnesRAM = theMMU.getInternalRAMPtr();
+	unsigned short int filesizeInKb = romContents.size() / 1024;
+
+	//	map rom to memory
+	unsigned char bank = 0x80;
+	unsigned char shadow_bank = 0x00;
+	unsigned char chunks = filesizeInKb / 32;
+	for (unsigned long int i = 0; i < romContents.size(); i++) 
+	{
+		//	write to all locations that mirror our ROM
+		for (unsigned char mirror = 0; mirror < (0x80 / chunks); mirror++) 
+		{
+			//	(Q3-Q4) 32k (0x8000) consecutive chunks to banks 0x80-0xff, upper halfs (0x8000-0xffff)
+			if ((bank + (i / 0x8000) + (mirror * chunks)) < 0xff) 
+			{
+				pSnesRAM[((bank + (i / 0x8000) + (mirror * chunks)) << 16) | 0x8000 + (i % 0x8000)]=romContents[i];
+			}
+
+			//	(Q1-Q2) shadowing to banks 0x00-0x7d, except WRAM (bank 0x7e/0x7f)
+			if ((shadow_bank + (i / 0x8000) + (mirror * chunks)) < 0x7e) 
+			{
+				pSnesRAM[((shadow_bank + (i / 0x8000) + (mirror * chunks)) << 16) | 0x8000 + (i % 0x8000)]=romContents[i];
+			}
+		}
 	}
 
 	// RESET (emulation)	0xFFFC / 0xFFFD

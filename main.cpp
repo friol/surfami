@@ -18,10 +18,13 @@
 #include <windows.h>
 #include <GL/GL.h>
 #include <tchar.h>
+#include <iomanip>
+#include <sstream>
 
 #include "romLoader.h"
 #include "mmu.h"
 #include "ppu.h"
+#include "apu.h"
 #include "cpu5a22.h"
 #include "debugger5a22.h"
 #include "logger.h"
@@ -191,11 +194,6 @@ void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& the
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
             ImGui::Selectable(instr.disasmed.c_str(), true);
             ImGui::PopStyleColor();
-            /*if (stepped)
-            {
-                ImGui::SetScrollHere();
-                stepped = false;
-            }*/
         }
         else ImGui::Selectable(instr.disasmed.c_str(), false);
 
@@ -367,6 +365,38 @@ void displaySNESScreenWindow(GLuint renderTexture, int image_width, int image_he
     ImGui::End();
 }
 
+void displayMemoryWindow(mmu& theMMU,int& baseAddress)
+{
+    ImGui::Begin("Memory viewer");
+
+    int hSteps = 16;
+    int rows = 4;
+    int curAddr = baseAddress;
+
+    for (int r = 0;r < rows;r++)
+    {
+        std::string sRow;
+        std::stringstream strr;
+        strr << std::hex << std::setw(6) << std::setfill('0') << curAddr;
+        sRow += strr.str() + "  ";
+
+        for (int x = 0;x < hSteps;x++)
+        {
+            unsigned char byteSized = theMMU.read8(curAddr);
+
+            std::stringstream strr;
+            strr << std::hex << std::setw(2) << std::setfill('0') << (int)byteSized;
+            sRow += strr.str()+" ";
+
+            curAddr += 1;
+        }
+
+        ImGui::Text(sRow.c_str());
+    }
+
+    ImGui::End();
+}
+
 //
 //
 //
@@ -415,15 +445,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //
 
     ppu thePPU;
-    mmu theMMU(thePPU);
+    apu theAPU;
+    mmu theMMU(thePPU,theAPU);
     std::vector<std::string> romLoadingLog;
 
     romLoader theRomLoader;
     //std::string romName = "d:\\prova\\snes\\HelloWorld.sfc";
-    std::string romName = "d:\\prova\\snes\\CPUMOV.sfc";
+    //std::string romName = "d:\\prova\\snes\\CPUMOV.sfc";
     //std::string romName = "d:\\prova\\snes\\CPUDEC.sfc";
+    //std::string romName = "d:\\prova\\snes\\CPUAND.sfc";
     //std::string romName = "d:\\prova\\snes\\8x8BG1Map2BPP32x328PAL.sfc";
-    
+    //std::string romName = "d:\\prova\\snes\\8x8BGMap4BPP32x328PAL.sfc";
+    //std::string romName = "d:\\prova\\snes\\Rings.sfc";
+    //std::string romName = "d:\\prova\\snes\\MosaicMode3.sfc";
+    std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
+    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc";
+
     if (theRomLoader.loadRom(romName,theMMU,romLoadingLog) != 0)
     {
         ImGui_ImplOpenGL3_Shutdown();
@@ -456,6 +493,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     bool isDebugWindowFocused = false;
     char jumpToAppoBuf[256];
     jumpToAppoBuf[0] = '\0';
+    int baseMemoryAddress = 0;
 
     while (!done)
     {
@@ -504,6 +542,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         displayLogWindow();
         displayVRAMViewerWindow(vramRenderTexture, thePPU.getVRAMViewerXsize(), thePPU.getVRAMViewerYsize(), thePPU.getVRAMViewerBitmap(),thePPU);
         displaySNESScreenWindow(screenRenderTexture, thePPU.getPPUResolutionX(), thePPU.getPPUResolutionY(), thePPU.getPPUFramebuffer(), thePPU);
+        displayMemoryWindow(theMMU,baseMemoryAddress);
 
         // rush there if needed
         while (rush)
