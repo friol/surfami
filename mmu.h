@@ -9,7 +9,7 @@
 #include "apu.h"
 #include "genericMMU.h"
 
-class mmu: genericMMU
+class mmu: public genericMMU
 {
 private:
 

@@ -163,7 +163,7 @@ void displayRomLoadingLogWindow(std::vector<std::string>& romLoadingLog)
     ImGui::End();
 }
 
-void displayRegistersWindow(cpu5a22& theCPU)
+void displayRegistersWindow(cpu5a22& theCPU,unsigned long int totCPUCycles)
 {
     ImGui::Begin("Registers window");
     std::vector<std::string> regInfo = theCPU.getRegistersInfo();
@@ -173,12 +173,16 @@ void displayRegistersWindow(cpu5a22& theCPU)
         ImGui::Text(line.c_str());
     }
 
+    std::string cycles = "Tot cycles:" + std::to_string(totCPUCycles);
+    ImGui::Text(cycles.c_str());
+
     ImGui::End();
 }
 
-void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& theMMU,bool& isDebugWindowFocused,bool& rush,int& rushAddress,char* jumpToAppoBuf)
+void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& theMMU,bool& isDebugWindowFocused,bool& rush,int& rushAddress,char* jumpToAppoBuf,unsigned long int& totCPUCycles)
 {
-    std::vector<disasmInfoRec> disasmed = theDebugger5a22.debugCode(theCPU.getPC(), 20, &theCPU, &theMMU);
+    unsigned int realPC = (theCPU.getPB() << 16) | theCPU.getPC();
+    std::vector<disasmInfoRec> disasmed = theDebugger5a22.debugCode(realPC, 20, &theCPU, &theMMU);
 
     ImGui::Begin("5A22/65C816 Debuggah");
 
@@ -249,7 +253,7 @@ void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& the
     ImGui::Text(" ");
     if (ImGui::Button("StepOne"))
     {
-        theCPU.stepOne();
+        totCPUCycles += theCPU.stepOne();
     }
     
     ImGui::SameLine();
@@ -260,6 +264,10 @@ void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& the
         while (res != -1)
         {
             res = theCPU.stepOne();
+            if (res != -1)
+            {
+                totCPUCycles += res;
+            }
         }
     }
 
@@ -270,7 +278,7 @@ void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& the
         int res = 0;
         while (res <100)
         {
-            theCPU.stepOne();
+            totCPUCycles += theCPU.stepOne();
             res += 1;
         }
     }
@@ -407,10 +415,6 @@ void displayAppoWindow(cpu65816tester& cpuTester)
 
     if (ImGui::Button("Start test"))
     {
-        testMMU testMMU;
-        cpu5a22 testCPU(&testMMU);
-
-
         cpuTester.loadTest("D:\\prova\\snes\\ProcessorTests-main\\65816\\v1\\1a.n.json");
         cpuTester.executeTest();
     }
@@ -479,11 +483,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\8x8BG1Map2BPP32x328PAL.sfc";
     //std::string romName = "d:\\prova\\snes\\8x8BGMap4BPP32x328PAL.sfc";
     //std::string romName = "d:\\prova\\snes\\Rings.sfc";
-    std::string romName = "d:\\prova\\snes\\MosaicMode3.sfc";
+    //std::string romName = "d:\\prova\\snes\\MosaicMode3.sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc";
     //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
-    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc";
+    std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc";
 
     if (theRomLoader.loadRom(romName,theMMU,romLoadingLog) != 0)
     {
@@ -514,14 +518,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     {
         theMMU.write8(0xa80d, 0xea);
         theMMU.write8(0xa80e, 0xea);
-
     }
 
-    cpu5a22 theCPU((genericMMU*) & theMMU);
+    debugger5a22 theDebugger5a22;
+    cpu5a22 theCPU(&theMMU,false);
     theCPU.reset();
 
-    debugger5a22 theDebugger5a22;
-    cpu65816tester cpuTester;
+    testMMU testMMU;
+    cpu5a22 testCPU(&testMMU,true);
+    cpu65816tester cpuTester(testMMU,testCPU);
 
     //
 
@@ -537,6 +542,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     char jumpToAppoBuf[256];
     jumpToAppoBuf[0] = '\0';
     int baseMemoryAddress = 0;
+    unsigned long int totCPUCycles = 0;
 
     while (!done)
     {
@@ -560,7 +566,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         {
             if (isDebugWindowFocused)
             {
-                theCPU.stepOne();
+                totCPUCycles += theCPU.stepOne();
             }
         }
 
@@ -573,9 +579,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
 
         bool rush = false;
         int rushToAddress = 0;
-        displayDebugWindow(theCPU, theDebugger5a22,theMMU,isDebugWindowFocused,rush,rushToAddress,jumpToAppoBuf);
+        displayDebugWindow(theCPU, theDebugger5a22,theMMU,isDebugWindowFocused,rush,rushToAddress,jumpToAppoBuf,totCPUCycles);
         
-        displayRegistersWindow(theCPU);
+        displayRegistersWindow(theCPU,totCPUCycles);
         displayPaletteWindow(thePPU);
         displayLogWindow();
         displayVRAMViewerWindow(vramRenderTexture, thePPU.getVRAMViewerXsize(), thePPU.getVRAMViewerYsize(), thePPU.getVRAMViewerBitmap(),thePPU);
@@ -585,14 +591,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         // rush there if needed
         while (rush)
         {
-            int curPC = theCPU.getPC();
+            int curPC = (theCPU.getPB()<<16) | theCPU.getPC();
             if (curPC == rushToAddress)
             {
                 rush = false;
             }
             else
             {
-                theCPU.stepOne();
+                totCPUCycles+=theCPU.stepOne();
             }
         }
 

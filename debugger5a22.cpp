@@ -6,6 +6,7 @@
 static const debugInfoRec debugInstrList[] =
 {
 	{0x08,1,"PHP",None,false,false},
+	{0x05,2,"ORA param0",Immediate8,false,false},
 	{0x09,2,"ORA param0",Immediate,false,true},
 	{0x0A,1,"ASL A",None,false,false},
 	{0x0B,1,"PHD",None,false,false},
@@ -58,6 +59,7 @@ static const debugInfoRec debugInstrList[] =
 	{0x8d,3,"STA param0",Absolute16,false,false},
 	{0x8e,3,"STX param0",Absolute16,false,false},
 	{0x8f,4,"STA param0",AbsoluteLong,false,false},
+	{0x90,2,"BCC param0",Immediate8,false,false},
 	{0x98,1,"TYA",None,false,false},
 	{0x99,3,"STA param0,Y",Absolute16,false,false},
 	{0x9c,3,"STZ param0",Absolute16,false,false},

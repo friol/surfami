@@ -7,8 +7,8 @@ private:
 
 public:
 
-	void write8(unsigned int address, unsigned char val) {  };
-	unsigned char read8(unsigned int address) { return 0; };
+	virtual void write8(unsigned int address, unsigned char val)=0;
+	virtual unsigned char read8(unsigned int address)=0;
 
 };
 

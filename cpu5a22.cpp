@@ -8,9 +8,11 @@
 
 */
 
+#include <typeinfo>
 #include "cpu5a22.h"
 #include "debugger5a22.h"
 #include "logger.h"
+#include "testMMU.h"
 
 extern logger glbTheLogger;
 
@@ -18,9 +20,18 @@ extern logger glbTheLogger;
 //
 //
 
-cpu5a22::cpu5a22(genericMMU* theMMU)
+cpu5a22::cpu5a22(genericMMU* theMMU,bool isTestMMUVar)
 {
-	pMMU = (mmu*)theMMU;
+	isTestMMU = isTestMMUVar;
+	if (isTestMMU)
+	{
+		pMMU = (testMMU*)theMMU;
+	}
+	else
+	{
+		pMMU = (mmu*)theMMU;
+	}
+
 }
 
 void cpu5a22::reset()
@@ -259,9 +270,25 @@ unsigned int cpu5a22::getDirectPageIndexedXAddress()
 	return regD | pMMU->read8(regPC+1) + (regX_lo|(regX_hi<<8));
 }
 
+void cpu5a22::setState(unsigned int pc, unsigned short int a, unsigned short int x, unsigned short int y,
+	unsigned short int sp, unsigned char dbr, unsigned short int d, unsigned char pb, unsigned char p)
+{
+	regPC = pc;
+	regA_lo = a & 0xff; regA_hi = a >> 8;
+	regX_lo = x & 0xff; regX_hi = x >> 8;
+	regY_lo = y & 0xff; regY_hi = y >> 8;
+	regSP = sp;
+	regDBR = dbr;
+	regD = d;
+	regPB = pb;
+	regP.setByte(p);
+}
+
 int cpu5a22::stepOne()
 {
-	unsigned char nextOpcode = pMMU->read8(regPC);
+	//unsigned char nextOpcode = pMMU->read8(regPC);
+	unsigned char nextOpcode = pMMU->read8((regPB << 16) | regPC);
+
 	int cycles = 0;
 
 	if (nextOpcode == 0x78)
@@ -2580,6 +2607,61 @@ int cpu5a22::stepOne()
 		regP.setIRQDisable(0);
 		regPC += 1;
 		cycles = 2;
+	}
+	else if (nextOpcode == 0x90)
+	{
+		// BCC - branch if carry clear
+
+		int addr = getImmediateAddress8();
+
+		unsigned char branch_taken = 0;
+		signed char offset = pMMU->read8(addr);
+
+		if (regP.getCarry() == 0)
+		{
+			regPC += offset + 2;
+			branch_taken = 1;
+		}
+		else
+		{
+			regPC += 2;
+		}
+
+		cycles = 2 + branch_taken;
+	}
+	else if (nextOpcode == 0x05)
+	{
+		// ORA dp
+		int cycAdder = 0;
+		int addr = getDirectPageAddress();
+
+		if (regP.getAccuMemSize())
+		{
+			unsigned char val = pMMU->read8(addr);
+			unsigned char res = val | regA_lo;
+			regA_lo = res;
+			regP.setNegative(res >> 7);
+			regP.setZero(res == 0);
+		}
+		else
+		{
+			unsigned char lo = pMMU->read8(addr);
+			unsigned char hi = pMMU->read8(addr + 1);
+			unsigned short int val = (hi << 8) | lo;
+			unsigned short int res = val | (regA_lo | (regA_hi << 8));
+
+			regA_lo = res & 0xff;
+			regA_hi = res >> 8;
+
+			regP.setNegative(res >> 15);
+			regP.setZero(res == 0);
+			cycAdder = 1;
+		}
+
+		if (regP.isDPLowNotZero()) cycAdder += 1;
+
+		regPC += 2;
+		cycles = 3 + cycAdder;
 	}
 	else
 	{

@@ -8,6 +8,7 @@
 
 #include "genericMMU.h"
 #include "mmu.h"
+#include "testMMU.h"
 
 class regStatus
 {
@@ -173,7 +174,11 @@ private:
 	unsigned int regPC;
 	regStatus regP;
 
-	mmu* pMMU;
+	bool isTestMMU;
+	//mmu* pRealMMU;
+	//testMMU* pMockMMU;
+	//genericMMU* getMMU();
+	genericMMU* pMMU;
 
 	void pushToStack8(unsigned char val);
 	void pushToStack16(unsigned short int val);
@@ -194,15 +199,27 @@ private:
 
 public:
 
-	cpu5a22(genericMMU* theMMU);
+	cpu5a22(genericMMU* theMMU,bool isTestMMUVar);
 	void reset();
 	int stepOne();
+	
 	unsigned int getPC();
+	unsigned char getPB() { return regPB;  }
+	unsigned short int getSP() { return regSP;  }
+	unsigned char getDBR() { return regDBR;  }
+	unsigned short int getD() { return regD;  }
+	unsigned short int getA() { return regA_lo | (regA_hi << 8); }
+	unsigned short int getX() { return regX_lo | (regX_hi << 8); }
+	unsigned short int getY() { return regY_lo | (regY_hi << 8); }
+
 	bool getIndexSize() { return regP.getIndexSize(); }
 	bool getAccuMemSize() { return regP.getAccuMemSize(); }
 	std::vector<std::string> getRegistersInfo();
+	
+	void setState(unsigned int pc, unsigned short int a, unsigned short int x, unsigned short int y,
+		unsigned short int sp, unsigned char dbr, unsigned short int d, unsigned char pb, unsigned char p);
+	
 	~cpu5a22();
-
 };
 
 #endif

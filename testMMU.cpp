@@ -4,6 +4,11 @@
 testMMU::testMMU()
 {
 	snesRAM = new unsigned char[0x1000000];
+
+	for (int loc = 0;loc < 0x1000000;loc++)
+	{
+		snesRAM[loc] = 0;
+	}
 }
 
 void testMMU::write8(unsigned int address, unsigned char val)
