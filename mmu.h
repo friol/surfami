@@ -7,8 +7,9 @@
 #include <sstream>
 #include "ppu.h"
 #include "apu.h"
+#include "genericMMU.h"
 
-class mmu
+class mmu: genericMMU
 {
 private:
 

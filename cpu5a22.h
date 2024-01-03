@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <sstream>
 
+#include "genericMMU.h"
 #include "mmu.h"
 
 class regStatus
@@ -26,7 +27,7 @@ public:
 
 	bool isDPLowNotZero() 
 	{
-		return (D & 0xff) != 0x00;
+		return D != 0x00;
 	}
 
 	void setEmulation(int val)
@@ -82,6 +83,18 @@ public:
 	void setBreak(unsigned char val)
 	{
 		B = val & 1;
+	}
+
+	void setByte(unsigned char val) 
+	{
+		C = val & 1;
+		Z = (val >> 1) & 1;
+		I = (val >> 2) & 1;
+		D = (val >> 3) & 1;
+		X = (val >> 4) & 1;
+		M = (val >> 5) & 1;
+		V = (val >> 6) & 1;
+		N = (val >> 7) & 1;
 	}
 
 	//
@@ -175,12 +188,13 @@ private:
 	unsigned int getLongAddressIndexedX();
 	unsigned int getDirectPageAddress();
 	unsigned int getDirectPageIndirectLongAddress();
+	unsigned int getDirectPageIndirectLongIndexedYAddress();
 	unsigned int getDirectPageIndirectAddress();
 	unsigned int getDirectPageIndexedXAddress();
 
 public:
 
-	cpu5a22(mmu* theMMU);
+	cpu5a22(genericMMU* theMMU);
 	void reset();
 	int stepOne();
 	unsigned int getPC();

@@ -28,6 +28,8 @@
 #include "cpu5a22.h"
 #include "debugger5a22.h"
 #include "logger.h"
+#include "cpu65816tester.h"
+#include "testMMU.h"
 
 struct WGL_WindowData { HDC hDC; };
 
@@ -397,6 +399,25 @@ void displayMemoryWindow(mmu& theMMU,int& baseAddress)
     ImGui::End();
 }
 
+void displayAppoWindow(cpu65816tester& cpuTester)
+{
+    ImGui::Begin("Appo window");
+    ImGui::Text("surFami emu: Super Nintendo lives");
+    //ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+
+    if (ImGui::Button("Start test"))
+    {
+        testMMU testMMU;
+        cpu5a22 testCPU(&testMMU);
+
+
+        cpuTester.loadTest("D:\\prova\\snes\\ProcessorTests-main\\65816\\v1\\1a.n.json");
+        cpuTester.executeTest();
+    }
+
+    ImGui::End();
+}
+
 //
 //
 //
@@ -454,11 +475,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\CPUMOV.sfc";
     //std::string romName = "d:\\prova\\snes\\CPUDEC.sfc";
     //std::string romName = "d:\\prova\\snes\\CPUAND.sfc";
+    //std::string romName = "d:\\prova\\snes\\CPUASL.sfc";
     //std::string romName = "d:\\prova\\snes\\8x8BG1Map2BPP32x328PAL.sfc";
     //std::string romName = "d:\\prova\\snes\\8x8BGMap4BPP32x328PAL.sfc";
     //std::string romName = "d:\\prova\\snes\\Rings.sfc";
-    //std::string romName = "d:\\prova\\snes\\MosaicMode3.sfc";
-    std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
+    std::string romName = "d:\\prova\\snes\\MosaicMode3.sfc";
+    //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
+    //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc";
+    //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
     //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc";
 
     if (theRomLoader.loadRom(romName,theMMU,romLoadingLog) != 0)
@@ -475,10 +499,29 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         return 1;
     }
 
-    cpu5a22 theCPU(&theMMU);
+    if (romName == "d:\\prova\\snes\\Super Mario World (J) [!].sfc")
+    {
+        theMMU.write8(0x80d6, 0xea);
+        theMMU.write8(0x80d7, 0xea);
+        theMMU.write8(0x809d, 0xea);
+        theMMU.write8(0x809e, 0xea);
+        theMMU.write8(0x80a8, 0xea);
+        theMMU.write8(0x80a9, 0xea);
+        theMMU.write8(0x80ad, 0xea);
+        theMMU.write8(0x80ae, 0xea);
+    }
+    else if (romName == "d:\\prova\\snes\\Parodius (Europe).sfc")
+    {
+        theMMU.write8(0xa80d, 0xea);
+        theMMU.write8(0xa80e, 0xea);
+
+    }
+
+    cpu5a22 theCPU((genericMMU*) & theMMU);
     theCPU.reset();
 
     debugger5a22 theDebugger5a22;
+    cpu65816tester cpuTester;
 
     //
 
@@ -525,12 +568,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        // window we don't know why it's there
-        ImGui::Begin("Appo window");
-        ImGui::Text("surFami emu: Super Nintendo lives");
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-        ImGui::End();
-
+        displayAppoWindow(cpuTester);
         displayRomLoadingLogWindow(romLoadingLog);
 
         bool rush = false;
