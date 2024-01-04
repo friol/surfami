@@ -139,7 +139,7 @@ std::vector<std::string> cpu5a22::getRegistersInfo()
 	return ret;
 }
 
-unsigned int cpu5a22::getPC()
+unsigned short int cpu5a22::getPC()
 {
 	return regPC;
 }
@@ -159,7 +159,7 @@ void cpu5a22::pushToStack16(unsigned short int val)
 
 unsigned char cpu5a22::pullFromStack()
 {
-	unsigned char val = pMMU->read8(regSP+1);
+	unsigned char val = pMMU->read8((regSP+1)&0xffff);
 	regSP = regSP + 1;
 	return val;
 }
@@ -180,49 +180,51 @@ unsigned int cpu5a22::getImmediateAddress16()
 unsigned int cpu5a22::getAbsoluteAddress16() 
 {
 	//unsigned char dbr = regDBR;
-	unsigned short int adr = (
-			(pMMU->read8((regPB << 16) | (regPC+2)) << 8) | 
-			pMMU->read8((regPB << 16) | (regPC+1))
-			);
+	//unsigned short int adr = (
+	//		(pMMU->read8((regPB << 16) | (regPC+2)) << 8) | 
+	//		pMMU->read8((regPB << 16) | (regPC+1))
+	//		);
 	//return (dbr << 16) | adr;
+	unsigned short int adr = ((pMMU->read8((regPB << 16) | (regPC+2)) << 8) | pMMU->read8((regPB << 16) | (regPC+1)));
+	return (regDBR << 16) | adr;
 	return adr;
 }
 
 unsigned int cpu5a22::getAbsoluteAddress16IndexedX()
 {
-	/*unsigned char dbr = regDBR;
-	unsigned short int addr = ((pMMU->read8(regPC + 2) << 8) | pMMU->read8(regPC + 1));
-	int pbr = (addr & 0xff00) != ((addr + (regX_lo|(regX_hi<<8))) & 0xff00);
-	addr = addr + (regX_lo | (regX_hi << 8));
-	return (dbr << 16) | addr;*/
-
-	unsigned char dbr = regDBR;
 	unsigned short int adr = ((pMMU->read8((regPB << 16) | (regPC+2)) << 8) | pMMU->read8((regPB << 16) | (regPC+1)));
-	regPB = (adr & 0xff00) != ((adr + (regX_lo | (regX_hi << 8))) & 0xff00);
+	//regPB = (adr & 0xff00) != ((adr + (regX_lo | (regX_hi << 8))) & 0xff00);
 	adr = adr + (regX_lo | (regX_hi << 8));
-	return (dbr << 16) | adr;
+	return (regDBR << 16) | adr;
 }
 
 unsigned int cpu5a22::getAbsoluteAddress16IndexedY()
 {
-	/*unsigned char dbr = regDBR;
-	unsigned short int addr = ((pMMU->read8(regPC + 2) << 8) | pMMU->read8(regPC + 1));
-	int pbr = (addr & 0xff00) != ((addr + (regY_lo | (regY_hi << 8))) & 0xff00);
-	addr = addr + (regY_lo | (regY_hi << 8));
-	return (dbr << 16) | addr;*/
+	unsigned short int adr = (
+		(pMMU->read8((regPB << 16) | (regPC + 2)) << 8) | 
+		pMMU->read8((regPB << 16) | (regPC + 1))
+		);
+	
+	//bool pbr = (adr & 0xff00) != ((adr + (regY_lo | (regY_hi << 8))) & 0xff00);
 
-	unsigned char dbr = regDBR;
-	unsigned short int adr = ((pMMU->read8((regPB << 16) | (regPC + 2)) << 8) | pMMU->read8((regPB << 16) | (regPC + 1)));
-	regPB = (adr & 0xff00) != ((adr + (regY_lo | (regY_hi << 8))) & 0xff00);
-	adr = adr + (regY_lo | (regY_hi << 8));
-	return (dbr << 16) | adr;
+	if (!regP.getIndexSize() && !regP.getEmulation()) 
+	{
+		adr = adr + (regY_lo | (regY_hi << 8));
+	}
+	else
+	{
+		adr = adr + regY_lo;
+	}
+	
+	return (regDBR << 16) | (adr&0xffff);
 }
 
 unsigned int cpu5a22::getLongAddress()
 {
-	return ((pMMU->read8((regPB << 16) | (regPC+3)) << 16) | 
-		(pMMU->read8((regPB << 16) | (regPC+2)) << 8) | 
-		pMMU->read8((regPB << 16) | (regPC+1)
+	return (
+		(pMMU->read8((regPB << 16) | ((regPC+3)&0xffff)) << 16) | 
+		(pMMU->read8((regPB << 16) | ((regPC+2) & 0xffff)) << 8) |
+		(pMMU->read8((regPB << 16) | ((regPC+1) & 0xffff))
 		));
 }
 
@@ -237,7 +239,7 @@ unsigned int cpu5a22::getLongAddressIndexedX()
 
 unsigned int cpu5a22::getDirectPageAddress()
 {
-	return pMMU->read8((regPB << 16) | (regPC+1)) + regD;
+	return (unsigned short int)(pMMU->read8((regPB << 16) | (regPC+1)) + regD);
 }
 
 unsigned int cpu5a22::getDirectPageIndirectLongAddress()
@@ -271,7 +273,7 @@ unsigned int cpu5a22::getDirectPageIndexedXAddress()
 }
 
 void cpu5a22::setState(unsigned int pc, unsigned short int a, unsigned short int x, unsigned short int y,
-	unsigned short int sp, unsigned char dbr, unsigned short int d, unsigned char pb, unsigned char p)
+	unsigned short int sp, unsigned char dbr, unsigned short int d, unsigned char pb, unsigned char p, unsigned char e)
 {
 	regPC = pc;
 	regA_lo = a & 0xff; regA_hi = a >> 8;
@@ -282,6 +284,7 @@ void cpu5a22::setState(unsigned int pc, unsigned short int a, unsigned short int
 	regD = d;
 	regPB = pb;
 	regP.setByte(p);
+	regP.setEmulation(e);
 }
 
 int cpu5a22::stepOne()
@@ -313,11 +316,12 @@ int cpu5a22::stepOne()
 		regP.setCarry(regP.getEmulation());
 		regP.setEmulation(tmp);
 
-		if (tmp == 0) 
+		if (tmp == 1) 
 		{	
 			//	if emulation mode
 			regP.setAccuMemSize(1);
 			regP.setIndexSize(1, regX_hi, regY_hi);
+			regSP = 0x100 | (regSP & 0xff);
 		}
 
 		regPC += 1;
@@ -352,7 +356,7 @@ int cpu5a22::stepOne()
 	else if (nextOpcode == 0xc2)
 	{
 		// REP - Reset Processor Status Bits
-		const unsigned char nextByte = pMMU->read8(regPC + 1);
+		const unsigned char nextByte = pMMU->read8((regPB << 16) | (regPC + 1));
 
 		bool N = ((int)regP.getNegative() & (~((nextByte >> 7) & 1))) > 0;
 		bool V = ((int)regP.getOverflow() & ~((nextByte >> 6) & 1)) > 0;
@@ -522,7 +526,7 @@ int cpu5a22::stepOne()
 	else if (nextOpcode == 0xe2)
 	{
 		// SEP - Set Processor Status Bits
-		const unsigned char nextByte = pMMU->read8(regPC + 1);
+		const unsigned char nextByte = pMMU->read8((regPB<<16)|((regPC + 1)&0xffff));
 
 		unsigned char N = (regP.getNegative() | ((nextByte >> 7) & 1)) > 0;
 		unsigned char V = (regP.getOverflow() | ((nextByte >> 6) & 1)) > 0;
@@ -623,16 +627,23 @@ int cpu5a22::stepOne()
 	else if (nextOpcode == 0xca)
 	{
 		// DEX - decrement X
+		if (regP.getIndexSize()) 
+		{
+			regX_lo=(unsigned char)(regX_lo-1);
+			regP.setZero(regX_lo == 0);
+			regP.setNegative(regX_lo >> 7);
+		}
+		else 
+		{
+			unsigned short int ics = regX_lo | (regX_hi << 8);
+			ics -= 1;
 
-		int ics = regX_lo | (regX_hi << 8);
-		ics -= 1;
-		ics &= 0xffff;
+			regX_lo = ics & 0xff;
+			regX_hi = ics >> 8;
 
-		regX_lo = ics & 0xff;
-		regX_hi = (unsigned char)(ics >> 8);
-
-		regP.setZero(ics == 0);
-		regP.setNegative(ics >> (7 + ((1 - regP.getIndexSize()) * 8)));
+			regP.setZero((regX_lo | (regX_hi << 8)) == 0);
+			regP.setNegative((regX_lo | (regX_hi << 8)) >> 15);
+		}
 
 		regPC += 1;
 		cycles += 2;
@@ -642,8 +653,7 @@ int cpu5a22::stepOne()
 		// BNE - branch if not equal (Z==0)
 
 		int branch_taken = 0;
-		
-		signed char offset = (signed char)pMMU->read8(regPC + 1);
+		signed char offset = (signed char)pMMU->read8((regPB<<16) | (regPC + 1));
 		
 		if (regP.getZero() == 0) 
 		{
@@ -667,11 +677,10 @@ int cpu5a22::stepOne()
 	else if (nextOpcode == 0x5c)
 	{
 		// JML - jump long
-		int addr = getLongAddress();
-
+		unsigned long int addr = getLongAddress();
 		unsigned char bnk = (addr >> 16) & 0xff;
-		regPC = addr;
 		regPB = bnk;
+		regPC = addr&0xffff;
 
 		cycles = 4;
 	}
@@ -706,9 +715,8 @@ int cpu5a22::stepOne()
 	else if (nextOpcode == 0x10)
 	{
 		// BPL - branch if plus
-
 		int branch_taken = 0;
-		signed char offset = (signed char)pMMU->read8(regPC + 1);
+		signed char offset = (signed char)pMMU->read8((regPB << 16) | (regPC + 1));
 
 		if (regP.getNegative() == 0)
 		{
@@ -726,7 +734,7 @@ int cpu5a22::stepOne()
 	{
 		// LDA addr,X
 
-		int addr = getAbsoluteAddress16IndexedX();
+		unsigned int addr = getAbsoluteAddress16IndexedX();
 		
 		if (regP.getAccuMemSize()) 
 		{
@@ -844,14 +852,13 @@ int cpu5a22::stepOne()
 	else if (nextOpcode == 0x85)
 	{
 		// STA dp
-
 		int cycAdder = 0;
-		int addr = getDirectPageAddress();
+		unsigned int addr = getDirectPageAddress();
 
 		pMMU->write8(addr,regA_lo);
 		if (regP.getAccuMemSize()==0)
 		{
-			pMMU->write8(addr + 1,regA_hi);
+			pMMU->write8((addr + 1)&0xffff,regA_hi);
 			cycAdder += 1;
 		}
 
@@ -1069,7 +1076,10 @@ int cpu5a22::stepOne()
 	else if (nextOpcode == 0x80)
 	{
 		// BRA - TODO: Add 1 cycle if branch taken crosses page boundary in emulation mode (e=1)
-		signed char offset = pMMU->read8(regPC+1);
+		
+		unsigned int addr = getImmediateAddress8();
+		signed char offset = pMMU->read8((regPB<<16)|addr);
+		
 		regPC += offset+2;
 		cycles=3;
 	}
@@ -1109,14 +1119,23 @@ int cpu5a22::stepOne()
 	else if (nextOpcode == 0x88)
 	{
 		// DEY
-		unsigned short regY = regY_lo | (regY_hi << 8);
-		regY -= 1;
+		if (regP.getIndexSize())
+		{
+			regY_lo = (unsigned char)(regY_lo - 1);
+			regP.setZero(regY_lo == 0);
+			regP.setNegative(regY_lo >> 7);
+		}
+		else
+		{
+			unsigned short int ics = regY_lo | (regY_hi << 8);
+			ics -= 1;
 
-		regY_lo = regY & 0xff;
-		regY_hi = regY>>8;
+			regY_lo = ics & 0xff;
+			regY_hi = ics >> 8;
 
-		regP.setZero((regY_lo|(regY_hi<<8)) == 0);
-		regP.setNegative((regY_lo | (regY_hi << 8)) >> (7 + ((1 - regP.getIndexSize()) * 8)));
+			regP.setZero((regY_lo | (regY_hi << 8)) == 0);
+			regP.setNegative((regY_lo | (regY_hi << 8)) >> 15);
+		}
 
 		regPC += 1;
 		cycles = 2;
@@ -1124,10 +1143,10 @@ int cpu5a22::stepOne()
 	else if (nextOpcode == 0x20)
 	{
 		// JSR absolute
-		int addr = getAbsoluteAddress16();
+		unsigned int addr = getAbsoluteAddress16();
 
-		pushToStack8((unsigned char)(regPC >> 8));
-		pushToStack8((unsigned char)(regPC & 0xff));
+		pushToStack8((unsigned char)((regPC+2) >> 8));
+		pushToStack8((unsigned char)((regPC+2) & 0xff));
 		
 		regPC = addr;
 
@@ -1171,7 +1190,7 @@ int cpu5a22::stepOne()
 		unsigned char lo = pullFromStack();
 		unsigned char hi = pullFromStack();
 		regPC = (hi << 8) | lo;
-		regPC+=3;
+		regPC+=1;
 		cycles=6;
 	}
 	else if (nextOpcode == 0xa5)
@@ -1650,7 +1669,7 @@ int cpu5a22::stepOne()
 	{
 		// LDA addr,Y
 		int cycAdder = 0;
-		int addr = getAbsoluteAddress16IndexedY();
+		unsigned int addr = getAbsoluteAddress16IndexedY();
 
 		if (regP.getAccuMemSize())
 		{
@@ -1663,7 +1682,7 @@ int cpu5a22::stepOne()
 		{
 			unsigned char lo = pMMU->read8(addr);
 			unsigned char hi = pMMU->read8(addr + 1);
-			unsigned int val = (hi << 8) | lo;
+			unsigned short int val = (hi << 8) | lo;
 			regA_lo = (val & 0xff);
 			regA_hi = (val >> 8);
 			regP.setZero(val == 0);
@@ -1742,11 +1761,11 @@ int cpu5a22::stepOne()
 	else if (nextOpcode == 0x22)
 	{
 		// JSL absolute long
-		int addr = getLongAddress();
+		unsigned int addr = getLongAddress();
 		
 		pushToStack8(regPB);
-		pushToStack8((unsigned char)(regPC >> 8));
-		pushToStack8((unsigned char)(regPC & 0xff));
+		pushToStack8((unsigned char)((regPC+3) >> 8));
+		pushToStack8((unsigned char)((regPC+3) & 0xff));
 
 		regPC = addr;
 		regPB = (addr >> 16) & 0xff;
@@ -2355,7 +2374,7 @@ int cpu5a22::stepOne()
 		regPB=pullFromStack();
 
 		regPC = (regPB << 16) | (hi << 8) | lo;
-		regPC+=4;
+		regPC+=1;
 		cycles = 6;
 	}
 	else if (nextOpcode == 0xbf)

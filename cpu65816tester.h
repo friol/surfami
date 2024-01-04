@@ -3,6 +3,7 @@
 
 #include <string>
 #include <fstream>
+#include <bitset>
 #include "testMMU.h"
 #include "cpu5a22.h"
 #include "json.hpp"

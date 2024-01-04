@@ -15,6 +15,7 @@ public:
 	~testMMU();
 	void write8(unsigned int address, unsigned char val);
 	unsigned char read8(unsigned int address);
+	unsigned char* getInternalRAMPtr() { return snesRAM; }
 };
 
 #endif

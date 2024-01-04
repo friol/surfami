@@ -407,15 +407,19 @@ void displayMemoryWindow(mmu& theMMU,int& baseAddress)
     ImGui::End();
 }
 
-void displayAppoWindow(cpu65816tester& cpuTester)
+void displayAppoWindow()
 {
-    ImGui::Begin("Appo window");
+    ImGui::Begin("Appo and tests window");
     ImGui::Text("surFami emu: Super Nintendo lives");
     //ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 
     if (ImGui::Button("Start test"))
     {
-        cpuTester.loadTest("D:\\prova\\snes\\ProcessorTests-main\\65816\\v1\\1a.n.json");
+        testMMU testMMU;
+        cpu5a22 testCPU(&testMMU, true);
+        cpu65816tester cpuTester(testMMU, testCPU);
+
+        cpuTester.loadTest("D:\\prova\\snes\\ProcessorTests-main\\65816\\v1\\c2.n.json");
         cpuTester.executeTest();
     }
 
@@ -484,10 +488,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\8x8BGMap4BPP32x328PAL.sfc";
     //std::string romName = "d:\\prova\\snes\\Rings.sfc";
     //std::string romName = "d:\\prova\\snes\\MosaicMode3.sfc";
+    //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc";
+    //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
-    //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc";
+    std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc";
     //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
-    std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc";
+    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc";
 
     if (theRomLoader.loadRom(romName,theMMU,romLoadingLog) != 0)
     {
@@ -518,15 +524,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     {
         theMMU.write8(0xa80d, 0xea);
         theMMU.write8(0xa80e, 0xea);
+        theMMU.write8(0xa7d1, 0xea);
+        theMMU.write8(0xa7d2, 0xea);
     }
 
     debugger5a22 theDebugger5a22;
     cpu5a22 theCPU(&theMMU,false);
     theCPU.reset();
-
-    testMMU testMMU;
-    cpu5a22 testCPU(&testMMU,true);
-    cpu65816tester cpuTester(testMMU,testCPU);
 
     //
 
@@ -574,7 +578,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        displayAppoWindow(cpuTester);
+        displayAppoWindow();
         displayRomLoadingLogWindow(romLoadingLog);
 
         bool rush = false;

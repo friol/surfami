@@ -171,7 +171,7 @@ private:
 	unsigned char regY_hi=0;	//	index Y - high byte
 	unsigned short int regSP;		//	Stack Pointer
 
-	unsigned int regPC;
+	unsigned short int regPC;
 	regStatus regP;
 
 	bool isTestMMU;
@@ -203,7 +203,7 @@ public:
 	void reset();
 	int stepOne();
 	
-	unsigned int getPC();
+	unsigned short int getPC();
 	unsigned char getPB() { return regPB;  }
 	unsigned short int getSP() { return regSP;  }
 	unsigned char getDBR() { return regDBR;  }
@@ -211,13 +211,14 @@ public:
 	unsigned short int getA() { return regA_lo | (regA_hi << 8); }
 	unsigned short int getX() { return regX_lo | (regX_hi << 8); }
 	unsigned short int getY() { return regY_lo | (regY_hi << 8); }
+	unsigned char getP() { return regP.getByte(); }
 
 	bool getIndexSize() { return regP.getIndexSize(); }
 	bool getAccuMemSize() { return regP.getAccuMemSize(); }
 	std::vector<std::string> getRegistersInfo();
 	
 	void setState(unsigned int pc, unsigned short int a, unsigned short int x, unsigned short int y,
-		unsigned short int sp, unsigned char dbr, unsigned short int d, unsigned char pb, unsigned char p);
+		unsigned short int sp, unsigned char dbr, unsigned short int d, unsigned char pb, unsigned char p,unsigned char e);
 	
 	~cpu5a22();
 };
