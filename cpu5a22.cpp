@@ -1257,7 +1257,7 @@ int cpu5a22::stepOne()
 	{
 		// BEQ
 		int branch_taken = 0;
-		signed char offset = (signed char)pMMU->read8(regPC + 1);
+		signed char offset = (signed char)pMMU->read8((regPB<<16)|(regPC + 1));
 
 		if (regP.getZero() == true)
 		{
@@ -1461,7 +1461,7 @@ int cpu5a22::stepOne()
 		// JMP Absolute
 		unsigned short int adr = ((pMMU->read8((regPB << 16) | (regPC+2)) << 8) | pMMU->read8((regPB << 16) | (regPC+1)));
 		regPC = (regPB << 16) | adr;
-		regPB = (adr >> 16) & 0xff;
+		//regPB = (adr >> 16) & 0xff;
 		cycles = 3;
 	}
 	else if (nextOpcode == 0x86)
@@ -2681,6 +2681,38 @@ int cpu5a22::stepOne()
 
 		regPC += 2;
 		cycles = 3 + cycAdder;
+	}
+	else if (nextOpcode == 0x9d)
+	{
+		// STA absolute,X
+		int cycAdder = 0;
+		unsigned int addr = getAbsoluteAddress16IndexedX();
+
+		pMMU->write8(addr,regA_lo);
+		if (regP.getAccuMemSize()==0)
+		{
+			pMMU->write8(addr + 1, regA_hi);
+			cycAdder += 1;
+		}
+
+		regPC += 3;
+		cycles = 5 + cycAdder;
+	}
+	else if (nextOpcode == 0x9e)
+	{
+		// STZ absolute,X
+		int cycAdder = 0;
+		unsigned int addr = getAbsoluteAddress16IndexedX();
+
+		pMMU->write8(addr, 0);
+		if (regP.getAccuMemSize() == 0)
+		{
+			pMMU->write8(addr + 1, 0);
+			cycAdder += 1;
+		}
+
+		regPC += 3;
+		cycles = 5 + cycAdder;
 	}
 	else
 	{

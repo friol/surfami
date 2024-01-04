@@ -65,6 +65,8 @@ static const debugInfoRec debugInstrList[] =
 	{0x9c,3,"STZ param0",Absolute16,false,false},
 	{0x9A,1,"TXS",None,false,false},
 	{0x9b,1,"TXY",None,false,false},
+	{0x9d,3,"STA param0,X",Absolute16,false,false},
+	{0x9e,3,"STZ param0,X",Absolute16,false,false},
 	{0x9f,4,"STA param0,X",AbsoluteLong,false,false},
 	{0xA0,2,"LDY param0",Immediate,true,false},
 	{0xA2,2,"LDX param0",Immediate,true,false},

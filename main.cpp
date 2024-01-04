@@ -330,9 +330,12 @@ void displayPaletteWindow(ppu& thePPU)
 
     ImGui::Text("SNES palette colors");
     int colidx = 0;
-    for (int i = 0; i < 32; i++)
+    for (int i = 0; i < 64; i++)
     {
-        if ((i > 0) && (i != 16)) ImGui::SameLine();
+        if ((i > 0) && ((i % 16) != 0))
+        {
+            ImGui::SameLine();
+        }
         // palette entry is ?bbbbbgg gggrrrrr
         unsigned int palcol = (((int)(palArr[colidx+1]&0x7f)) << 8) | palArr[colidx];
         int red = palcol & 0x1f; red <<= 3;
@@ -419,7 +422,7 @@ void displayAppoWindow()
         cpu5a22 testCPU(&testMMU, true);
         cpu65816tester cpuTester(testMMU, testCPU);
 
-        cpuTester.loadTest("D:\\prova\\snes\\ProcessorTests-main\\65816\\v1\\c2.n.json");
+        cpuTester.loadTest("D:\\prova\\snes\\ProcessorTests-main\\65816\\v1\\54.n.json");
         cpuTester.executeTest();
     }
 
@@ -491,9 +494,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc";
     //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
-    std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc";
+    //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc";
     //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
-    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc";
+    std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc";
 
     if (theRomLoader.loadRom(romName,theMMU,romLoadingLog) != 0)
     {

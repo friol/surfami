@@ -117,77 +117,110 @@ void mmu::write8(unsigned int address, unsigned char val)
 	std::stringstream strr;
 	strr << std::hex << std::setw(2) << std::setfill('0') << (int)val;
 
-	if (address == 0x420B) // DMA start reg
-	{
-		DMAstart(val);
-	}
-	else if (address == 0x2105)
-	{
-		glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2105 (BG Mode and Character Size Register)");
-		pPPU->writeRegister(0x2105, val);
-	}
-	else if ((address == 0x2107)|| (address == 0x2108) || (address == 0x2109) || (address == 0x210A))
-	{
-		glbTheLogger.logMsg("Writing [" + strr.str() + "] to 0x2107/8/9/A (BGx Screen Base and Screen Size)");
-		pPPU->writeRegister(address, val);
-	}
-	else if (address == 0x2121)
-	{
-		glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2121 (CGRAM index)");
-		pPPU->writeRegister(0x2121, val);
-	}
-	else if (address == 0x2122)
-	{
-		//glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2122 (CGRAM write reg)");
-		pPPU->writeRegister(0x2122, val);
-	}
-	else if (address == 0x2115)
-	{
-		glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2115 (VRAM Address Increment Mode)");
-		pPPU->writeRegister(0x2115, val);
-	}
-	else if (address == 0x2116)
-	{
-		glbTheLogger.logMsg("Writing [" + strr.str() + "] to 0x2116 (VRAM Address Lower)");
-		pPPU->writeRegister(0x2116, val);
-	}
-	else if (address == 0x2117)
-	{
-		glbTheLogger.logMsg("Writing [" + strr.str() + "] to 0x2117 (VRAM Address Upper)");
-		pPPU->writeRegister(0x2117, val);
-	}
-	else if (address == 0x2118)
-	{
-		//glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2118 (VRAM data write lower 8-bit)");
-		pPPU->writeRegister(0x2118, val);
-	}
-	else if (address == 0x2119)
-	{
-		//glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2118 (VRAM data write upper 8-bit)");
-		pPPU->writeRegister(0x2119, val);
-	}
-	else if (address == 0x210B)
-	{
-		glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x210B (BG tile base address lower)");
-		pPPU->writeRegister(0x210B, val);
-	}
-	else if (address == 0x210C)
-	{
-		glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x210C (BG tile base address upper)");
-		pPPU->writeRegister(0x210C, val);
-	}
+	unsigned char bank_nr = address >> 16;
+	unsigned short int adr = address & 0xffff;
 
-	snesRAM[address] = val;
+	if (adr < 0x8000 && ((bank_nr < 0x40) || (bank_nr >= 0x80 && bank_nr < 0xc0)))
+	{
+		//	WRAM
+		if (adr < 0x2000)
+		{
+			snesRAM[0x7e0000 + adr] = val;
+		}
+
+
+		if (adr == 0x420B) // DMA start reg
+		{
+			DMAstart(val);
+		}
+		else if (adr == 0x2105)
+		{
+			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2105 (BG Mode and Character Size Register)");
+			pPPU->writeRegister(0x2105, val);
+		}
+		else if ((adr == 0x2107) || (adr == 0x2108) || (adr == 0x2109) || (adr == 0x210A))
+		{
+			glbTheLogger.logMsg("Writing [" + strr.str() + "] to 0x2107/8/9/A (BGx Screen Base and Screen Size)");
+			pPPU->writeRegister(adr, val);
+		}
+		else if (adr == 0x2121)
+		{
+			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2121 (CGRAM index)");
+			pPPU->writeRegister(0x2121, val);
+		}
+		else if (adr == 0x2122)
+		{
+			//glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2122 (CGRAM write reg)");
+			pPPU->writeRegister(0x2122, val);
+		}
+		else if (adr == 0x2115)
+		{
+			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2115 (VRAM Address Increment Mode)");
+			pPPU->writeRegister(0x2115, val);
+		}
+		else if (adr == 0x2116)
+		{
+			glbTheLogger.logMsg("Writing [" + strr.str() + "] to 0x2116 (VRAM Address Lower)");
+			pPPU->writeRegister(0x2116, val);
+		}
+		else if (adr == 0x2117)
+		{
+			glbTheLogger.logMsg("Writing [" + strr.str() + "] to 0x2117 (VRAM Address Upper)");
+			pPPU->writeRegister(0x2117, val);
+		}
+		else if (adr == 0x2118)
+		{
+			//glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2118 (VRAM data write lower 8-bit)");
+			pPPU->writeRegister(0x2118, val);
+		}
+		else if (adr == 0x2119)
+		{
+			//glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2118 (VRAM data write upper 8-bit)");
+			pPPU->writeRegister(0x2119, val);
+		}
+		else if (adr == 0x210B)
+		{
+			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x210B (BG tile base address lower)");
+			pPPU->writeRegister(0x210B, val);
+		}
+		else if (adr == 0x210C)
+		{
+			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x210C (BG tile base address upper)");
+			pPPU->writeRegister(0x210C, val);
+		}
+
+		snesRAM[adr] = val;
+	}
+	else
+	{
+		snesRAM[address] = val;
+	}
 }
 
 unsigned char mmu::read8(unsigned int address)
 {
-	if ((address == 0x2140)|| (address == 0x2141))
-	{
-		return pAPU->read8(address);
-	}
+	unsigned char bank_nr = address >> 16;
+	unsigned short int adr = address & 0xffff;
 
-	return snesRAM[address];
+	if (adr < 0x8000 && ((bank_nr < 0x40) || (bank_nr >= 0x80 && bank_nr < 0xc0)))
+	{
+		//	WRAM
+		if (adr < 0x2000)
+		{
+			return snesRAM[0x7e0000 + adr];
+		}
+
+		if ((adr == 0x2140) || (adr == 0x2141))
+		{
+			return pAPU->read8(adr);
+		}
+
+		return snesRAM[adr];
+	}
+	else
+	{
+		return snesRAM[address];
+	}
 }
 
 mmu::~mmu()
