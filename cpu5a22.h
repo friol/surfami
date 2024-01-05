@@ -196,6 +196,7 @@ private:
 	unsigned int getDirectPageIndirectLongIndexedYAddress();
 	unsigned int getDirectPageIndirectAddress();
 	unsigned int getDirectPageIndexedXAddress();
+	unsigned int getStackRelative();
 
 public:
 

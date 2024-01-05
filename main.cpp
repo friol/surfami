@@ -283,6 +283,18 @@ void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& the
         }
     }
 
+    ImGui::SameLine();
+    // step 10k
+    if (ImGui::Button("Step 10k"))
+    {
+        int res = 0;
+        while (res < 10000)
+        {
+            totCPUCycles += theCPU.stepOne();
+            res += 1;
+        }
+    }
+
     // error message box
     bool open = true;
     if (ImGui::BeginPopupModal("MsgBox", &open))
@@ -300,7 +312,7 @@ void displayLogWindow()
 {
     ImGui::Begin("Log window");
 
-    const int nmsgToDisplay = 7;
+    const int nmsgToDisplay = 9;
 
     if (glbTheLogger.getMessages().size() < nmsgToDisplay)
     {
@@ -422,7 +434,7 @@ void displayAppoWindow()
         cpu5a22 testCPU(&testMMU, true);
         cpu65816tester cpuTester(testMMU, testCPU);
 
-        cpuTester.loadTest("D:\\prova\\snes\\ProcessorTests-main\\65816\\v1\\54.n.json");
+        cpuTester.loadTest("D:\\prova\\snes\\ProcessorTests-main\\65816\\v1\\b7.n.json");
         cpuTester.executeTest();
     }
 
@@ -495,8 +507,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc";
-    //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
-    std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc";
+    std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
+    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc";
+    //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc";
+    //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc";
 
     if (theRomLoader.loadRom(romName,theMMU,romLoadingLog) != 0)
     {
@@ -529,6 +543,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0xa80e, 0xea);
         theMMU.write8(0xa7d1, 0xea);
         theMMU.write8(0xa7d2, 0xea);
+    }
+    else if (romName == "d:\\prova\\snes\\SNES Test Program (U).smc")
+    {
+        theMMU.write8(0xd894, 0xea);
+        theMMU.write8(0xd895, 0xea);
+        theMMU.write8(0xd85b, 0xea);
+        theMMU.write8(0xd85c, 0xea);
+        theMMU.write8(0xd86b, 0xea);
+        theMMU.write8(0xd86c, 0xea);
     }
 
     debugger5a22 theDebugger5a22;

@@ -19,6 +19,8 @@ private:
 
 	void DMAstart(unsigned char val);
 
+	unsigned char NMI=0x42;
+
 public:
 
 	mmu(ppu& thePPU,apu& theAPU);

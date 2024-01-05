@@ -215,6 +215,24 @@ unsigned char mmu::read8(unsigned int address)
 			return pAPU->read8(adr);
 		}
 
+		if (adr == 0x4210)
+		{
+			if (NMI == 0x42) 
+			{
+				NMI = 0xc2;
+				return NMI;
+			}
+			if (NMI == 0xc2) 
+			{
+				NMI = 0x42;
+				return NMI;
+			}
+
+			//bool res = interrupts.isNMIFlagged();
+			//interrupts.clearNMIFlag();
+			//return (res << 7) | 0x62;
+		}
+
 		return snesRAM[adr];
 	}
 	else
