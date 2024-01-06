@@ -179,7 +179,7 @@ void displayRegistersWindow(cpu5a22& theCPU,unsigned long int totCPUCycles)
     ImGui::End();
 }
 
-void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& theMMU,bool& isDebugWindowFocused,bool& rush,int& rushAddress,char* jumpToAppoBuf,unsigned long int& totCPUCycles)
+void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& theMMU,bool& isDebugWindowFocused,bool& rush,int& rushAddress,char* jumpToAppoBuf,unsigned long int& totCPUCycles,int& emustatus)
 {
     unsigned int realPC = (theCPU.getPB() << 16) | theCPU.getPC();
     std::vector<disasmInfoRec> disasmed = theDebugger5a22.debugCode(realPC, 20, &theCPU, &theMMU);
@@ -293,6 +293,20 @@ void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& the
             totCPUCycles += theCPU.stepOne();
             res += 1;
         }
+    }
+
+    ImGui::SameLine();
+    // RUN!
+    if (ImGui::Button("Go!"))
+    {
+        emustatus = 1;
+    }
+
+    ImGui::SameLine();
+    // Stop
+    if (ImGui::Button("Stop"))
+    {
+        emustatus = 0;
     }
 
     // error message box
@@ -422,10 +436,17 @@ void displayMemoryWindow(mmu& theMMU,int& baseAddress)
     ImGui::End();
 }
 
-void displayAppoWindow()
+void displayAppoWindow(ppu& thePPU)
 {
     ImGui::Begin("Appo and tests window");
     ImGui::Text("surFami emu: Super Nintendo lives");
+
+    std::string bgModeString = "BG Screen Mode:";
+    bgModeString += std::to_string(thePPU.getCurrentBGMode());
+
+    ImGui::SameLine();
+    ImGui::Text(bgModeString.c_str());
+
     //ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 
     if (ImGui::Button("Start test"))
@@ -434,7 +455,7 @@ void displayAppoWindow()
         cpu5a22 testCPU(&testMMU, true);
         cpu65816tester cpuTester(testMMU, testCPU);
 
-        cpuTester.loadTest("D:\\prova\\snes\\ProcessorTests-main\\65816\\v1\\b7.n.json");
+        cpuTester.loadTest("D:\\prova\\snes\\ProcessorTests-main\\65816\\v1\\e6.n.json");
         cpuTester.executeTest();
     }
 
@@ -497,20 +518,30 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\HelloWorld.sfc";
     //std::string romName = "d:\\prova\\snes\\CPUMOV.sfc";
     //std::string romName = "d:\\prova\\snes\\CPUDEC.sfc";
-    //std::string romName = "d:\\prova\\snes\\CPUAND.sfc";
+    //std::string romName = "d:\\prova\\snes\\CPUAND.sfc"; // fails for uninitialized memory
     //std::string romName = "d:\\prova\\snes\\CPUASL.sfc";
     //std::string romName = "d:\\prova\\snes\\8x8BG1Map2BPP32x328PAL.sfc";
     //std::string romName = "d:\\prova\\snes\\8x8BGMap4BPP32x328PAL.sfc";
     //std::string romName = "d:\\prova\\snes\\Rings.sfc";
     //std::string romName = "d:\\prova\\snes\\MosaicMode3.sfc";
-    //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc";
-    //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
+    //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc"; // opcode (?) ff
+    //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc"; // opcode 46
     //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
-    //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc";
-    std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
-    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc";
+    //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc"; // jumps to nowhere
+    //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc"; // jumps to 0
+    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // opcode 19
     //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc";
-    //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc";
+    //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // jumps to nowhere
+    //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc";
+    //std::string romName = "d:\\prova\\snes\\Frogger (U).smc"; // jumps to nowhere
+    //std::string romName = "d:\\prova\\snes\\Race Drivin' (U).smc"; // RTI (?)
+    //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc";
+    //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc";
+    //std::string romName = "d:\\prova\\snes\\Arkanoid - Doh it Again (E) [!].smc";
+    //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc";
+    //std::string romName = "d:\\prova\\snes\\Home Alone (E) [!].smc"; // crash
+    //std::string romName = "d:\\prova\\snes\\Kick Off (E).smc";
+    std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc";
 
     if (theRomLoader.loadRom(romName,theMMU,romLoadingLog) != 0)
     {
@@ -537,6 +568,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x80ad, 0xea);
         theMMU.write8(0x80ae, 0xea);
     }
+    else if (romName == "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc")
+    {
+        theMMU.write8(0x7d902, 0xea);
+        theMMU.write8(0x7d903, 0xea);
+        theMMU.write8(0x7d8c9, 0xea);
+        theMMU.write8(0x7d8ca, 0xea);
+        theMMU.write8(0x7d8d9, 0xea);
+        theMMU.write8(0x7d8da, 0xea);
+    }
+    else if (romName == "d:\\prova\\snes\\Kick Off (E).smc")
+    {
+        theMMU.write8(0x86a2, 0xea);
+        theMMU.write8(0x86a3, 0xea);
+        theMMU.write8(0x8669, 0xea);
+        theMMU.write8(0x866a, 0xea);
+        theMMU.write8(0x8679, 0xea);
+        theMMU.write8(0x867a, 0xea);
+    }
     else if (romName == "d:\\prova\\snes\\Parodius (Europe).sfc")
     {
         theMMU.write8(0xa80d, 0xea);
@@ -552,6 +601,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0xd85c, 0xea);
         theMMU.write8(0xd86b, 0xea);
         theMMU.write8(0xd86c, 0xea);
+    }
+    else if (romName == "d:\\prova\\snes\\Chessmaster, The (U).smc")
+    {
+        theMMU.write8(0xac7b, 0xea);
+        theMMU.write8(0xac7c, 0xea);
+        theMMU.write8(0xac42, 0xea);
+        theMMU.write8(0xac43, 0xea);
+        theMMU.write8(0xac4f, 0xea);
+        theMMU.write8(0xac50, 0xea);
     }
 
     debugger5a22 theDebugger5a22;
@@ -573,6 +631,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     jumpToAppoBuf[0] = '\0';
     int baseMemoryAddress = 0;
     unsigned long int totCPUCycles = 0;
+    int emustatus = 0; // 0 debugging, 1 running
 
     while (!done)
     {
@@ -604,19 +663,36 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        displayAppoWindow();
+        displayAppoWindow(thePPU);
         displayRomLoadingLogWindow(romLoadingLog);
 
         bool rush = false;
         int rushToAddress = 0;
-        displayDebugWindow(theCPU, theDebugger5a22,theMMU,isDebugWindowFocused,rush,rushToAddress,jumpToAppoBuf,totCPUCycles);
-        
+        displayDebugWindow(theCPU, theDebugger5a22,theMMU,isDebugWindowFocused,rush,rushToAddress,jumpToAppoBuf,totCPUCycles,emustatus);
         displayRegistersWindow(theCPU,totCPUCycles);
         displayPaletteWindow(thePPU);
         displayLogWindow();
         displayVRAMViewerWindow(vramRenderTexture, thePPU.getVRAMViewerXsize(), thePPU.getVRAMViewerYsize(), thePPU.getVRAMViewerBitmap(),thePPU);
         displaySNESScreenWindow(screenRenderTexture, thePPU.getPPUResolutionX(), thePPU.getPPUResolutionY(), thePPU.getPPUFramebuffer(), thePPU);
         displayMemoryWindow(theMMU,baseMemoryAddress);
+
+        if (emustatus == 1)
+        {
+            int inst = 0;
+            while ((inst < 10000)&&(emustatus==1))
+            {
+                int cycs= theCPU.stepOne();
+                if (cycs > 0)
+                {
+                    totCPUCycles += cycs;
+                }
+                else
+                {
+                    emustatus = 0;
+                }
+                inst += 1;
+            }
+        }
 
         // rush there if needed
         while (rush)

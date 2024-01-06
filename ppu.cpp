@@ -113,8 +113,16 @@ void ppu::writeRegister(int reg, unsigned char val)
 		// BGx Screen Base and Screen Size
 		bgTileMapBaseAddress[reg-0x2107] = val;
 	}
+	else if (reg == 0x212c)
+	{
+		mainScreenDesignation = val;
+	}
+}
 
-
+int ppu::getCurrentBGMode()
+{
+	int screenMode = (bgMode & 0x03);
+	return screenMode;
 }
 
 void ppu::getPalette(unsigned char* destArr)
@@ -162,6 +170,22 @@ void ppu::tileViewerRenderTiles()
 	}
 }
 
+void ppu::renderBackdrop()
+{
+	unsigned int backdropColor = (((int)(cgram[1] & 0x7f)) << 8) | cgram[0];
+	unsigned char red = backdropColor & 0x1f; red <<= 3;
+	unsigned char green = (backdropColor >> 5) & 0x1f; green <<= 3;
+	unsigned char blue = (backdropColor >> 10) & 0x1f; blue <<= 3;
+
+	for (unsigned int pos = 0;pos < (ppuResolutionX * ppuResolutionY * 4);pos+=4)
+	{
+		screenFramebuffer[pos] = red;
+		screenFramebuffer[pos+1] = green;
+		screenFramebuffer[pos+2] = blue;
+		screenFramebuffer[pos+3] = 0xff;
+	}
+}
+
 void ppu::renderTile2bpp(int px, int py, int tileNum,int palId)
 {
 	unsigned char* pBuf;
@@ -195,10 +219,18 @@ void ppu::renderTile2bpp(int px, int py, int tileNum,int palId)
 		for (int x = 7;x >= 0;x--)
 		{
 			int curCol = ((loByte >> x) & 1) + (((hiByte >> x) & 1) * 2);
-			*pBuf = palArr[(curCol*3)+0]; pBuf++; 
-			*pBuf = palArr[(curCol*3)+1]; pBuf++; 
-			*pBuf = palArr[(curCol*3)+2]; pBuf++; 
-			*pBuf = 0xff; pBuf++;
+
+			if ((curCol % 4) != 0)
+			{
+				*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
+				*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
+				*pBuf = palArr[(curCol * 3) + 2]; pBuf++;
+				*pBuf = 0xff; pBuf++;
+			}
+			else
+			{
+				pBuf+=4;
+			}
 		}
 
 		tileAddr += 1;
@@ -324,6 +356,24 @@ void ppu::renderTile8bpp(int px, int py, int tileNum, int palId)
 
 }
 
+void ppu::renderBG(int bgnum)
+{
+	int tileAddr = ((bgTileMapBaseAddress[bgnum] >> 2) << 10) & 0x7fff;
+
+	for (int y = 0;y < 28;y++)
+	{
+		for (int x = 0;x < 32;x++)
+		{
+			int vramWord = vram[tileAddr];
+			int tileNum = vramWord & 0x3ff;
+			int palId = (vramWord >> 10) & 0x7;
+
+			renderTile2bpp(x * 8, y * 8, tileNum, palId);
+			tileAddr++;
+		}
+	}
+}
+
 void ppu::renderScreen()
 {
 	/*
@@ -337,24 +387,15 @@ void ppu::renderScreen()
 
 	// rendering depends on screen mode
 	int screenMode = (bgMode & 0x03);
-
 	if (screenMode == 0)
 	{
 		// 0      4-color     4-color     4-color     4-color   ;Normal   
-
-		int tileBaseBG1 = ((bgTileMapBaseAddress[0] >> 2) << 10) & 0x7fff;
-		int tileAddr = tileBaseBG1;
-
-		for (int y = 0;y < 28;y++)
+		renderBackdrop();
+		for (int bg = 3;bg >= 0;bg--)
 		{
-			for (int x = 0;x < 32;x++)
+			if (((mainScreenDesignation&0x1f) & (1 << bg)) > 0)
 			{
-				int vramWord = vram[tileAddr];
-				int tileNum = vramWord & 0x3ff;
-				int palId = (vramWord >> 10) & 0x7;
-
-				renderTile2bpp(x * 8, y * 8, tileNum, palId);
-				tileAddr++;
+				renderBG(bg);
 			}
 		}
 	}

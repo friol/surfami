@@ -189,6 +189,7 @@ private:
 	unsigned int getAbsoluteAddress16();
 	unsigned int getAbsoluteAddress16IndexedX();
 	unsigned int getAbsoluteAddress16IndexedY();
+	unsigned int getAbsoluteIndexedIndirectX();
 	unsigned int getLongAddress();
 	unsigned int getLongAddressIndexedX();
 	unsigned int getDirectPageAddress();
@@ -196,7 +197,12 @@ private:
 	unsigned int getDirectPageIndirectLongIndexedYAddress();
 	unsigned int getDirectPageIndirectAddress();
 	unsigned int getDirectPageIndexedXAddress();
+	unsigned int getDirectPageIndirectIndexedYAddress();
 	unsigned int getStackRelative();
+	unsigned int getStackRelativeIndirectIndexedY();
+
+	int doADC(unsigned int addr);
+	int doSBC(unsigned int addr,int& pcAdder);
 
 public:
 

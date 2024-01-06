@@ -188,6 +188,11 @@ void mmu::write8(unsigned int address, unsigned char val)
 			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x210C (BG tile base address upper)");
 			pPPU->writeRegister(0x210C, val);
 		}
+		else if (adr == 0x212c)
+		{
+			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x212C (TM - Main Screen Designation)");
+			pPPU->writeRegister(adr, val);
+		}
 
 		snesRAM[adr] = val;
 	}

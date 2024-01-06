@@ -16,8 +16,8 @@ private:
 
 	int bgMode;
 	int bgTileBaseAddress;
-	
-	//int bg1TileMapBaseAddress = 0; // BG1
+	int mainScreenDesignation=0;
+
 	int bgTileMapBaseAddress[4];
 
 	const int vramViewerXsize = 256;
@@ -32,11 +32,15 @@ private:
 	void renderTile4bpp(int px, int py, int tileNum, int palId);
 	void renderTile8bpp(int px, int py, int tileNum, int palId);
 
+	void renderBackdrop();
+	void renderBG(int bgnum);
+
 public:
 
 	ppu();
 	void writeRegister(int reg, unsigned char val);
 	void getPalette(unsigned char* destArr);
+	int getCurrentBGMode();
 	void tileViewerRenderTiles();
 	void renderScreen();
 
