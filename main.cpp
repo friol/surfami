@@ -436,7 +436,7 @@ void displayMemoryWindow(mmu& theMMU,int& baseAddress)
     ImGui::End();
 }
 
-void displayAppoWindow(ppu& thePPU)
+void displayAppoWindow(ppu& thePPU, debugger5a22& theDebugger5a22)
 {
     ImGui::Begin("Appo and tests window");
     ImGui::Text("surFami emu: Super Nintendo lives");
@@ -447,16 +447,33 @@ void displayAppoWindow(ppu& thePPU)
     ImGui::SameLine();
     ImGui::Text(bgModeString.c_str());
 
-    //ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+    std::vector<debugInfoRec>* pOpcodeList = theDebugger5a22.getOpcodesList();
 
     if (ImGui::Button("Start test"))
     {
-        testMMU testMMU;
-        cpu5a22 testCPU(&testMMU, true);
-        cpu65816tester cpuTester(testMMU, testCPU);
+        for (auto& testCase : *pOpcodeList)
+        {
+            if (testCase.validatedTomHarte == false)
+            //if (testCase.opcode>=0xfc)
+            {
+                testMMU testMMU;
+                cpu5a22 testCPU(&testMMU, true);
+                cpu65816tester cpuTester(testMMU, testCPU);
 
-        cpuTester.loadTest("D:\\prova\\snes\\ProcessorTests-main\\65816\\v1\\bd.n.json");
-        cpuTester.executeTest();
+                std::stringstream strr;
+                strr << std::hex << std::setw(2) << std::setfill('0') << (int)testCase.opcode;
+                std::string curOpcode = strr.str();
+
+                cpuTester.loadTest("D:\\prova\\snes\\ProcessorTests-main\\65816\\v1\\" + curOpcode + ".n.json");
+                int retVal = cpuTester.executeTest();
+
+                if (retVal != 0)
+                {
+                    ImGui::End();
+                    return;
+                }
+            }
+        }
     }
 
     ImGui::End();
@@ -515,7 +532,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     std::vector<std::string> romLoadingLog;
 
     romLoader theRomLoader;
-    std::string romName = "d:\\prova\\snes\\HelloWorld.sfc";
+    //std::string romName = "d:\\prova\\snes\\HelloWorld.sfc";
     //std::string romName = "d:\\prova\\snes\\CPUMOV.sfc";
     //std::string romName = "d:\\prova\\snes\\CPUDEC.sfc";
     //std::string romName = "d:\\prova\\snes\\CPUAND.sfc"; // fails for uninitialized memory
@@ -524,26 +541,29 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\8x8BGMap4BPP32x328PAL.sfc";
     //std::string romName = "d:\\prova\\snes\\Rings.sfc";
     //std::string romName = "d:\\prova\\snes\\MosaicMode3.sfc";
-    //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc"; // opcode (?) 00
-    //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc"; // jumps to nowhere
-    //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
+
+    //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc";
+    //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc"; 
+    //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc"; // jumps nowhere
     //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc"; // jumps to nowhere
-    //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc"; // jumps to 0
-    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // jumps to 0
-    //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc";
-    //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // jumps to nowhere
+    //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
+    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // jumps to 0 after 50k cycles
+    //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc"; // waiting IRQ
+    //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // waiting IRQ
     //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc";
-    //std::string romName = "d:\\prova\\snes\\Frogger (U).smc"; // jumps to nowhere
-    //std::string romName = "d:\\prova\\snes\\Race Drivin' (U).smc"; // RTI (?)
-    //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc";
+    //std::string romName = "d:\\prova\\snes\\Frogger (U).smc";
+    //std::string romName = "d:\\prova\\snes\\Race Drivin' (U).smc";
+    //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc"; // opcode 2e
     //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Arkanoid - Doh it Again (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc"; // waits for joypad
-    //std::string romName = "d:\\prova\\snes\\Home Alone (E) [!].smc";
+    //std::string romName = "d:\\prova\\snes\\Home Alone (E) [!].smc"; // 6c
     //std::string romName = "d:\\prova\\snes\\Kick Off (E).smc";
     //std::string romName = "d:\\prova\\snes\\Super Off Road (E) [!].smc";
-    //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc"; // jmups to nowhere
-    //std::string romName = "d:\\prova\\snes\\elix-smashit-pal.sfc"; // WAI
+    //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc";
+
+    //std::string romName = "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc";
+    //std::string romName = "d:\\prova\\snes\\elix-smashit-pal.sfc"; // cb WAI
 
     if (theRomLoader.loadRom(romName,theMMU,romLoadingLog) != 0)
     {
@@ -567,6 +587,33 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x809e, 0xea);
         theMMU.write8(0x80a8, 0xea);
         theMMU.write8(0x80a9, 0xea);
+        theMMU.write8(0x80ad, 0xea);
+        theMMU.write8(0x80ae, 0xea);
+    }
+    else if (romName == "d:\\prova\\snes\\Race Drivin' (U).smc")
+    {
+        theMMU.write8(0xfe3b6, 0xea);
+        theMMU.write8(0xfe3b7, 0xea);
+        theMMU.write8(0xfe37d, 0xea);
+        theMMU.write8(0xfe37e, 0xea);
+        theMMU.write8(0xfe38d, 0xea);
+        theMMU.write8(0xfe38e, 0xea);
+        theMMU.write8(0xfe3d6, 0xea);
+        theMMU.write8(0xfe3d7, 0xea);
+        theMMU.write8(0xfe3e4, 0xea);
+        theMMU.write8(0xfe3e5, 0xea);
+        theMMU.write8(0xfe4ec, 0xea);
+        theMMU.write8(0xfe4ed, 0xea);
+        theMMU.write8(0xfe512, 0xea);
+        theMMU.write8(0xfe513, 0xea);
+
+    }
+    else if (romName == "d:\\prova\\snes\\Super Mario World (USA).sfc")
+    {
+        theMMU.write8(0x80d6, 0xea);
+        theMMU.write8(0x80d7, 0xea);
+        theMMU.write8(0x809d, 0xea);
+        theMMU.write8(0x809e, 0xea);
         theMMU.write8(0x80ad, 0xea);
         theMMU.write8(0x80ae, 0xea);
     }
@@ -622,6 +669,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     {
         theMMU.write8(0xe096, 0xea);
         theMMU.write8(0xe097, 0xea);
+        theMMU.write8(0xe060, 0xea);
+        theMMU.write8(0xe061, 0xea);
+        theMMU.write8(0xe070, 0xea);
+        theMMU.write8(0xe071, 0xea);
     }
     else if (romName == "d:\\prova\\snes\\Parodius (Europe).sfc")
     {
@@ -639,8 +690,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0xd86b, 0xea);
         theMMU.write8(0xd86c, 0xea);
     }
+    else if (romName == "d:\\prova\\snes\\Frogger (U).smc")
+    {
+        theMMU.write8(0x8ff141, 0xea);
+        theMMU.write8(0x8ff142, 0xea);
+        theMMU.write8(0x8ff108, 0xea);
+        theMMU.write8(0x8ff109, 0xea);
+        theMMU.write8(0x8ff118, 0xea);
+        theMMU.write8(0x8ff119, 0xea);
+        theMMU.write8(0x8ff2ce, 0xea);
+        theMMU.write8(0x8ff2cf, 0xea);
+        theMMU.write8(0x8ff353, 0xea);
+        theMMU.write8(0x8ff354, 0xea);
+        theMMU.write8(0x8ff334, 0xea);
+        theMMU.write8(0x8ff335, 0xea);
+
+    }
     else if (romName == "d:\\prova\\snes\\Chessmaster, The (U).smc")
     {
+        theMMU.write8(0xaa4b, 0xea);
+        theMMU.write8(0xaa4c, 0xea);
         theMMU.write8(0xac7b, 0xea);
         theMMU.write8(0xac7c, 0xea);
         theMMU.write8(0xac42, 0xea);
@@ -648,6 +717,32 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0xac4f, 0xea);
         theMMU.write8(0xac50, 0xea);
     }
+    else if (romName == "d:\\prova\\snes\\Ms. Pac-Man (U).smc")
+    {
+        theMMU.write8(0x8387a2, 0xea);
+        theMMU.write8(0x8387a3, 0xea);
+        theMMU.write8(0x838763, 0xea);
+        theMMU.write8(0x838764, 0xea);
+        theMMU.write8(0x838773, 0xea);
+        theMMU.write8(0x838774, 0xea);
+        theMMU.write8(0x8387aa, 0xea);
+        theMMU.write8(0x8387ab, 0xea);
+        
+        theMMU.write8(0x838c60, 0xea);
+        theMMU.write8(0x838c61, 0xea);
+        theMMU.write8(0x8389d7, 0xea);
+        theMMU.write8(0x8389d8, 0xea);
+        theMMU.write8(0x838a03, 0xea);
+        theMMU.write8(0x838a04, 0xea);
+        theMMU.write8(0x838a28, 0xea);
+        theMMU.write8(0x838a29, 0xea);
+        theMMU.write8(0x838a3b, 0xea);
+        theMMU.write8(0x838a3c, 0xea);
+        theMMU.write8(0x838c2c, 0xea);
+        theMMU.write8(0x838c2d, 0xea);
+    }
+    
+    //
 
     debugger5a22 theDebugger5a22;
     cpu5a22 theCPU(&theMMU,false);
@@ -700,7 +795,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        displayAppoWindow(thePPU);
+        displayAppoWindow(thePPU,theDebugger5a22);
         displayRomLoadingLogWindow(romLoadingLog);
 
         bool rush = false;
@@ -719,7 +814,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
             while ((inst < 10000)&&(emustatus==1))
             {
                 int cycs= theCPU.stepOne();
-                if (cycs > 0)
+                if (cycs!=-1)
                 {
                     totCPUCycles += cycs;
                 }

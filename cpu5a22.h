@@ -192,12 +192,15 @@ private:
 	unsigned int getAbsoluteIndexedIndirectX();
 	unsigned int getLongAddress();
 	unsigned int getLongAddressIndexedX();
+
 	unsigned int getDirectPageAddress();
+	unsigned int getDirectPageIndirectX();
 	unsigned int getDirectPageIndirectLongAddress();
 	unsigned int getDirectPageIndirectLongIndexedYAddress();
 	unsigned int getDirectPageIndirectAddress();
 	unsigned int getDirectPageIndexedXAddress();
 	unsigned int getDirectPageIndirectIndexedYAddress();
+
 	unsigned int getStackRelative();
 	unsigned int getStackRelativeIndirectIndexedY();
 

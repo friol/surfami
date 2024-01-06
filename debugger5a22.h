@@ -32,6 +32,7 @@ public:
 	AddressingMode addressingMode;
 	bool additionalByteIfXFlag;
 	bool additionalByteIfAccuMemSize;
+	bool validatedTomHarte;
 };
 
 class disasmInfoRec
@@ -51,10 +52,13 @@ private:
 	std::string formatBytes(std::vector<unsigned char>& bytez, int maxbytez);
 	std::string processDisasmTemplate(std::string disasmTmpl, const debugInfoRec& debugInfo, std::vector<unsigned char>& bytez, cpu5a22& theCPU);
 
+	std::vector<debugInfoRec> debugInstrList;
+
 public:
 
+	debugger5a22();
 	std::vector<disasmInfoRec> debugCode(unsigned int pc, unsigned int numInstrs, cpu5a22* theCPU,mmu* theMMU);
-
+	std::vector<debugInfoRec>* getOpcodesList();
 };
 
 #endif

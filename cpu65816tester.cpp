@@ -19,7 +19,7 @@ int cpu65816tester::loadTest(std::string filename)
 	return 0;
 }
 
-void cpu65816tester::executeTest()
+int cpu65816tester::executeTest()
 {
 	glbTheLogger.logMsg("Starting 65816 test.");
 
@@ -131,20 +131,21 @@ void cpu65816tester::executeTest()
 				glbTheLogger.logMsg("RAM at [" + std::to_string(address) + 
 					"] value [" + std::to_string(valAtAddress) + 
 					"] different from test val ["+std::to_string(val) + "].");
-				return;
+				return 1;
 			}
 		}
 
 		if (breakkk)
 		{
 			glbTheLogger.logMsg("Testing ended with error");
-			return;
+			return 1;
 		}
 
 		testId += 1;
 	}
 
 	glbTheLogger.logMsg("Test ended successfully");
+	return 0;
 }
 
 cpu65816tester::~cpu65816tester()

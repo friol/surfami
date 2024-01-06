@@ -22,7 +22,7 @@ public:
 
 	cpu65816tester(testMMU& ammu,cpu5a22& acpu);
 	int loadTest(std::string filename);
-	void executeTest();
+	int executeTest();
 	~cpu65816tester();
 };
 
