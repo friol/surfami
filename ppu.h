@@ -33,7 +33,7 @@ private:
 	void renderTile8bpp(int px, int py, int tileNum, int palId);
 
 	void renderBackdrop();
-	void renderBG(int bgnum);
+	void renderBG(int bgnum,int bpp);
 
 public:
 

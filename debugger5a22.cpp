@@ -6,6 +6,7 @@
 static const debugInfoRec debugInstrList[] =
 {
 	{0x03,2,"ORA param0",Immediate8,false,false},
+	{0x06,2,"ASL param0",Immediate8,false,false},
 	{0x08,1,"PHP",None,false,false},
 	{0x05,2,"ORA param0",Immediate8,false,false},
 	{0x09,2,"ORA param0",Immediate,false,true},
@@ -13,6 +14,7 @@ static const debugInfoRec debugInstrList[] =
 	{0x0B,1,"PHD",None,false,false},
 	{0x0C,3,"TSB param0",Absolute16,false,false},
 	{0x0D,3,"ORA param0",Absolute16,false,false},
+	{0x0e,3,"ASL param0",Absolute16,false,false},
 	{0x0f,4,"ORA param0",AbsoluteLong,false,false},
 	{0x10,2,"BPL param0",Immediate8,false,false},
 	{0x17,2,"ORA [param0],Y",Immediate8,false,false},
@@ -39,7 +41,9 @@ static const debugInfoRec debugInstrList[] =
 	{0x38,1,"SEC",None,false,false},
 	{0x3a,1,"DEC A",None,false,false},
 	{0x44,3,"MVP param0",Absolute16,false,false},
+	{0x46,2,"LSR param0",Immediate8,false,false},
 	{0x48,1,"PHA",None,false,false},
+	{0x49,2,"EOR param0",Immediate,false,true},
 	{0x4a,1,"LSR A",None,false,false},
 	{0x4c,3,"JMP param0",Absolute16,false,false},
 	{0x4d,3,"EOR param0",Absolute16,false,false},
@@ -49,7 +53,7 @@ static const debugInfoRec debugInstrList[] =
 	{0x5a,1,"PHY",None,false,false},
 	{0x5b,1,"TCD",None,false,false},
 	{0x5c,4,"JML param0",AbsoluteLong,false,false},
-	{0x5d,2,"EOR param0,X",Absolute16,false,false},
+	{0x5d,3,"EOR param0,X",Absolute16,false,false},
 	{0x62,3,"PER param0,X",Absolute16,false,false},
 	{0x60,1,"RTS",None,false,false},
 	{0x64,2,"STZ param0",Immediate8,false,false},
@@ -58,12 +62,14 @@ static const debugInfoRec debugInstrList[] =
 	{0x69,2,"ADC param0",Immediate,false,true},
 	{0x6a,1,"ROR A",None,false,false},
 	{0x6b,1,"RTL",None,false,false},
+	{0x6e,3,"ROR param0",Absolute16,false,false},
 	{0x70,2,"BVS param0",Immediate8,false,false},
 	{0x73,2,"ADC (param0,S),Y",Immediate8,false,false},
 	{0x74,2,"STZ param0,X",Immediate8,false,false},
 	{0x75,2,"ADC param0,X",Immediate8,false,false},
 	{0x78,1,"SEI",None,false,false},
 	{0x7a,1,"PLY",None,false,false},
+	{0x7c,3,"JMP (param0,X)",Absolute16,false,false},
 	{0x80,2,"BRA param0",Immediate8,false,false},
 	{0x82,3,"BRL param0",Absolute16,false,false},
 	{0x84,2,"STY param0",Immediate8,false,false},
@@ -106,6 +112,8 @@ static const debugInfoRec debugInstrList[] =
 	{0xaf,4,"LDA param0",AbsoluteLong,false,false},
 	{0xB0,2,"BCS param0",Immediate8,false,false},
 	{0xb1,2,"LDA (param0),Y",Immediate8,false,false},
+	{0xb2,2,"LDA (param0)",Immediate8,false,false},
+	{0xb3,2,"LDA (param0,S),Y",Immediate8,false,false},
 	{0xB5,2,"LDA param0,X",Immediate8,false,false},
 	{0xB7,2,"LDA [param0],Y",Immediate8,false,false},
 	{0xB9,3,"LDA param0,Y",Absolute16,false,false},
@@ -150,6 +158,7 @@ static const debugInfoRec debugInstrList[] =
 	{0xFA,1,"PLX",None,false,false},
 	{0xFB,1,"XCE",None,false,false},
 	{0xfc,3,"JSR (param0,X)",Absolute16,false,false },
+	{0xff,4,"SBC param0,X",AbsoluteLong,false,false },
 };
 
 int debugger5a22::findOpcode(unsigned char opcode)
@@ -250,6 +259,11 @@ std::string debugger5a22::processDisasmTemplate(std::string disasmTmpl,const deb
 	{
 		std::stringstream strr;
 		std::string hexPaddedConst;
+
+		if (bytez.size() < 3)
+		{
+			int err = 1;
+		}
 
 		unsigned short int mem = bytez[1];
 		mem |= ((int)bytez[2]) << 8;

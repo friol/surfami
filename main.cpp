@@ -455,7 +455,7 @@ void displayAppoWindow(ppu& thePPU)
         cpu5a22 testCPU(&testMMU, true);
         cpu65816tester cpuTester(testMMU, testCPU);
 
-        cpuTester.loadTest("D:\\prova\\snes\\ProcessorTests-main\\65816\\v1\\e6.n.json");
+        cpuTester.loadTest("D:\\prova\\snes\\ProcessorTests-main\\65816\\v1\\bd.n.json");
         cpuTester.executeTest();
     }
 
@@ -515,7 +515,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     std::vector<std::string> romLoadingLog;
 
     romLoader theRomLoader;
-    //std::string romName = "d:\\prova\\snes\\HelloWorld.sfc";
+    std::string romName = "d:\\prova\\snes\\HelloWorld.sfc";
     //std::string romName = "d:\\prova\\snes\\CPUMOV.sfc";
     //std::string romName = "d:\\prova\\snes\\CPUDEC.sfc";
     //std::string romName = "d:\\prova\\snes\\CPUAND.sfc"; // fails for uninitialized memory
@@ -524,12 +524,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\8x8BGMap4BPP32x328PAL.sfc";
     //std::string romName = "d:\\prova\\snes\\Rings.sfc";
     //std::string romName = "d:\\prova\\snes\\MosaicMode3.sfc";
-    //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc"; // opcode (?) ff
-    //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc"; // opcode 46
+    //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc"; // opcode (?) 00
+    //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc"; // jumps to nowhere
     //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc"; // jumps to nowhere
     //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc"; // jumps to 0
-    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // opcode 19
+    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // jumps to 0
     //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc";
     //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // jumps to nowhere
     //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc";
@@ -538,10 +538,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Arkanoid - Doh it Again (E) [!].smc";
-    //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc";
-    //std::string romName = "d:\\prova\\snes\\Home Alone (E) [!].smc"; // crash
+    //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc"; // waits for joypad
+    //std::string romName = "d:\\prova\\snes\\Home Alone (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Kick Off (E).smc";
-    std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc";
+    //std::string romName = "d:\\prova\\snes\\Super Off Road (E) [!].smc";
+    //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc"; // jmups to nowhere
+    //std::string romName = "d:\\prova\\snes\\elix-smashit-pal.sfc"; // WAI
 
     if (theRomLoader.loadRom(romName,theMMU,romLoadingLog) != 0)
     {
@@ -585,6 +587,41 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x866a, 0xea);
         theMMU.write8(0x8679, 0xea);
         theMMU.write8(0x867a, 0xea);
+        theMMU.write8(0xd8008, 0xea);
+        theMMU.write8(0xd8009, 0xea);
+    }
+    else if (romName == "d:\\prova\\snes\\Home Alone (E) [!].smc")
+    {
+        theMMU.write8(0x867c, 0xea);
+        theMMU.write8(0x867d, 0xea);
+        theMMU.write8(0x8643, 0xea);
+        theMMU.write8(0x8644, 0xea);
+        theMMU.write8(0x8653, 0xea);
+        theMMU.write8(0x8654, 0xea);
+        theMMU.write8(0x876c, 0xea);
+        theMMU.write8(0x876d, 0xea);
+        theMMU.write8(0x879b, 0xea);
+        theMMU.write8(0x879c, 0xea);
+        theMMU.write8(0x87b2, 0xea);
+        theMMU.write8(0x87b3, 0xea);
+        theMMU.write8(0x8838, 0xea);
+        theMMU.write8(0x8839, 0xea);
+    }
+    else if (romName == "d:\\prova\\snes\\elix-smashit-pal.sfc")
+    {
+        theMMU.write8(0x8527, 0xea);
+        theMMU.write8(0x8528, 0xea);
+        theMMU.write8(0x8542, 0xea);
+        theMMU.write8(0x8543, 0xea);
+        theMMU.write8(0x8561, 0xea);
+        theMMU.write8(0x8562, 0xea);
+        theMMU.write8(0x8581, 0xea);
+        theMMU.write8(0x8582, 0xea);
+    }
+    else if (romName == "d:\\prova\\snes\\Super Off Road (E) [!].smc")
+    {
+        theMMU.write8(0xe096, 0xea);
+        theMMU.write8(0xe097, 0xea);
     }
     else if (romName == "d:\\prova\\snes\\Parodius (Europe).sfc")
     {

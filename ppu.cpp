@@ -160,7 +160,7 @@ void ppu::tileViewerRenderTile2bpp(int px, int py, int tileAddr)
 void ppu::tileViewerRenderTiles()
 {
 	int tileAddr = 0;
-	for (int y = 0;y < 16;y++)
+	for (int y = 0;y < 24;y++)
 	{
 		for (int x = 0;x < 16;x++)
 		{
@@ -356,7 +356,7 @@ void ppu::renderTile8bpp(int px, int py, int tileNum, int palId)
 
 }
 
-void ppu::renderBG(int bgnum)
+void ppu::renderBG(int bgnum,int bpp)
 {
 	int tileAddr = ((bgTileMapBaseAddress[bgnum] >> 2) << 10) & 0x7fff;
 
@@ -364,12 +364,14 @@ void ppu::renderBG(int bgnum)
 	{
 		for (int x = 0;x < 32;x++)
 		{
-			int vramWord = vram[tileAddr];
-			int tileNum = vramWord & 0x3ff;
-			int palId = (vramWord >> 10) & 0x7;
+				int vramWord = vram[tileAddr];
+				int tileNum = vramWord & 0x3ff;
+				int palId = (vramWord >> 10) & 0x7;
 
-			renderTile2bpp(x * 8, y * 8, tileNum, palId);
-			tileAddr++;
+				if (bpp==2) renderTile2bpp(x * 8, y * 8, tileNum, palId);
+				else if (bpp==4) renderTile4bpp(x * 8, y * 8, tileNum, palId);
+				else if (bpp==8) renderTile8bpp(x * 8, y * 8, tileNum, palId);
+				tileAddr++;
 		}
 	}
 }
@@ -395,45 +397,24 @@ void ppu::renderScreen()
 		{
 			if (((mainScreenDesignation&0x1f) & (1 << bg)) > 0)
 			{
-				renderBG(bg);
+				renderBG(bg,2);
 			}
 		}
+	}
+	else if (screenMode == 0x01)
+	{
+		// 1      16-color    16-color    4-color     -         ;Normal
+		renderBackdrop();
+		if (((mainScreenDesignation & 0x1f) & (1 << 2)) > 0) renderBG(2,2);
+		if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBG(1,4);
+		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBG(0,4);
 	}
 	else if (screenMode == 0x03)
 	{
 		// 3      256-color   16-color    -           -         ;Normal   
-
-		/*
-		int tileAddr = ((bgTileMapBaseAddress[1] >> 2) << 10) & 0x7fff;
-		for (int y = 0;y < 28;y++)
-		{
-			for (int x = 0;x < 32;x++)
-			{
-				int vramWord = vram[tileAddr];
-				int tileNum = vramWord & 0x3ff;
-				int palId = (vramWord >> 10) & 0x7;
-
-				renderTile4bpp(x * 8, y * 8, tileNum, palId);
-				tileAddr++;
-			}
-		}
-		*/
-
-		int tileAddr = ((bgTileMapBaseAddress[0] >> 2) << 10) & 0x7fff;
-		for (int y = 0;y < 28;y++)
-		{
-			for (int x = 0;x < 32;x++)
-			{
-				int vramWord = vram[tileAddr];
-				int tileNum = vramWord & 0x3ff;
-				int palId = (vramWord >> 10) & 0x7;
-
-				renderTile8bpp(x * 8, y * 8, tileNum, palId);
-				tileAddr++;
-			}
-		}
-
-
+		renderBackdrop();
+		if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBG(1, 4);
+		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBG(0, 8);
 	}
 }
 
