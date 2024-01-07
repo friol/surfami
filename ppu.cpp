@@ -413,50 +413,9 @@ void ppu::renderBG(int bgnum,int bpp)
 	}
 }
 
-void ppu::renderScreen()
+void ppu::renderSprites()
 {
-	/*
-		7-2  SC Base Address in VRAM (in 1K-word steps, aka 2K-byte steps)
-		1-0  SC Size (0=One-Screen, 1=V-Mirror, 2=H-Mirror, 3=Four-Screen)
-						(0=32x32, 1=64x32, 2=32x64, 3=64x64 tiles)
-					(0: SC0 SC0    1: SC0 SC1  2: SC0 SC0  3: SC0 SC1   )
-					(   SC0 SC0       SC0 SC1     SC1 SC1     SC2 SC3   )
-		Specifies the BG Map addresses in VRAM. The "SCn" screens consists of 32x32 tiles each.
-	*/
-
-	// rendering depends on screen mode
-	int screenMode = (bgMode & 0x07);
-	if (screenMode == 0)
-	{
-		// 0      4-color     4-color     4-color     4-color   ;Normal   
-		renderBackdrop();
-		for (int bg = 3;bg >= 0;bg--)
-		{
-			if (((mainScreenDesignation&0x1f) & (1 << bg)) > 0)
-			{
-				renderBG(bg,2);
-			}
-		}
-	}
-	else if (screenMode == 0x01)
-	{
-		// 1      16-color    16-color    4-color     -         ;Normal
-		renderBackdrop();
-		if (((mainScreenDesignation & 0x1f) & (1 << 2)) > 0) renderBG(2,2);
-		if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBG(1,4);
-		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBG(0,4);
-	}
-	else if (screenMode == 0x03)
-	{
-		// 3      256-color   16-color    -           -         ;Normal   
-		renderBackdrop();
-		if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBG(1, 4);
-		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBG(0, 8);
-	}
-
-	// now OAM Sprites
-
-	for (auto i = 127; i>=0; i--)
+	for (auto i = 127; i >= 0; i--)
 	{
 		const unsigned char byte1 = OAM[(i * 4)];
 		const unsigned char byte2 = OAM[(i * 4) + 1];
@@ -503,9 +462,80 @@ void ppu::renderScreen()
 				}
 			}
 		}
-
-	
 	}
+}
+
+void ppu::renderScreen()
+{
+	/*
+		7-2  SC Base Address in VRAM (in 1K-word steps, aka 2K-byte steps)
+		1-0  SC Size (0=One-Screen, 1=V-Mirror, 2=H-Mirror, 3=Four-Screen)
+						(0=32x32, 1=64x32, 2=32x64, 3=64x64 tiles)
+					(0: SC0 SC0    1: SC0 SC1  2: SC0 SC0  3: SC0 SC1   )
+					(   SC0 SC0       SC0 SC1     SC1 SC1     SC2 SC3   )
+		Specifies the BG Map addresses in VRAM. The "SCn" screens consists of 32x32 tiles each.
+	*/
+
+	// rendering depends on screen mode
+	int screenMode = (bgMode & 0x07);
+	if (screenMode == 0)
+	{
+		// 0      4-color     4-color     4-color     4-color   ;Normal   
+		renderBackdrop();
+		for (int bg = 3;bg >= 0;bg--)
+		{
+			if (((mainScreenDesignation&0x1f) & (1 << bg)) > 0)
+			{
+				renderBG(bg,2);
+			}
+		}
+	}
+	else if (screenMode == 0x01)
+	{
+		// 1      16-color    16-color    4-color     -         ;Normal
+		renderBackdrop();
+		if (((mainScreenDesignation & 0x1f) & (1 << 2)) > 0) renderBG(2,2);
+		//if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBG(1,4);
+		//if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBG(0,4);
+	}
+	else if (screenMode == 0x03)
+	{
+		// 3      256-color   16-color    -           -         ;Normal   
+		renderBackdrop();
+		if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBG(1, 4);
+		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBG(0, 8);
+	}
+
+	// now OAM Sprites
+
+	renderSprites();
+
+	// final pass, master brightness!
+
+	int brightness = iniDisp & 0x0f;
+	if ((iniDisp & 0x80) == 0x80) brightness = 0;
+	
+	for (int pos = 0;pos < (ppuResolutionX * ppuResolutionY * 4);pos += 4)
+	{
+		int val;
+		val = screenFramebuffer[pos+0];
+		val *= brightness;
+		val >>= 4;
+		screenFramebuffer[pos + 0] = val;
+
+		val = screenFramebuffer[pos + 1];
+		val *= brightness;
+		val >>= 4;
+		screenFramebuffer[pos + 1] = val;
+
+		val = screenFramebuffer[pos + 2];
+		val *= brightness;
+		val >>= 4;
+		screenFramebuffer[pos + 2] = val;
+	}
+
+
+
 }
 
 void ppu::step(int numCycles, mmu& theMMU, cpu5a22& theCPU)

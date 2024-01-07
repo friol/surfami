@@ -571,7 +571,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc"; // mode7
     //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
-    std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc"; // 7f
+    std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc"; 
     //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc"; // 7b
     //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc";
     //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc"; // 45
@@ -586,7 +586,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Home Alone (E) [!].smc"; // 45
     //std::string romName = "d:\\prova\\snes\\Kick Off (E).smc";
     //std::string romName = "d:\\prova\\snes\\Super Off Road (E) [!].smc";
-    //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc"; // 7d
+    //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc"; 
     //std::string romName = "d:\\prova\\snes\\Sensible Soccer - International Edition (E).smc";
 
     //std::string romName = "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc";
@@ -871,7 +871,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         if (emustatus == 1)
         {
             int inst = 0;
-            while ((inst < 10000)&&(emustatus==1))
+            while ((inst < 100000)&&(emustatus==1))
             {
                 int cycs= theCPU.stepOne();
                 if (cycs!=-1)

@@ -22,6 +22,7 @@ private:
 	int bgMode;
 	int bgTileBaseAddress=0;
 	int mainScreenDesignation=0;
+	unsigned char iniDisp = 0;
 
 	int bgTileMapBaseAddress[4];
 
@@ -41,6 +42,7 @@ private:
 
 	void renderBackdrop();
 	void renderBG(int bgnum,int bpp);
+	void renderSprites();
 
 	unsigned int scanline=0;
 	unsigned int internalCyclesCounter = 0;
@@ -53,6 +55,7 @@ public:
 
 	ppu();
 	void writeRegister(int reg, unsigned char val);
+	void setINIDISP(unsigned char val) { iniDisp = val; }
 	
 	void writeOAMAddressLow(unsigned char val) { OAMAddr = (OAMAddr & 0xff00) | val; }
 	void writeOAMAddressHigh(unsigned char val) { OAMAddr = (OAMAddr & 0xff) | (val<<8); }

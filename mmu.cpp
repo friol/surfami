@@ -154,6 +154,12 @@ void mmu::write8(unsigned int address, unsigned char val)
 		{
 			snesRAM[0x7e0000 + adr] = val;
 		}
+		else if (adr == 0x2100)
+		{
+			// 2100h - INIDISP - Display Control 1
+			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2100 (INIDISP - Display Control 1)");
+			pPPU->setINIDISP(val);
+		}
 		else if (adr == 0x2102)
 		{
 			// 2102h/2103h - OAMADDL/OAMADDH - OAM Address and Priority Rotation (W)
