@@ -230,6 +230,17 @@ unsigned int cpu5a22::getAbsoluteIndexedIndirectX()
 	return ((regPB << 16) | (i_hi << 8) | i_lo)&0xffffff;
 }
 
+unsigned int cpu5a22::getAbsoluteIndexedIndirectLong()
+{
+	unsigned char lo = pMMU->read8((regPB << 16) | ((regPC + 1) & 0xffff));
+	unsigned char hi = pMMU->read8((regPB << 16) | ((regPC + 2) & 0xffff));
+	unsigned short int adr = ((hi << 8) | lo);
+	unsigned char i_lo = pMMU->read8(adr);
+	unsigned char i_hi = pMMU->read8((adr + 1)&0xffff);
+	regPB=(pMMU->read8(adr + 2) & 0xffff);
+	return ((regPB << 16) | (((i_hi << 8) | i_lo)&0xffff));
+}
+
 unsigned int cpu5a22::getLongAddress()
 {
 	return (
@@ -348,7 +359,7 @@ int cpu5a22::doADC(unsigned int addr)
 	int cycles = 0;
 	int cycAdder = 0;
 
-	if (regP.getAccuMemSize())
+	/*if (regP.getAccuMemSize())
 	{
 		unsigned int addr = getImmediateAddress8();
 		unsigned char val = pMMU->read8(addr);
@@ -424,10 +435,71 @@ int cpu5a22::doADC(unsigned int addr)
 		regA_hi = (res >> 8) & 0xff;
 
 		cycAdder = 1;
+	}*/
+
+	if (regP.getAccuMemSize())
+	{
+		unsigned char value = pMMU->read8(addr);
+		int result = 0;
+		unsigned short int regA = regA_lo | (regA_hi << 8);
+		if (regP.getDecimal()) 
+		{
+			result = (regA & 0xf) + (value & 0xf) + regP.getCarry();
+			if (result > 0x9) result = ((result + 0x6) & 0xf) + 0x10;
+			result = (regA & 0xf0) + (value & 0xf0) + result;
+		}
+		else 
+		{
+			result = (regA & 0xff) + value + regP.getCarry();
+		}
+
+		regP.setOverflow((regA & 0x80) == (value & 0x80) && (value & 0x80) != (result & 0x80));
+		if (regP.getDecimal() && result > 0x9f) result += 0x60;
+		regP.setCarry(result > 0xff);
+		
+		regA = (regA & 0xff00) | (result & 0xff);
+		regA_lo = regA & 0xff;
+		regA_hi = regA>>8;
+
+		regP.setZero(regA_lo == 0);
+		regP.setNegative((regA_lo & 0x80) == 0x80);
 	}
+	else 
+	{
+		unsigned char lo = pMMU->read8(addr);
+		unsigned char hi = pMMU->read8(addr + 1);
+		unsigned short int value = (hi << 8) | lo;
+		int result = 0;
+		unsigned short int regA = regA_lo | (regA_hi << 8);
+
+		if (regP.getDecimal()) 
+		{
+			result = (regA & 0xf) + (value & 0xf) + regP.getCarry();
+			if (result > 0x9) result = ((result + 0x6) & 0xf) + 0x10;
+			result = (regA & 0xf0) + (value & 0xf0) + result;
+			if (result > 0x9f) result = ((result + 0x60) & 0xff) + 0x100;
+			result = (regA & 0xf00) + (value & 0xf00) + result;
+			if (result > 0x9ff) result = ((result + 0x600) & 0xfff) + 0x1000;
+			result = (regA & 0xf000) + (value & 0xf000) + result;
+		}
+		else 
+		{
+			result = regA + value + regP.getCarry();
+		}
+		regP.setOverflow((regA & 0x8000) == (value & 0x8000) && (value & 0x8000) != (result & 0x8000));
+		if (regP.getDecimal() && result > 0x9fff) result += 0x6000;
+		regP.setCarry(result > 0xffff);
+		regA_lo = result&0xff;
+		regA_hi = result>>8;
+		regA = regA_lo | (regA_hi << 8);
+
+		regP.setZero((unsigned short int)(regA) == 0);
+		regP.setNegative((regA & 0x8000) == 0x8000);
+	}
+	
+	//cpu_setZN(cpu, cpu->a, cpu->mf);
 
 	cycles = 2 + cycAdder;
-
 	return cycles;
 }
 
@@ -2814,10 +2886,17 @@ int cpu5a22::stepOne()
 				unsigned char lo = pMMU->read8(addr);
 				unsigned char hi = pMMU->read8(addr + 1);
 				unsigned short int m = (hi << 8) | lo;
-				unsigned short val = (regY_lo|(regY_hi<<8)) - m;
-				regP.setNegative(val >> 7);
+				
+				unsigned short int regY = regY_lo | (regY_hi << 8);
+				unsigned short val = regY - m;
+
+				unsigned short int value = m ^ 0xffff;
+				int result = regY + value + 1;
+
+				regP.setNegative(((((unsigned short int)result) >> 15))&0x01);
 				regP.setZero(val == 0);
-				regP.setCarry((regY_lo | (regY_hi << 8)) >= m);
+				regP.setCarry(regY >= m);
+				
 				cycAdder += 1;
 			}
 
@@ -4650,6 +4729,104 @@ int cpu5a22::stepOne()
 			unsigned int addr = getAbsoluteIndexedIndirect();
 			regPC = addr;
 			cycles = 5;
+			break;
+		}
+		case 0xdc:
+		{
+			// JMP [addr]
+			unsigned int addr = getAbsoluteIndexedIndirectLong();
+			regPC = addr;
+			regPB=((addr >> 16) & 0xff);
+			cycles = 6;
+			break;
+		}
+		case 0x07:
+		{
+			// ORA [dp]
+			int cycAdder = 0;
+			unsigned int addr = getDirectPageIndirectLongAddress();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				unsigned char res = val | regA_lo;
+				regA_lo = res;
+				regP.setNegative(res >> 7);
+				regP.setZero(res == 0);
+			}
+			else
+			{
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned short int val = (hi << 8) | lo;
+				unsigned short int res = val | (regA_lo | (regA_hi << 8));
+
+				regA_lo = res & 0xff;
+				regA_hi = res >> 8;
+
+				regP.setNegative(res >> 15);
+				regP.setZero(res == 0);
+				cycAdder = 1;
+			}
+
+			if (regP.isDPLowNotZero()) cycAdder += 1;
+
+			regPC += 2;
+			cycles = 6 + cycAdder;
+			break;
+		}
+		case 0xcc:
+		{
+			// CPY addr
+			int cycAdder = 0;
+			unsigned int addr = getAbsoluteAddress16();
+
+			if (regP.getIndexSize())
+			{
+				unsigned char m = pMMU->read8(addr);
+				unsigned char val = regY_lo - m;
+				regP.setNegative(val >> 7);
+				regP.setZero(val == 0);
+				regP.setCarry(regY_lo >= m);
+			}
+			else
+			{
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned short int m = (hi << 8) | lo;
+
+				unsigned short int regY = regY_lo | (regY_hi << 8);
+				unsigned short val = regY - m;
+
+				unsigned short int value = m ^ 0xffff;
+				int result = regY + value + 1;
+
+				regP.setNegative((result >> 15) & 0x01);
+				regP.setZero(val == 0);
+				regP.setCarry(regY >= m);
+
+				cycAdder += 1;
+			}
+
+			regPC += 3;
+			cycles = 4 + cycAdder;
+			break;
+		}
+		case 0x87:
+		{
+			// STA [dp]
+			int cycAdder = 0;
+			unsigned int addr = getDirectPageIndirectLongAddress();
+
+			pMMU->write8(addr, regA_lo);
+			if (regP.getAccuMemSize() == 0)
+			{
+				pMMU->write8(addr + 1, regA_hi);
+				cycAdder += 1;
+			}
+
+			regPC += 2;
+			cycles = 6 + cycAdder;
 			break;
 		}
 		default:

@@ -192,6 +192,7 @@ private:
 	unsigned int getAbsoluteAddress16IndexedY();
 	unsigned int getAbsoluteIndexedIndirect();
 	unsigned int getAbsoluteIndexedIndirectX();
+	unsigned int getAbsoluteIndexedIndirectLong();
 	unsigned int getLongAddress();
 	unsigned int getLongAddressIndexedX();
 

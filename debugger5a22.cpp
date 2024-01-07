@@ -9,6 +9,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x06,2,"ASL param0",Immediate8,false,false,true}, // validatedF
 	{0x08,1,"PHP",None,false,false,true}, // validatedF
 	{0x05,2,"ORA param0",Immediate8,false,false,true}, // validatedF
+	{0x07,2,"ORA param0",Immediate8,false,false,true}, // validatedF
 	{0x09,2,"ORA param0",Immediate,false,true,true}, // validatedF
 	{0x0A,1,"ASL A",None,false,false,true}, // validatedF
 	{0x0B,1,"PHD",None,false,false,true}, // validatedF
@@ -66,7 +67,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x62,3,"PER param0,X",Absolute16,false,false,true}, // validatedF
 	{0x60,1,"RTS",None,false,false,true}, // validatedF
 	{0x64,2,"STZ param0",Immediate8,false,false,true}, // validatedF
-	{0x65,2,"ADC param0",Immediate8,false,false,true},
+	{0x65,2,"ADC param0",Immediate8,false,false,true}, // validatedF
 	{0x68,1,"PLA",None,false,false,true}, // validatedF
 	{0x69,2,"ADC param0",Immediate,false,true,true},
 	{0x6a,1,"ROR A",None,false,false,true}, // validatedF
@@ -88,6 +89,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x84,2,"STY param0",Immediate8,false,false,true}, // validatedF
 	{0x85,2,"STA param0",Immediate8,false,false,true}, // validatedF
 	{0x86,2,"STX param0",Immediate8,false,false,true}, // validatedF
+	{0x87,2,"STA [param0]",Immediate8,false,false,true}, // validatedF
 	{0x88,1,"DEY",None,false,false,true}, // validatedF
 	{0x89,2,"BIT param0",Immediate,false,true,true}, // validatedF
 	{0x8a,1,"TXA",None,false,false,true}, // validatedF
@@ -145,8 +147,9 @@ static const debugInfoRec debugInstrData[] =
 	{0xC8,1,"INY",None,false,false,true}, // validatedF
 	{0xC9,2,"CMP param0",Immediate,false,true,true}, // validatedF
 	{0xC2,2,"REP param0",Immediate8,false,false,true}, // validatedF
-	{0xC4,2,"CPY param0",Immediate8,false,false,true}, // validatedF
+	{0xC4,2,"CPY param0",Immediate8,false,false,true}, // validatedF fck
 	{0xCA,1,"DEX",None,false,false,true }, // validatedF
+	{0xCC,3,"CPY param0",Absolute16,false,false,true},
 	{0xCD,3,"CMP param0",Absolute16,false,false,true}, // validatedF
 	{0xCE,3,"DEC param0",Absolute16,false,false,true}, // validatedF
 	{0xD0,2,"BNE param0",Immediate8,false,false,true}, // validatedF
@@ -155,6 +158,7 @@ static const debugInfoRec debugInstrData[] =
 	{0xD9,3,"CMP param0,Y",Absolute16,false,false,true}, // validatedF
 	{0xda,1,"PHX",None,false,false ,true}, // validatedF
 	{0xdb,1,"STP",None,false,false,true},
+	{0xdc,3,"JMP [param0]",Absolute16,false,false,true}, // fck
 	{0xDD,3,"CMP param0,X",Absolute16,false,false,true}, // validatedF
 	{0xDE,3,"DEC param0,X",Absolute16,false,false,true}, // validatedF
 	{0xdf,4,"CMP param0,X",AbsoluteLong,false,false ,true}, // validatedF

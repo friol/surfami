@@ -109,7 +109,7 @@ int cpu65816tester::executeTest()
 		}
 		if (pCPU->getPB() != finalPBR)
 		{
-			glbTheLogger.logMsg("PBR [" + std::to_string(pCPU->getPB()) + "] and reference [" + std::to_string(finalPBR) + "] don't match.");
+			glbTheLogger.logMsg("PBR (regPB) [" + std::to_string(pCPU->getPB()) + "] and reference [" + std::to_string(finalPBR) + "] don't match.");
 			breakkk = true;
 		}
 		if (pCPU->getP() != finalP)
