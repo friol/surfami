@@ -23,6 +23,7 @@ private:
 	int bgTileBaseAddress=0;
 	int mainScreenDesignation=0;
 	unsigned char iniDisp = 0;
+	unsigned char obSel = 0;
 
 	int bgTileMapBaseAddress[4];
 
@@ -56,6 +57,7 @@ public:
 	ppu();
 	void writeRegister(int reg, unsigned char val);
 	void setINIDISP(unsigned char val) { iniDisp = val; }
+	void setOBSEL(unsigned char val) { obSel = val; }
 	
 	void writeOAMAddressLow(unsigned char val) { OAMAddr = (OAMAddr & 0xff00) | val; }
 	void writeOAMAddressHigh(unsigned char val) { OAMAddr = (OAMAddr & 0xff) | (val<<8); }

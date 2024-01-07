@@ -160,6 +160,12 @@ void mmu::write8(unsigned int address, unsigned char val)
 			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2100 (INIDISP - Display Control 1)");
 			pPPU->setINIDISP(val);
 		}
+		else if (adr == 0x2101)
+		{
+			// 2101h - OBSEL - Object Size and Object Base
+			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2101 (OBSEL - Object Size and Object Base)");
+			pPPU->setOBSEL(val);
+		}
 		else if (adr == 0x2102)
 		{
 			// 2102h/2103h - OAMADDL/OAMADDH - OAM Address and Priority Rotation (W)
@@ -307,6 +313,11 @@ unsigned char mmu::read8(unsigned int address)
 			//	PPU - CGDATA - Palette CGRAM Data Read (R)
 			//return PPU_readCGRAM(memory[0x2121]);
 			glbTheLogger.logMsg("Error: reading from 213b (CGRAM)");
+		}
+		else if (adr == 0x213f)
+		{
+			// TODO PAL/NTSC flag
+			return 0x13;
 		}
 		else if ((adr == 0x2140) || (adr == 0x2141))
 		{

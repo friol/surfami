@@ -100,10 +100,13 @@ void ppu::writeRegister(int reg, unsigned char val)
 		int vramAddr = (vramAddressLower | (vramAddressUpper << 8));
 		unsigned char _v_hi_lo = vmainVRAMAddrIncrMode >> 7;
 
+		int adrIncrStep = 1;
 		int addrIncrementStep = vmainVRAMAddrIncrMode & 0x03;
 		if (addrIncrementStep != 0)
 		{
-			int err = 1;
+			// 1 - 0   Address Increment Step(0..3 = Increment Word - Address by 1, 32, 128, 128)
+			const int increments[] = {1, 32, 128, 128};
+			adrIncrStep = increments[addrIncrementStep];
 		}
 
 		if (reg == 0x2118)
@@ -118,7 +121,7 @@ void ppu::writeRegister(int reg, unsigned char val)
 		if ((reg == 0x2118 && !_v_hi_lo) || (reg == 0x2119 && _v_hi_lo))
 		{
 			unsigned int nextAddr = vramAddr;
-			nextAddr++;
+			nextAddr+=adrIncrStep;
 			vramAddressLower = nextAddr & 0xff;
 			vramAddressUpper = nextAddr >> 8;
 		}
@@ -415,6 +418,19 @@ void ppu::renderBG(int bgnum,int bpp)
 
 void ppu::renderSprites()
 {
+	int spriteDimensions[8][2][2] = {
+		{{8,8},{16,16}},
+		{{8,8},{32,32}},
+		{{8,8},{64,64}},
+		{{16,16},{32,32}},
+		{{16,16},{64,64}},
+		{{32,32},{64,64}},
+		{{16,32},{32,64}},
+		{{16,32},{32,32}},
+	};
+
+	int spriteDim = (obSel >> 5)&0x7;
+
 	for (auto i = 127; i >= 0; i--)
 	{
 		const unsigned char byte1 = OAM[(i * 4)];
@@ -423,19 +439,44 @@ void ppu::renderSprites()
 		const unsigned char byte4 = OAM[(i * 4) + 3];
 		const unsigned char attr = (OAM[512 + (i / 4)] >> ((i % 4) * 2)) & 0b11;
 
-		int x_pos = (((attr & 1) << 8) | byte1) & 0x1ff;
+		int x_pos = byte1;
 		int y_pos = byte2;
 		int tile_nr = ((byte4 & 1) << 8) | byte3;
 		int y_flip = byte4 >> 7;
 		int x_flip = (byte4 >> 6) & 1;
+		int paletteNum = (byte4 >> 1) & 0b111;
 		//priority = (byte4 >> 4) & 0b11;
-		int palette = (byte4 >> 1) & 0b111;
+		int spriteSize = (attr >> 1) & 0x01;
 
-		const unsigned int OAMBase = 0xc000 / 2;
+		if (attr & 0x01) x_pos -= 256;
 
-		for (int y = 0;y < 16;y++)
+		const int spriteDimX = spriteDimensions[spriteDim][(attr>>1) & 1][0];
+		const int spriteDimY = spriteDimensions[spriteDim][(attr>>1) & 1][1];
+
+		const int numCols = 16;
+		unsigned char palArr[3 * numCols];
+
+		int colidx = 256+( paletteNum * 16 * 2);
+		for (int col = 0;col < numCols;col++)
 		{
-			for (int x = 0;x < 16;x++)
+			unsigned int palcol = (((int)(cgram[colidx + 1] & 0x7f)) << 8) | cgram[colidx];
+			int red = palcol & 0x1f; red <<= 3;
+			int green = (palcol >> 5) & 0x1f; green <<= 3;
+			int blue = (palcol >> 10) & 0x1f; blue <<= 3;
+
+			palArr[(col * 3) + 0] = red;
+			palArr[(col * 3) + 1] = green;
+			palArr[(col * 3) + 2] = blue;
+
+			colidx += 2;
+		}
+
+		//const unsigned int OAMBase = 0xc000 / 2;
+		const unsigned int OAMBase = (obSel & 0x03) * 0x2000;
+
+		for (int y = 0;y < spriteDimY;y++)
+		{
+			for (int x = 0;x != spriteDimX; x+=1)
 			{
 				const unsigned char shift_x = 7 - (x % 8);
 				const unsigned short int tile_address = OAMBase + (tile_nr + x / 8) * 0x10 + (y % 8) + (y / 8 * 0x100);
@@ -443,23 +484,27 @@ void ppu::renderSprites()
 				const unsigned char b_2 = vram[tile_address] >> 8;
 				const unsigned char b_3 = vram[tile_address + 8] & 0xff;
 				const unsigned char b_4 = vram[tile_address + 8] >> 8;
-				const unsigned short int v = ((b_1 >> shift_x) & 1) +
+				const unsigned short int pixPalIdx = ((b_1 >> shift_x) & 1) +
 					(2 * ((b_2 >> shift_x) & 1)) +
 					(4 * ((b_3 >> shift_x) & 1)) +
 					(8 * ((b_4 >> shift_x) & 1));
 
-				if ((v % 8) != 0)
+				if (pixPalIdx != 0)
 				{
-					unsigned int pixaddr = ((x_pos + x) + ((y_pos + y) * ppuResolutionX)) * 4;
+					int realx = x;
+					if (x_flip) realx = spriteDimX - x - 1;
+					unsigned int pixaddr = ((x_pos + realx) + ((y_pos + y) * ppuResolutionX)) * 4;
 					if (pixaddr < (ppuResolutionX * ppuResolutionY * 4))
 					{
 						unsigned char* pBuf = &screenFramebuffer[pixaddr];
-						*pBuf = 0xff; pBuf++;
-						*pBuf = 0xff; pBuf++;
-						*pBuf = 0xff; pBuf++;
+						*pBuf = palArr[(pixPalIdx * 3) + 0]; pBuf++;
+						*pBuf = palArr[(pixPalIdx * 3) + 1]; pBuf++;
+						*pBuf = palArr[(pixPalIdx * 3) + 2]; pBuf++;
 						*pBuf = 0xff;
 					}
 				}
+
+
 			}
 		}
 	}
@@ -495,8 +540,8 @@ void ppu::renderScreen()
 		// 1      16-color    16-color    4-color     -         ;Normal
 		renderBackdrop();
 		if (((mainScreenDesignation & 0x1f) & (1 << 2)) > 0) renderBG(2,2);
-		//if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBG(1,4);
-		//if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBG(0,4);
+		if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBG(1,4);
+		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBG(0,4);
 	}
 	else if (screenMode == 0x03)
 	{
@@ -507,35 +552,33 @@ void ppu::renderScreen()
 	}
 
 	// now OAM Sprites
-
 	renderSprites();
 
 	// final pass, master brightness!
-
 	int brightness = iniDisp & 0x0f;
 	if ((iniDisp & 0x80) == 0x80) brightness = 0;
-	
-	for (int pos = 0;pos < (ppuResolutionX * ppuResolutionY * 4);pos += 4)
+
+	if (brightness != 15)
 	{
-		int val;
-		val = screenFramebuffer[pos+0];
-		val *= brightness;
-		val >>= 4;
-		screenFramebuffer[pos + 0] = val;
+		for (int pos = 0;pos < (ppuResolutionX * ppuResolutionY * 4);pos += 4)
+		{
+			int val;
+			val = screenFramebuffer[pos + 0];
+			val *= brightness;
+			val >>= 4;
+			screenFramebuffer[pos + 0] = val;
 
-		val = screenFramebuffer[pos + 1];
-		val *= brightness;
-		val >>= 4;
-		screenFramebuffer[pos + 1] = val;
+			val = screenFramebuffer[pos + 1];
+			val *= brightness;
+			val >>= 4;
+			screenFramebuffer[pos + 1] = val;
 
-		val = screenFramebuffer[pos + 2];
-		val *= brightness;
-		val >>= 4;
-		screenFramebuffer[pos + 2] = val;
+			val = screenFramebuffer[pos + 2];
+			val *= brightness;
+			val >>= 4;
+			screenFramebuffer[pos + 2] = val;
+		}
 	}
-
-
-
 }
 
 void ppu::step(int numCycles, mmu& theMMU, cpu5a22& theCPU)

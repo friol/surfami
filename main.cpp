@@ -572,20 +572,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
     std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc"; 
-    //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc"; // 7b
+    //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc"; // 6f
     //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc";
     //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc"; // 45
     //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // cb
     //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc";
     //std::string romName = "d:\\prova\\snes\\Frogger (U).smc";
     //std::string romName = "d:\\prova\\snes\\Race Drivin' (U).smc"; // 1f
-    //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc"; // opcode 7b
+    //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc"; // mode7 
     //std::string romName = "d:\\prova\\snes\\Arkanoid - Doh it Again (E) [!].smc"; // 87 mode7
     //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc"; // waits for joypad?
-    //std::string romName = "d:\\prova\\snes\\Home Alone (E) [!].smc"; // 45
+    //std::string romName = "d:\\prova\\snes\\Home Alone (E) [!].smc"; // 66
     //std::string romName = "d:\\prova\\snes\\Kick Off (E).smc";
-    //std::string romName = "d:\\prova\\snes\\Super Off Road (E) [!].smc";
+    //std::string romName = "d:\\prova\\snes\\Super Off Road (E) [!].smc"; // 66
     //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc"; 
     //std::string romName = "d:\\prova\\snes\\Sensible Soccer - International Edition (E).smc";
 
