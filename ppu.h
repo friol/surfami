@@ -1,6 +1,9 @@
 #ifndef PPU_H
 #define PPU_H
 
+class mmu;
+class cpu5a22;
+
 class ppu
 {
 private:
@@ -15,7 +18,7 @@ private:
 	unsigned char vramAddressUpper;
 
 	int bgMode;
-	int bgTileBaseAddress;
+	int bgTileBaseAddress=0;
 	int mainScreenDesignation=0;
 
 	int bgTileMapBaseAddress[4];
@@ -28,12 +31,19 @@ private:
 	int ppuResolutionX = 256;
 	int ppuResolutionY = 224;
 	unsigned char* screenFramebuffer;
-	void renderTile2bpp(int px, int py, int tileNum, int palId);
-	void renderTile4bpp(int px, int py, int tileNum, int palId);
-	void renderTile8bpp(int px, int py, int tileNum, int palId);
+	void renderTile2bpp(int px, int py, int tileNum, int palId, int bgnum);
+	void renderTile4bpp(int px, int py, int tileNum, int palId, int bgnum);
+	void renderTile8bpp(int px, int py, int tileNum, int palId, int bgnum);
 
 	void renderBackdrop();
 	void renderBG(int bgnum,int bpp);
+
+	unsigned int scanline=0;
+	unsigned int internalCyclesCounter = 0;
+
+	const int vblankStartScanline = 0xf0;
+	const int cyclesPerScanline = 1364;
+	const int totScanlines = 262;
 
 public:
 
@@ -51,6 +61,8 @@ public:
 	int getPPUResolutionX() { return ppuResolutionX; }
 	int getPPUResolutionY() { return ppuResolutionY; }
 	unsigned char* getPPUFramebuffer() { return screenFramebuffer; }
+
+	void step(int numCycles,mmu& theMMU,cpu5a22& theCPU);
 
 	~ppu();
 };

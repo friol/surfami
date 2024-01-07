@@ -504,9 +504,39 @@ int cpu5a22::doSBC(unsigned int addr,int& pcAdder)
 
 int cpu5a22::stepOne()
 {
-	//unsigned char nextOpcode = pMMU->read8(regPC);
-	unsigned char nextOpcode = pMMU->read8((regPB << 16) | regPC);
+	if (nmiRequested)
+	{
+		pushToStack8(regPB);
+		pushToStack8((unsigned char)(regPC >> 8));
+		pushToStack8((unsigned char)(regPC & 0xff));
+		pushToStack8((unsigned char)(regP.getByte()));
 
+		int loNMIVec = pMMU->read8(0xffea);
+		int hiNMIVec = pMMU->read8(0xffeb);
+		regPC = (unsigned short int)(loNMIVec | (hiNMIVec << 8));
+
+		regPB = 0x00;
+		nmiRequested = false;
+	}
+	else if (irqRequested)
+	{
+		if (regP.getIRQDisable() == 0)
+		{
+			pushToStack8(regPB);
+			pushToStack8((unsigned char)(regPC >> 8));
+			pushToStack8((unsigned char)(regPC & 0xff));
+			pushToStack8((unsigned char)(regP.getByte()));
+
+			int loIrqVec = pMMU->read8(0xffee);
+			int hiIrqVec = pMMU->read8(0xffef);
+			regPC = (unsigned short int)(loIrqVec | (hiIrqVec << 8));
+
+			regPB = 0x00;
+			irqRequested = false;
+		}
+	}
+
+	unsigned char nextOpcode = pMMU->read8((regPB << 16) | regPC);
 	int cycles = 0;
 
 	switch (nextOpcode)
@@ -4342,6 +4372,250 @@ int cpu5a22::stepOne()
 			}
 
 			cycles = 2 + cycleAdder;
+			break;
+		}
+		case 0x40:
+		{
+			// RTI, finally
+
+			if (regP.getEmulation()) 
+			{
+				regP.setByte(pullFromStack());
+
+				regP.setAccuMemSize(1);
+				regP.setIndexSize(1, regX_hi, regY_hi);
+
+				regP.setAccuMemSize(1);
+				regP.setIndexSize(1, regX_hi, regY_hi);
+				unsigned char lo = pullFromStack();
+				unsigned char hi = pullFromStack();
+				regPC = (regPB << 16) | (hi << 8) | lo;
+			}
+			else 
+			{
+				unsigned char p = pullFromStack();
+				regP.setByte(p);
+				regP.setIndexSize(regP.getIndexSize(), regX_hi, regY_hi);
+				unsigned char lo = pullFromStack();
+				unsigned char hi = pullFromStack();
+				regPB=pullFromStack();
+				regPC = (regPB << 16) | (hi << 8) | lo;
+			}
+
+			cycles=6 + regP.getEmulation();
+			break;
+		}
+		case 0xfe:
+		{
+			// INC addr,X
+			int cycAdder = 0;
+			unsigned int addr = getAbsoluteAddress16IndexedX();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				val++;
+				pMMU->write8(addr, val);
+				regP.setNegative(val >> 7);
+				regP.setZero(val == 0);
+			}
+			else
+			{
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+
+				unsigned short int val = (hi << 8) | lo;
+				val++;
+
+				pMMU->write8(addr, val & 0xff);
+				pMMU->write8(addr + 1, val >> 8);
+				regP.setNegative(val >> 15);
+				regP.setZero(val == 0);
+				cycAdder += 2;
+			}
+
+			regPC += 3;
+			cycles = 7 + cycAdder;
+			break;
+		}
+		case 0x3d:
+		{
+			// AND addr,X - the three-dimensional opcode
+			int cycAdder = 0;
+			unsigned int addr = getAbsoluteAddress16IndexedX();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				regA_lo = regA_lo & val;
+				regP.setNegative(regA_lo >> 7);
+				regP.setZero((regA_lo & 0xff) == 0);
+			}
+			else {
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned short int val = (hi << 8) | lo;
+
+				int accu = regA_lo | (regA_hi << 8);
+
+				unsigned short int res = ((unsigned short)(accu & val));
+				regA_lo = res & 0xff;
+				regA_hi = res >> 8;
+
+				regP.setNegative((regA_lo | (regA_hi << 8)) >> 15);
+				regP.setZero((regA_lo | (regA_hi << 8)) == 0);
+				cycAdder = 1;
+			}
+
+			regPC += 3;
+			cycles = 4 + cycAdder; // check page crossed
+			break;
+		}
+		case 0xba:
+		{
+			// TSX TSX
+			if (regP.getIndexSize()) 
+			{
+				unsigned char val = regSP & 0xff;;
+				
+				regX_lo = val;
+				
+				regP.setZero(val == 0);
+				regP.setNegative(val >> 7);
+			}
+			else 
+			{
+				unsigned short int val = regSP;
+				
+				regX_lo = val & 0xff;
+				regX_hi = val >> 8;
+				
+				regP.setZero(val == 0);
+				regP.setNegative(val >> 15);
+			}
+
+			regPC += 1;
+			cycles = 2;
+			break;
+		}
+		case 0x3b:
+		{
+			// TSC
+			regA_lo = regSP & 0xff;
+			regA_hi = regSP>>8;
+			regP.setZero((regA_lo|(regA_hi<<8)) == 0);
+			regP.setNegative((regA_lo | (regA_hi << 8)) >> 15);
+			regPC += 1;
+			cycles = 2;
+			break;
+		}
+		case 0x94:
+		{
+			// STY dp,X
+			int cycAdder = 0;
+			unsigned int addr = getDirectPageIndexedXAddress();
+
+			pMMU->write8(addr, regY_lo);
+			if (regP.getIndexSize() == false)
+			{
+				pMMU->write8(addr + 1, regY_hi);
+				cycAdder += 1;
+			}
+
+			if (regP.isDPLowNotZero()) cycAdder += 1;
+
+			regPC += 2;
+			cycles = 4 + cycAdder;
+			break;
+		}
+		case 0x35:
+		{
+			// AND dp,X
+			int cycAdder = 0;
+			unsigned int addr = getDirectPageIndexedXAddress();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				regA_lo = regA_lo & val;
+				regP.setNegative(regA_lo >> 7);
+				regP.setZero((regA_lo & 0xff) == 0);
+			}
+			else 
+			{
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned short int val = (hi << 8) | lo;
+
+				int accu = regA_lo | (regA_hi << 8);
+
+				unsigned short int res = ((unsigned short)(accu & val));
+				regA_lo = res & 0xff;
+				regA_hi = res >> 8;
+
+				regP.setNegative((regA_lo | (regA_hi << 8)) >> 15);
+				regP.setZero((regA_lo | (regA_hi << 8)) == 0);
+				cycAdder = 1;
+			}
+
+			if (regP.isDPLowNotZero()) cycAdder += 1;
+
+			regPC += 2;
+			cycles = 4 + cycAdder;
+			break;
+		}
+		case 0x2e:
+		{
+			// ROL addr
+			int cycAdder = 0;
+			unsigned int addr = getAbsoluteAddress16();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				unsigned char old_C = regP.getCarry();
+				regP.setCarry(val >> 7);
+				val = (val << 1) + old_C;
+				pMMU->write8(addr, val);
+				regP.setZero(val == 0);
+				regP.setNegative(val >> 7);
+			}
+			else
+			{
+				unsigned short int val = (pMMU->read8(addr + 1) << 8) | pMMU->read8(addr);
+				unsigned char old_C = regP.getCarry();
+				regP.setCarry(val >> 15);
+				val = (val << 1) + old_C;
+				pMMU->write8(addr, (unsigned char)val);
+				pMMU->write8(addr + 1, val >> 8);
+				regP.setZero(val == 0);
+				regP.setNegative(val >> 15);
+				cycAdder += 2;
+			}
+
+			regPC += 3;
+			cycles = 6 + cycAdder;
+			break;
+		}
+		case 0xdb:
+		{
+			// STP TODO
+			regPC += 1;
+			break;
+		}
+		case 0x79:
+		{
+			// ADC addr,Y
+			unsigned int addr = getAbsoluteAddress16IndexedY();
+			cycles = doADC(addr);
+			regPC += 3;
+			break;
+		}
+		case 0xf8:
+		{
+			// SED
+			regP.setDecimal(1);
+			regPC += 1;
 			break;
 		}
 		default:

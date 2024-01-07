@@ -175,10 +175,11 @@ private:
 	regStatus regP;
 
 	bool isTestMMU;
-	//mmu* pRealMMU;
-	//testMMU* pMockMMU;
-	//genericMMU* getMMU();
 	genericMMU* pMMU;
+
+	bool irqRequested = false;
+	bool nmiRequested = false;
+	//bool nmiFlag = false;
 
 	void pushToStack8(unsigned char val);
 	void pushToStack16(unsigned short int val);
@@ -229,6 +230,10 @@ public:
 	
 	void setState(unsigned int pc, unsigned short int a, unsigned short int x, unsigned short int y,
 		unsigned short int sp, unsigned char dbr, unsigned short int d, unsigned char pb, unsigned char p,unsigned char e);
+
+	void triggerNMI() { nmiRequested = true; }
+	//bool getNMIFlag() { return nmiFlag;  }
+	//void clearNMIFlag() { nmiFlag = false; }
 	
 	~cpu5a22();
 };

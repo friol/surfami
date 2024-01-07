@@ -128,8 +128,13 @@ void mmu::write8(unsigned int address, unsigned char val)
 			snesRAM[0x7e0000 + adr] = val;
 		}
 
-
-		if (adr == 0x420B) // DMA start reg
+		if (adr == 0x4200)
+		{
+			// NMITIMEN - Interrupt Enable and Joypad Request (W)
+			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x4200 (NMITIMEN - Interrupt Enable and Joypad Request)");
+			nmiTimen = val;
+		}
+		else if (adr == 0x420B) // DMA start reg
 		{
 			DMAstart(val);
 		}
@@ -222,7 +227,7 @@ unsigned char mmu::read8(unsigned int address)
 
 		if (adr == 0x4210)
 		{
-			if (NMI == 0x42) 
+			/*if (NMI == 0x42)
 			{
 				NMI = 0xc2;
 				return NMI;
@@ -231,11 +236,15 @@ unsigned char mmu::read8(unsigned int address)
 			{
 				NMI = 0x42;
 				return NMI;
-			}
+			}*/
 
-			//bool res = interrupts.isNMIFlagged();
-			//interrupts.clearNMIFlag();
-			//return (res << 7) | 0x62;
+			//bool res = pCPU->getNMIFlag();
+			bool res = nmiFlag;
+			if (res)
+			{
+				nmiFlag = false;
+			}
+			return (res << 7) | 0x02;
 		}
 
 		return snesRAM[adr];

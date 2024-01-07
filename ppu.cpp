@@ -2,6 +2,8 @@
 /* PPU - surFami */
 
 #include "ppu.h"
+#include "mmu.h"
+#include "cpu5a22.h"
 
 ppu::ppu()
 {
@@ -121,7 +123,7 @@ void ppu::writeRegister(int reg, unsigned char val)
 
 int ppu::getCurrentBGMode()
 {
-	int screenMode = (bgMode & 0x03);
+	int screenMode = (bgMode & 0x07);
 	return screenMode;
 }
 
@@ -186,7 +188,7 @@ void ppu::renderBackdrop()
 	}
 }
 
-void ppu::renderTile2bpp(int px, int py, int tileNum,int palId)
+void ppu::renderTile2bpp(int px, int py, int tileNum,int palId, int bgnum)
 {
 	unsigned char* pBuf;
 	unsigned char palArr[3*4];
@@ -208,6 +210,8 @@ void ppu::renderTile2bpp(int px, int py, int tileNum,int palId)
 	}
 
 	int tileAddr = tileNum * 8;
+	tileAddr += ((bgTileBaseAddress >> (4 * bgnum)) & 0x0f) * 1024 * 4;
+	tileAddr &= 0x7fff;
 
 	for (int y = 0;y < 8;y++)
 	{
@@ -238,7 +242,7 @@ void ppu::renderTile2bpp(int px, int py, int tileNum,int palId)
 
 }
 
-void ppu::renderTile4bpp(int px, int py, int tileNum, int palId)
+void ppu::renderTile4bpp(int px, int py, int tileNum, int palId, int bgnum)
 {
 	unsigned char* pBuf;
 	const int numCols = 16;
@@ -261,6 +265,8 @@ void ppu::renderTile4bpp(int px, int py, int tileNum, int palId)
 	}
 
 	int tileAddr = tileNum * 16;
+	tileAddr += ((bgTileBaseAddress >> (4 * bgnum)) & 0x0f) * 1024 * 4;
+	tileAddr &= 0x7fff;
 
 	for (int y = 0;y < 8;y++)
 	{
@@ -294,7 +300,7 @@ void ppu::renderTile4bpp(int px, int py, int tileNum, int palId)
 
 }
 
-void ppu::renderTile8bpp(int px, int py, int tileNum, int palId)
+void ppu::renderTile8bpp(int px, int py, int tileNum, int palId, int bgnum)
 {
 	unsigned char* pBuf;
 	const int numCols = 256;
@@ -317,6 +323,8 @@ void ppu::renderTile8bpp(int px, int py, int tileNum, int palId)
 	}
 
 	int tileAddr = tileNum * 32;
+	tileAddr += ((bgTileBaseAddress >> (4 * bgnum)) & 0x0f) * 1024 * 4;
+	tileAddr &= 0x7fff;
 
 	for (int y = 0;y < 8;y++)
 	{
@@ -368,9 +376,9 @@ void ppu::renderBG(int bgnum,int bpp)
 				int tileNum = vramWord & 0x3ff;
 				int palId = (vramWord >> 10) & 0x7;
 
-				if (bpp==2) renderTile2bpp(x * 8, y * 8, tileNum, palId);
-				else if (bpp==4) renderTile4bpp(x * 8, y * 8, tileNum, palId);
-				else if (bpp==8) renderTile8bpp(x * 8, y * 8, tileNum, palId);
+				if (bpp==2) renderTile2bpp(x * 8, y * 8, tileNum, palId,bgnum);
+				else if (bpp==4) renderTile4bpp(x * 8, y * 8, tileNum, palId,bgnum);
+				else if (bpp==8) renderTile8bpp(x * 8, y * 8, tileNum, palId,bgnum);
 				tileAddr++;
 		}
 	}
@@ -388,7 +396,7 @@ void ppu::renderScreen()
 	*/
 
 	// rendering depends on screen mode
-	int screenMode = (bgMode & 0x03);
+	int screenMode = (bgMode & 0x07);
 	if (screenMode == 0)
 	{
 		// 0      4-color     4-color     4-color     4-color   ;Normal   
@@ -415,6 +423,34 @@ void ppu::renderScreen()
 		renderBackdrop();
 		if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBG(1, 4);
 		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBG(0, 8);
+	}
+}
+
+void ppu::step(int numCycles, mmu& theMMU, cpu5a22& theCPU)
+{
+	internalCyclesCounter += numCycles;
+
+	if (internalCyclesCounter >= cyclesPerScanline)
+	{
+		scanline += 1;
+		internalCyclesCounter %= cyclesPerScanline;
+
+		// NMI
+		if (scanline == vblankStartScanline)
+		{
+			theMMU.setNMIFlag();
+			// trigger nmi if not blocked
+			if (theMMU.isVblankNMIEnabled())
+			{
+				theCPU.triggerNMI();
+			}
+		}
+
+		if (scanline >= totScanlines)
+		{
+			scanline = 0;
+			theMMU.clearNMIFlag();
+		}
 	}
 }
 

@@ -7,28 +7,36 @@
 #include <sstream>
 #include "ppu.h"
 #include "apu.h"
+#include "cpu5a22.h"
 #include "genericMMU.h"
 
 class mmu: public genericMMU
 {
 private:
 
+	cpu5a22* pCPU;
 	ppu* pPPU;
 	apu* pAPU;
 	unsigned char* snesRAM;
 
+	bool nmiFlag = false;
+
 	void DMAstart(unsigned char val);
 
 	unsigned char NMI=0x42;
+	unsigned char nmiTimen = 0;
 
 public:
 
 	mmu(ppu& thePPU,apu& theAPU);
+	void setCPU(cpu5a22& theCPU) { pCPU = &theCPU; }
 	void write8(unsigned int address, unsigned char val);
 	unsigned char read8(unsigned int address);
 	unsigned char* getInternalRAMPtr() { return snesRAM; }
+	bool isVblankNMIEnabled() { return ((nmiTimen & 0x80) == 0x80); }
+	void setNMIFlag() { nmiFlag = true; }
+	void clearNMIFlag() { nmiFlag = false; }
 	~mmu();
-
 };
 
 #endif

@@ -36,12 +36,17 @@ static const debugInfoRec debugInstrData[] =
 	{0x2b,1,"PLD",None,false,false,true}, // validated
 	{0x2c,3,"BIT param0",Absolute16,false,false,true}, // validated
 	{0x2d,3,"AND param0",Absolute16,false,false,true}, // validated
+	{0x2e,3,"ROL param0",Absolute16,false,false,true}, // validated
 	{0x2f,4,"AND param0",AbsoluteLong,false,false,true}, // validated
 	{0x30,2,"BMI param0",Immediate8,false,false,true}, // validated
 	{0x32,2,"AND (param0)",Immediate8,false,false,true}, // validated
+	{0x35,2,"AND param0,X",Immediate8,false,false,true}, // validated
 	{0x38,1,"SEC",None,false,false,true}, // validated
 	{0x3a,1,"DEC A",None,false,false,true}, // validated
-	{0x44,3,"MVP param0",Absolute16,false,false,true}, // fails
+	{0x3b,1,"TSC",None,false,false,true}, // validated
+	{0x3d,3,"AND param0,X",Absolute16,false,false,true}, // validated
+	{0x40,1,"RTI",None,false,false,true}, // validated
+	{0x44,3,"MVP param0",Absolute16,false,false,true},
 	{0x46,2,"LSR param0",Immediate8,false,false,true}, // validated
 	{0x48,1,"PHA",None,false,false,true}, // validated
 	{0x49,2,"EOR param0",Immediate,false,true,true}, // validated
@@ -52,7 +57,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x4B,1,"PHK",None,false,false,true}, // validated
 	{0x50,2,"BVC param0",Immediate8,false,false,true},
 	{0x54,3,"MVN param0",Absolute16,false,false,true},
-	{0x55,2,"EOR param0,X",Absolute16,false,false,true}, // validated
+	{0x55,2,"EOR param0,X",Immediate8,false,false,true}, // validated
 	{0x58,1,"CLI",None,false,false,true}, // validated
 	{0x5a,1,"PHY",None,false,false,true}, // validated
 	{0x5b,1,"TCD",None,false,false,true}, // validated
@@ -74,6 +79,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x75,2,"ADC param0,X",Immediate8,false,false,true},
 	{0x77,2,"ADC [param0],Y",Immediate8,false,false,true},
 	{0x78,1,"SEI",None,false,false,true}, // validated
+	{0x79,3,"ADC param0,Y",Absolute16,false,false,true},
 	{0x7a,1,"PLY",None,false,false,true}, // validated
 	{0x7c,3,"JMP (param0,X)",Absolute16,false,false,true}, // validated
 	{0x80,2,"BRA param0",Immediate8,false,false,true}, // validated
@@ -92,6 +98,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x90,2,"BCC param0",Immediate8,false,false,true}, // validated
 	{0x91,2,"STA (param0),Y",Immediate8,false,false,true}, // validated
 	{0x92,2,"STA (param0)",Immediate8,false,false,true}, // validated
+	{0x94,2,"STY param0,X",Immediate8,false,false,true}, // validated
 	{0x95,2,"STA _dp_ param0,X",Immediate8,false,false,true}, // validated
 	{0x97,2,"STA [param0],Y",Immediate8,false,false,true}, // validated
 	{0x98,1,"TYA",None,false,false,true}, // validated
@@ -125,6 +132,7 @@ static const debugInfoRec debugInstrData[] =
 	{0xB7,2,"LDA [param0],Y",Immediate8,false,false,true}, // validated
 	{0xB9,3,"LDA param0,Y",Absolute16,false,false,true}, // validated
 	{0xB8,1,"CLV",None,false,false,true}, // validated
+	{0xba,1,"TSX",None,false,false,true}, // validated
 	{0xbb,1,"TYX",None,false,false,true}, // validated
 	{0xBC,3,"LDY param0,X",Absolute16,false,false,true}, // validated
 	{0xBE,3,"LDX param0,Y",Absolute16,false,false,true}, // validated
@@ -145,6 +153,7 @@ static const debugInfoRec debugInstrData[] =
 	{0xd8,1,"CLD",None,false,false,true}, // validated
 	{0xD9,3,"CMP param0,Y",Absolute16,false,false,true}, // validated
 	{0xda,1,"PHX",None,false,false ,true}, // validated
+	{0xdb,1,"STP",None,false,false,true},
 	{0xDD,3,"CMP param0,X",Absolute16,false,false,true}, // validated
 	{0xDE,3,"DEC param0,X",Absolute16,false,false,true}, // validated
 	{0xdf,4,"CMP param0,X",AbsoluteLong,false,false ,true}, // validated
@@ -162,10 +171,12 @@ static const debugInfoRec debugInstrData[] =
 	{0xea,1,"NOP",None,false,false,true}, // validated
 	{0xf0,2,"BEQ param0",Immediate8,false,false,true}, // validated
 	{0xF4,3,"PEA param0",Absolute16,false,false,true}, // validated
+	{0xF8,1,"SED",None,false,false,true}, // validated
 	{0xF9,3,"SBC param0,Y",Absolute16,false,false,true},
 	{0xFA,1,"PLX",None,false,false,true}, // validated
 	{0xFB,1,"XCE",None,false,false,true}, // validated
 	{0xfc,3,"JSR (param0,X)",Absolute16,false,false ,true}, // fuck
+	{0xfe,3,"INC param0,X",Absolute16,false,false ,true}, // validated
 	{0xff,4,"SBC param0,X",AbsoluteLong,false,false ,true},
 };
 
@@ -280,6 +291,11 @@ std::string debugger5a22::processDisasmTemplate(std::string disasmTmpl,const deb
 	{
 		std::stringstream strr;
 		std::string hexPaddedConst;
+
+		if (bytez.size() < 3)
+		{
+			int err = 1;
+		}
 
 		unsigned short int mem = bytez[1];
 		mem |= ((int)bytez[2]) << 8;

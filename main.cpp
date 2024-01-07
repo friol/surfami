@@ -179,7 +179,7 @@ void displayRegistersWindow(cpu5a22& theCPU,unsigned long int totCPUCycles)
     ImGui::End();
 }
 
-void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& theMMU,bool& isDebugWindowFocused,bool& rush,int& rushAddress,char* jumpToAppoBuf,unsigned long int& totCPUCycles,int& emustatus)
+void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& theMMU,bool& isDebugWindowFocused,bool& rush,int& rushAddress,char* jumpToAppoBuf,unsigned long int& totCPUCycles,int& emustatus,ppu& thePPU)
 {
     unsigned int realPC = (theCPU.getPB() << 16) | theCPU.getPC();
     std::vector<disasmInfoRec> disasmed = theDebugger5a22.debugCode(realPC, 20, &theCPU, &theMMU);
@@ -253,7 +253,12 @@ void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& the
     ImGui::Text(" ");
     if (ImGui::Button("StepOne"))
     {
-        totCPUCycles += theCPU.stepOne();
+        int cycs= theCPU.stepOne();
+        if (cycs != -1)
+        {
+            totCPUCycles += cycs;
+            thePPU.step(cycs,theMMU,theCPU);
+        }
     }
     
     ImGui::SameLine();
@@ -267,6 +272,7 @@ void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& the
             if (res != -1)
             {
                 totCPUCycles += res;
+                thePPU.step(res, theMMU, theCPU);
             }
         }
     }
@@ -276,10 +282,20 @@ void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& the
     if (ImGui::Button("Step 100"))
     {
         int res = 0;
+        int cycs;
         while (res <100)
         {
-            totCPUCycles += theCPU.stepOne();
-            res += 1;
+            cycs = theCPU.stepOne();
+            if (cycs != -1)
+            {
+                totCPUCycles += cycs;
+                thePPU.step(cycs, theMMU, theCPU);
+                res += 1;
+            }
+            else
+            {
+                res = 100;
+            }
         }
     }
 
@@ -288,10 +304,20 @@ void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& the
     if (ImGui::Button("Step 10k"))
     {
         int res = 0;
+        int cycs;
         while (res < 10000)
         {
-            totCPUCycles += theCPU.stepOne();
-            res += 1;
+            cycs = theCPU.stepOne();
+            if (cycs != -1)
+            {
+                totCPUCycles += cycs;
+                thePPU.step(cycs, theMMU, theCPU);
+                res += 1;
+            }
+            else
+            {
+                res = 10000;
+            }
         }
     }
 
@@ -542,25 +568,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Rings.sfc";
     //std::string romName = "d:\\prova\\snes\\MosaicMode3.sfc";
 
-    //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc";
-    //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc"; 
+    std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc"; // 66
+    //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc"; // 00
     //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc"; // jumps nowhere
     //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc"; // jumps to nowhere
-    //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
-    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // jumps to 0 after 50k cycles
-    //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc"; // waiting IRQ
-    //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // waiting IRQ
+    //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc"; // 6c
+    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // jumps to nowhere after 50k cycles
+    //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc"; // 45
+    //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // 79
     //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc";
     //std::string romName = "d:\\prova\\snes\\Frogger (U).smc";
-    //std::string romName = "d:\\prova\\snes\\Race Drivin' (U).smc";
-    //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc"; // opcode 2e
-    //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc";
+    //std::string romName = "d:\\prova\\snes\\Race Drivin' (U).smc"; // 1f
+    //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc"; // opcode 7b
+    //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc"; // mode7 
     //std::string romName = "d:\\prova\\snes\\Arkanoid - Doh it Again (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc"; // waits for joypad
     //std::string romName = "d:\\prova\\snes\\Home Alone (E) [!].smc"; // 6c
-    //std::string romName = "d:\\prova\\snes\\Kick Off (E).smc";
+    //std::string romName = "d:\\prova\\snes\\Kick Off (E).smc"; // 83
     //std::string romName = "d:\\prova\\snes\\Super Off Road (E) [!].smc";
-    //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc";
+    //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc"; // 7d
+    //std::string romName = "d:\\prova\\snes\\Sensible Soccer - International Edition (E).smc"; // 87
 
     //std::string romName = "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc";
     //std::string romName = "d:\\prova\\snes\\elix-smashit-pal.sfc"; // cb WAI
@@ -747,6 +774,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     debugger5a22 theDebugger5a22;
     cpu5a22 theCPU(&theMMU,false);
     theCPU.reset();
+    theMMU.setCPU(theCPU);
 
     //
 
@@ -787,7 +815,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         {
             if (isDebugWindowFocused)
             {
-                totCPUCycles += theCPU.stepOne();
+                int cycs= theCPU.stepOne();
+                if (cycs != -1)
+                {
+                    totCPUCycles += cycs;
+                    thePPU.step(cycs, theMMU, theCPU);
+                }
             }
         }
 
@@ -800,7 +833,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
 
         bool rush = false;
         int rushToAddress = 0;
-        displayDebugWindow(theCPU, theDebugger5a22,theMMU,isDebugWindowFocused,rush,rushToAddress,jumpToAppoBuf,totCPUCycles,emustatus);
+        displayDebugWindow(theCPU, theDebugger5a22,theMMU,isDebugWindowFocused,rush,rushToAddress,jumpToAppoBuf,totCPUCycles,emustatus,thePPU);
         displayRegistersWindow(theCPU,totCPUCycles);
         displayPaletteWindow(thePPU);
         displayLogWindow();
@@ -817,6 +850,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
                 if (cycs!=-1)
                 {
                     totCPUCycles += cycs;
+                    thePPU.step(cycs,theMMU, theCPU);
                 }
                 else
                 {
