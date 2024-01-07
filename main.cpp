@@ -568,12 +568,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Rings.sfc";
     //std::string romName = "d:\\prova\\snes\\MosaicMode3.sfc";
 
-    //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc"; // mode7?
+    //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc"; // mode7
     //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc"; // 00
     //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
-    //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc";
-    std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc"; // 7b
-    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // jumps to nowhere after 50k cycles
+    std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc";
+    //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc"; // 7b
+    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // cf
     //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc"; // 45
     //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc";
     //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc";
@@ -582,12 +582,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc"; // opcode 7b
     //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc"; // mode7 
     //std::string romName = "d:\\prova\\snes\\Arkanoid - Doh it Again (E) [!].smc"; // 87 mode7
-    //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc"; // waits for joypad
-    //std::string romName = "d:\\prova\\snes\\Home Alone (E) [!].smc";
-    //std::string romName = "d:\\prova\\snes\\Kick Off (E).smc"; // jumps to nowhere
+    //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc"; // waits for joypad?
+    //std::string romName = "d:\\prova\\snes\\Home Alone (E) [!].smc"; // 45
+    //std::string romName = "d:\\prova\\snes\\Kick Off (E).smc";
     //std::string romName = "d:\\prova\\snes\\Super Off Road (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc"; // 7d
-    //std::string romName = "d:\\prova\\snes\\Sensible Soccer - International Edition (E).smc"; // 87
+    //std::string romName = "d:\\prova\\snes\\Sensible Soccer - International Edition (E).smc";
 
     //std::string romName = "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc";
     //std::string romName = "d:\\prova\\snes\\elix-smashit-pal.sfc"; // cb WAI
@@ -614,6 +614,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x809e, 0xea);
         theMMU.write8(0x80ad, 0xea);
         theMMU.write8(0x80ae, 0xea);
+    }
+    else if (romName == "d:\\prova\\snes\\Puzzle Bobble (E).smc")
+    {
+        theMMU.write8(0x858b6d, 0xea);
+        theMMU.write8(0x858b6e, 0xea);
+        theMMU.write8(0x858b34, 0xea);
+        theMMU.write8(0x858b35, 0xea);
+        theMMU.write8(0x858b44, 0xea);
+        theMMU.write8(0x858b45, 0xea);
+
     }
     else if (romName == "d:\\prova\\snes\\Arkanoid - Doh it Again (E) [!].smc")
     {
@@ -686,8 +696,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x879c, 0xea);
         theMMU.write8(0x87b2, 0xea);
         theMMU.write8(0x87b3, 0xea);
+        theMMU.write8(0x87d7, 0xea);
+        theMMU.write8(0x87d8, 0xea);
         theMMU.write8(0x8838, 0xea);
         theMMU.write8(0x8839, 0xea);
+        theMMU.write8(0x87ec, 0xea);
+        theMMU.write8(0x87ed, 0xea);
+        theMMU.write8(0x8803, 0xea);
+        theMMU.write8(0x8804, 0xea);
     }
     else if (romName == "d:\\prova\\snes\\elix-smashit-pal.sfc")
     {
@@ -739,7 +755,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x8ff354, 0xea);
         theMMU.write8(0x8ff334, 0xea);
         theMMU.write8(0x8ff335, 0xea);
-
+        theMMU.write8(0x8ff378, 0xea);
+        theMMU.write8(0x8ff379, 0xea);
+        theMMU.write8(0x8ff38e, 0xea);
+        theMMU.write8(0x8ff38f, 0xea);
     }
     else if (romName == "d:\\prova\\snes\\Chessmaster, The (U).smc")
     {

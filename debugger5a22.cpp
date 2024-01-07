@@ -69,19 +69,21 @@ static const debugInfoRec debugInstrData[] =
 	{0x64,2,"STZ param0",Immediate8,false,false,true}, // validatedF
 	{0x65,2,"ADC param0",Immediate8,false,false,true}, // validatedF
 	{0x68,1,"PLA",None,false,false,true}, // validatedF
+
 	{0x69,2,"ADC param0",Immediate,false,true,true},
+
 	{0x6a,1,"ROR A",None,false,false,true}, // validatedF
 	{0x6b,1,"RTL",None,false,false,true}, // validatedF
 	{0x6c,3,"JMP (param0)",Absolute16,false,false,true}, // validatedF
-	{0x6d,3,"ADC param0",Absolute16,false,false,true},
+	{0x6d,3,"ADC param0",Absolute16,false,false,true}, // validatedF
 	{0x6e,3,"ROR param0",Absolute16,false,false,true}, // validatedF
 	{0x70,2,"BVS param0",Immediate8,false,false,true}, // validatedF
-	{0x73,2,"ADC (param0,S),Y",Immediate8,false,false,true},
+	{0x73,2,"ADC (param0,S),Y",Immediate8,false,false,true}, // validatedF
 	{0x74,2,"STZ param0,X",Immediate8,false,false,true}, // validatedF
-	{0x75,2,"ADC param0,X",Immediate8,false,false,true},
-	{0x77,2,"ADC [param0],Y",Immediate8,false,false,true},
+	{0x75,2,"ADC param0,X",Immediate8,false,false,true}, // validatedF
+	{0x77,2,"ADC [param0],Y",Immediate8,false,false,true}, // validatedF
 	{0x78,1,"SEI",None,false,false,true}, // validatedF
-	{0x79,3,"ADC param0,Y",Absolute16,false,false,true},
+	{0x79,3,"ADC param0,Y",Absolute16,false,false,true}, // validatedF
 	{0x7a,1,"PLY",None,false,false,true}, // validatedF
 	{0x7c,3,"JMP (param0,X)",Absolute16,false,false,true}, // validatedF
 	{0x80,2,"BRA param0",Immediate8,false,false,true}, // validatedF
@@ -165,24 +167,24 @@ static const debugInfoRec debugInstrData[] =
 	{0xE0,2,"CPX param0",Immediate,true,false,true}, // validatedF
 	{0xe2,2,"SEP param0",Immediate8,false,false,true}, // validatedF
 	{0xe4,2,"CPX param0",Immediate8,false,false,true}, // validatedF
-	{0xe5,2,"SBC param0",Immediate8,false,false,true},
+	{0xe5,2,"SBC param0",Immediate8,false,false,true}, // validatedF
 	{0xe6,2,"INC param0",Immediate8,false,false,true}, // validatedF
 	{0xe8,1,"INX",None,false,false,true}, // validatedF
-	{0xe9,2,"SBC param0",Immediate,false,true,true},
+	{0xe9,2,"SBC param0",Immediate,false,true,true}, // validatedF
 	{0xeb,1,"XBA",None,false,false,true}, // validatedF
 	{0xEC,3,"CPX param0",Absolute16,false,false,true}, // validatedF
-	{0xED,3,"SBC param0",Absolute16,false,false,true},
+	{0xED,3,"SBC param0",Absolute16,false,false,true}, // validatedF
 	{0xEE,3,"INC param0",Absolute16,false,false ,true}, // validatedF
 	{0xea,1,"NOP",None,false,false,true}, // validatedF
 	{0xf0,2,"BEQ param0",Immediate8,false,false,true}, // validatedF
 	{0xF4,3,"PEA param0",Absolute16,false,false,true}, // validatedF
 	{0xF8,1,"SED",None,false,false,true}, // validatedF
-	{0xF9,3,"SBC param0,Y",Absolute16,false,false,true},
+	{0xF9,3,"SBC param0,Y",Absolute16,false,false,true}, // validatedF
 	{0xFA,1,"PLX",None,false,false,true}, // validatedF
 	{0xFB,1,"XCE",None,false,false,true}, // validatedF
 	{0xfc,3,"JSR (param0,X)",Absolute16,false,false ,true}, // fuck
 	{0xfe,3,"INC param0,X",Absolute16,false,false ,true}, // validated
-	{0xff,4,"SBC param0,X",AbsoluteLong,false,false ,true},
+	{0xff,4,"SBC param0,X",AbsoluteLong,false,false,true}, // validatedF
 };
 
 debugger5a22::debugger5a22()

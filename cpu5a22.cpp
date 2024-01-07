@@ -495,9 +495,9 @@ int cpu5a22::doADC(unsigned int addr)
 
 		regP.setZero((unsigned short int)(regA) == 0);
 		regP.setNegative((regA & 0x8000) == 0x8000);
+
+		cycAdder += 1;
 	}
-	
-	//cpu_setZN(cpu, cpu->a, cpu->mf);
 
 	cycles = 2 + cycAdder;
 	return cycles;
@@ -507,7 +507,7 @@ int cpu5a22::doSBC(unsigned int addr,int& pcAdder)
 {
 	int cycAdder = 0;
 
-	if (regP.getAccuMemSize())
+	/*if (regP.getAccuMemSize())
 	{
 		unsigned char val = pMMU->read8(addr);
 		val = ~val;
@@ -575,6 +575,69 @@ int cpu5a22::doSBC(unsigned int addr,int& pcAdder)
 		regA_hi = (res >> 8) & 0xff;
 
 		pcAdder = 1;
+	}*/
+
+	if (regP.getAccuMemSize())
+	{
+		unsigned char value = pMMU->read8(addr)^0xff;
+		int result = 0;
+		unsigned short int regA = regA_lo | (regA_hi << 8);
+		if (regP.getDecimal()) 
+		{
+			result = (regA & 0xf) + (value & 0xf) + regP.getCarry();
+			if (result < 0x10) result = (result - 0x6) & ((result - 0x6 < 0) ? 0xf : 0x1f);
+			result = (regA & 0xf0) + (value & 0xf0) + result;
+		}
+		else 
+		{
+			result = (regA & 0xff) + value + regP.getCarry();
+		}
+		
+		regP.setOverflow((regA & 0x80) == (value & 0x80) && (value & 0x80) != (result & 0x80));
+		if (regP.getDecimal() && result < 0x100) result -= 0x60;
+		regP.setCarry(result > 0xff);
+		
+		regA = (regA & 0xff00) | (result & 0xff);
+		regA_lo = regA & 0xff;
+		regA_hi = regA>>8;
+
+		regP.setZero(regA_lo == 0);
+		regP.setNegative((regA_lo & 0x80) == 0x80);
+	}
+	else 
+	{
+		unsigned char lo = pMMU->read8(addr);
+		unsigned char hi = pMMU->read8(addr + 1);
+		unsigned short int value = ((hi << 8) | lo)^0xffff;
+		unsigned short int regA = regA_lo | (regA_hi << 8);
+		int result = 0;
+		if (regP.getDecimal()) 
+		{
+			result = (regA & 0xf) + (value & 0xf) + regP.getCarry();
+			if (result < 0x10) result = (result - 0x6) & ((result - 0x6 < 0) ? 0xf : 0x1f);
+			result = (regA & 0xf0) + (value & 0xf0) + result;
+			if (result < 0x100) result = (result - 0x60) & ((result - 0x60 < 0) ? 0xff : 0x1ff);
+			result = (regA & 0xf00) + (value & 0xf00) + result;
+			if (result < 0x1000) result = (result - 0x600) & ((result - 0x600 < 0) ? 0xfff : 0x1fff);
+			result = (regA & 0xf000) + (value & 0xf000) + result;
+		}
+		else 
+		{
+			result = regA + value + regP.getCarry();
+		}
+
+		regP.setOverflow((regA & 0x8000) == (value & 0x8000) && (value & 0x8000) != (result & 0x8000));
+		if (regP.getDecimal() && result < 0x10000) result -= 0x6000;
+		regP.setCarry(result > 0xffff);
+		
+		regA_lo = result&0xff;
+		regA_hi = result>>8;
+		regA = regA_lo | (regA_hi << 8);
+
+		regP.setZero((unsigned short int)(regA) == 0);
+		regP.setNegative((regA & 0x8000) == 0x8000);
+
+		cycAdder += 1;
 	}
 
 	return (2 + cycAdder);
@@ -2188,6 +2251,7 @@ int cpu5a22::stepOne()
 			{
 				addr = getImmediateAddress16();
 				cycles = doSBC(addr, pcAdder);
+				pcAdder += 1;
 			}
 
 			regPC += 2 + pcAdder;
