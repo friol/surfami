@@ -1418,7 +1418,7 @@ int cpu5a22::stepOne()
 			}
 			else
 			{
-				unsigned short int addr = getImmediateAddress16();
+				unsigned int addr = getImmediateAddress16();
 				cycles = doADC(addr);
 				regPC += 3;
 			}
@@ -1872,7 +1872,7 @@ int cpu5a22::stepOne()
 		}
 		case 0x54:
 		{
-			// MVN xx,xx
+			// MVP xx,xx
 
 			unsigned char dst_bank = pMMU->read8(regPC + 1);
 			unsigned char src_bank = pMMU->read8(regPC + 2);
@@ -4891,6 +4891,175 @@ int cpu5a22::stepOne()
 
 			regPC += 2;
 			cycles = 6 + cycAdder;
+			break;
+		}
+		case 0x39:
+		{
+			// AND addr,Y
+			int cycAdder = 0;
+			unsigned int addr = getAbsoluteAddress16IndexedY();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				regA_lo = regA_lo & val;
+				regP.setNegative(regA_lo >> 7);
+				regP.setZero((regA_lo & 0xff) == 0);
+			}
+			else {
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned short int val = (hi << 8) | lo;
+
+				int accu = regA_lo | (regA_hi << 8);
+
+				unsigned short int res = ((unsigned short)(accu & val));
+				regA_lo = res & 0xff;
+				regA_hi = res >> 8;
+
+				regP.setNegative((regA_lo | (regA_hi << 8)) >> 15);
+				regP.setZero((regA_lo | (regA_hi << 8)) == 0);
+				cycAdder = 1;
+			}
+
+			regPC += 3;
+			cycles = 4 + cycAdder; // TODO check page bound
+			break;
+		}
+		case 0x19:
+		{
+			// ORA addr,Y
+			int cycAdder = 0;
+			unsigned int addr = getAbsoluteAddress16IndexedY();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				unsigned char res = val | regA_lo;
+				regA_lo = res;
+				regP.setNegative(res >> 7);
+				regP.setZero(res == 0);
+			}
+			else
+			{
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned short int val = (hi << 8) | lo;
+				unsigned short int res = val | (regA_lo | (regA_hi << 8));
+
+				regA_lo = res & 0xff;
+				regA_hi = res >> 8;
+
+				regP.setNegative(res >> 15);
+				regP.setZero(res == 0);
+				cycAdder = 1;
+			}
+
+			regPC += 3;
+			cycles = 4 + cycAdder; // TODO bound
+			break;
+		}
+		case 0xcf:
+		{
+			// CMP long
+			int cycAdder = 0;
+			unsigned int addr = getLongAddress();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char m = pMMU->read8(addr);
+				unsigned char val = regA_lo - m;
+				regP.setNegative(val >> 7);
+				regP.setZero(val == 0);
+				regP.setCarry(regA_lo >= m);
+			}
+			else
+			{
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned short int m = (hi << 8) | lo;
+				unsigned short int val = (regA_lo | (regA_hi << 8)) - m;
+				regP.setNegative(val >> 15);
+				regP.setZero(val == 0);
+				regP.setCarry((regA_lo | (regA_hi << 8)) >= m);
+				cycAdder = 1;
+			}
+
+			regPC += 4;
+			cycles = 5 + cycAdder;
+			break;
+		}
+		case 0x59:
+		{
+			// EOR addr,Y
+			int cycAdder = 0;
+			unsigned int addr = getAbsoluteAddress16IndexedY();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				unsigned char res = val ^ (regA_lo & 0xff);
+				regA_lo = res;
+				regP.setNegative(res >> 7);
+				regP.setZero(res == 0);
+			}
+			else
+			{
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned short int val = (hi << 8) | lo;
+				unsigned short int res = val ^ (regA_lo | (regA_hi << 8));
+				regA_lo = res & 0xff;
+				regA_hi = res >> 8;
+				regP.setNegative(res >> 15);
+				regP.setZero(res == 0);
+			}
+
+			regPC += 3;
+			cycles = 4 + cycAdder; // TODO bound
+			break;
+		}
+		case 0x45:
+		{
+			// EOR dp
+			int cycAdder = 0;
+			unsigned int addr = getDirectPageAddress();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				unsigned char res = val ^ (regA_lo & 0xff);
+				regA_lo = res;
+				regP.setNegative(res >> 7);
+				regP.setZero(res == 0);
+			}
+			else
+			{
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned short int val = (hi << 8) | lo;
+				unsigned short int res = val ^ (regA_lo | (regA_hi << 8));
+				regA_lo = res & 0xff;
+				regA_hi = res >> 8;
+				regP.setNegative(res >> 15);
+				regP.setZero(res == 0);
+			}
+
+			if (regP.isDPLowNotZero()) cycAdder += 1;
+
+			regPC += 2;
+			cycles = 3 + cycAdder;
+			break;
+		}
+		case 0x7f:
+		{
+			// ADC addr,X
+			int cycAdder = 0;
+			unsigned int addr = getLongAddressIndexedX();
+			doADC(addr);
+			regPC += 4;
+			if (!regP.getAccuMemSize()) cycAdder += 1;
+			cycles = 5 + cycAdder;
 			break;
 		}
 		default:

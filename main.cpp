@@ -569,13 +569,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\MosaicMode3.sfc";
 
     //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc"; // mode7
-    //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc"; // 00
+    //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
-    std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc";
+    std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc"; // 7f
     //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc"; // 7b
-    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // cf
+    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc";
     //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc"; // 45
-    //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc";
+    //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // cb
     //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc";
     //std::string romName = "d:\\prova\\snes\\Frogger (U).smc";
     //std::string romName = "d:\\prova\\snes\\Race Drivin' (U).smc"; // 1f

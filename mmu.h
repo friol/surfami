@@ -20,11 +20,11 @@ private:
 	unsigned char* snesRAM;
 
 	bool nmiFlag = false;
+	unsigned char nmiTimen = 0;
 
 	void DMAstart(unsigned char val);
 
-	unsigned char NMI=0x42;
-	unsigned char nmiTimen = 0;
+	unsigned char wram281x[3];
 
 public:
 

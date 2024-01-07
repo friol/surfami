@@ -10,8 +10,10 @@ private:
 
 	int cgramIdx = 0;
 	unsigned char cgram[512];
-
 	unsigned short int vram[0x8000];
+	unsigned char OAM[0x220];
+	unsigned short int OAMAddr=0;
+	unsigned short int OAM_Lsb = 0;
 
 	unsigned char vmainVRAMAddrIncrMode;
 	unsigned char vramAddressLower;
@@ -35,6 +37,8 @@ private:
 	void renderTile4bpp(int px, int py, int tileNum, int palId, int bgnum);
 	void renderTile8bpp(int px, int py, int tileNum, int palId, int bgnum);
 
+	void renderSprite(int px, int py, int tileNum, int palId);
+
 	void renderBackdrop();
 	void renderBG(int bgnum,int bpp);
 
@@ -49,6 +53,12 @@ public:
 
 	ppu();
 	void writeRegister(int reg, unsigned char val);
+	
+	void writeOAMAddressLow(unsigned char val) { OAMAddr = (OAMAddr & 0xff00) | val; }
+	void writeOAMAddressHigh(unsigned char val) { OAMAddr = (OAMAddr & 0xff) | (val<<8); }
+	void writeOAM(unsigned char val);
+	unsigned char readOAM() { return OAM[OAMAddr++ & 0x1ff]; }
+
 	void getPalette(unsigned char* destArr);
 	int getCurrentBGMode();
 	void tileViewerRenderTiles();

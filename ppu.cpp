@@ -17,6 +17,11 @@ ppu::ppu()
 		vram[addr] = 0;
 	}
 
+	for (int addr = 0;addr < 0x220;addr++)
+	{
+		OAM[addr] = 0;
+	}
+
 	screenFramebuffer = new unsigned char[ppuResolutionX * ppuResolutionY * 4];
 
 	vramViewerBitmap = new unsigned char[vramViewerXsize * vramViewerYsize * 4];
@@ -24,6 +29,24 @@ ppu::ppu()
 	{
 		vramViewerBitmap[pos] = 0;
 	}
+}
+
+void ppu::writeOAM(unsigned char val)
+{
+	if (OAMAddr % 2 == 0) 
+	{
+		OAM_Lsb = val;
+	}
+	else if (OAMAddr % 2 == 1 && OAMAddr < 0x200) 
+	{
+		OAM[OAMAddr - 1] = OAM_Lsb;
+		OAM[OAMAddr] = val;
+	}
+	if (OAMAddr > 0x1ff) 
+	{
+		OAM[OAMAddr] = val;
+	}
+	OAMAddr++;
 }
 
 void ppu::writeRegister(int reg, unsigned char val)
@@ -76,6 +99,12 @@ void ppu::writeRegister(int reg, unsigned char val)
 
 		int vramAddr = (vramAddressLower | (vramAddressUpper << 8));
 		unsigned char _v_hi_lo = vmainVRAMAddrIncrMode >> 7;
+
+		int addrIncrementStep = vmainVRAMAddrIncrMode & 0x03;
+		if (addrIncrementStep != 0)
+		{
+			int err = 1;
+		}
 
 		if (reg == 0x2118)
 		{
@@ -423,6 +452,59 @@ void ppu::renderScreen()
 		renderBackdrop();
 		if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBG(1, 4);
 		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBG(0, 8);
+	}
+
+	// now OAM Sprites
+
+	for (auto i = 127; i>=0; i--)
+	{
+		const unsigned char byte1 = OAM[(i * 4)];
+		const unsigned char byte2 = OAM[(i * 4) + 1];
+		const unsigned char byte3 = OAM[(i * 4) + 2];
+		const unsigned char byte4 = OAM[(i * 4) + 3];
+		const unsigned char attr = (OAM[512 + (i / 4)] >> ((i % 4) * 2)) & 0b11;
+
+		int x_pos = (((attr & 1) << 8) | byte1) & 0x1ff;
+		int y_pos = byte2;
+		int tile_nr = ((byte4 & 1) << 8) | byte3;
+		int y_flip = byte4 >> 7;
+		int x_flip = (byte4 >> 6) & 1;
+		//priority = (byte4 >> 4) & 0b11;
+		int palette = (byte4 >> 1) & 0b111;
+
+		const unsigned int OAMBase = 0xc000 / 2;
+
+		for (int y = 0;y < 16;y++)
+		{
+			for (int x = 0;x < 16;x++)
+			{
+				const unsigned char shift_x = 7 - (x % 8);
+				const unsigned short int tile_address = OAMBase + (tile_nr + x / 8) * 0x10 + (y % 8) + (y / 8 * 0x100);
+				const unsigned char b_1 = vram[tile_address] & 0xff;
+				const unsigned char b_2 = vram[tile_address] >> 8;
+				const unsigned char b_3 = vram[tile_address + 8] & 0xff;
+				const unsigned char b_4 = vram[tile_address + 8] >> 8;
+				const unsigned short int v = ((b_1 >> shift_x) & 1) +
+					(2 * ((b_2 >> shift_x) & 1)) +
+					(4 * ((b_3 >> shift_x) & 1)) +
+					(8 * ((b_4 >> shift_x) & 1));
+
+				if ((v % 8) != 0)
+				{
+					unsigned int pixaddr = ((x_pos + x) + ((y_pos + y) * ppuResolutionX)) * 4;
+					if (pixaddr < (ppuResolutionX * ppuResolutionY * 4))
+					{
+						unsigned char* pBuf = &screenFramebuffer[pixaddr];
+						*pBuf = 0xff; pBuf++;
+						*pBuf = 0xff; pBuf++;
+						*pBuf = 0xff; pBuf++;
+						*pBuf = 0xff;
+					}
+				}
+			}
+		}
+
+	
 	}
 }
 
