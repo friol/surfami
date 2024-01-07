@@ -112,14 +112,14 @@ int cpu65816tester::executeTest()
 			glbTheLogger.logMsg("PBR [" + std::to_string(pCPU->getPB()) + "] and reference [" + std::to_string(finalPBR) + "] don't match.");
 			breakkk = true;
 		}
-		/*if (pCPU->getP() != finalP)
+		if (pCPU->getP() != finalP)
 		{
 			std::string cpuP = std::bitset<8>(pCPU->getP()).to_string();
 			std::string finP = std::bitset<8>(finalP).to_string();
 
-			glbTheLogger.logMsg("P [" + cpuP + "] and final [" + finP + "] don't match.");
+			glbTheLogger.logMsg("P [" + cpuP + "] and reference [" + finP + "] don't match.");
 			breakkk = true;
-		}*/
+		}
 
 		for (auto& ramPos : testData[testId]["final"]["ram"])
 		{

@@ -190,6 +190,7 @@ private:
 	unsigned int getAbsoluteAddress16();
 	unsigned int getAbsoluteAddress16IndexedX();
 	unsigned int getAbsoluteAddress16IndexedY();
+	unsigned int getAbsoluteIndexedIndirect();
 	unsigned int getAbsoluteIndexedIndirectX();
 	unsigned int getLongAddress();
 	unsigned int getLongAddressIndexedX();

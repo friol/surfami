@@ -5,176 +5,177 @@
 
 static const debugInfoRec debugInstrData[] =
 {
-	{0x03,2,"ORA param0",Immediate8,false,false,true}, // validated
-	{0x06,2,"ASL param0",Immediate8,false,false,true}, // validated
-	{0x08,1,"PHP",None,false,false,true}, // validated
-	{0x05,2,"ORA param0",Immediate8,false,false,true}, // validated
-	{0x09,2,"ORA param0",Immediate,false,true,true}, // validated
-	{0x0A,1,"ASL A",None,false,false,true}, // validated
-	{0x0B,1,"PHD",None,false,false,true}, // validated
-	{0x0C,3,"TSB param0",Absolute16,false,false,true}, // validated
-	{0x0D,3,"ORA param0",Absolute16,false,false,true}, // validated
-	{0x0e,3,"ASL param0",Absolute16,false,false,true}, // validated
-	{0x0f,4,"ORA param0",AbsoluteLong,false,false,true}, // validated
-	{0x10,2,"BPL param0",Immediate8,false,false,true}, // validated
-	{0x14,2,"TRB param0",Immediate8,false,false,true},
-	{0x17,2,"ORA [param0],Y",Immediate8,false,false,true}, // validated
-	{0x18,1,"CLC",None,false,false,true}, // validated
-	{0x1A,1,"INC A",None,false,false,true}, // validated
-	{0x1B,1,"TCS",None,false,false,true}, // validated
-	{0x1d,3,"ORA param0",Absolute16,false,false,true}, // validated
-	{0x20,3,"JSR param0",Absolute16,false,false,true}, // validated
-	{0x21,2,"AND param0,X",Immediate8,false,false,true}, // validated
-	{0x22,4,"JSL param0",AbsoluteLong,false,false,true}, // validated
-	{0x24,2,"BIT param0",Immediate,false,false,true}, // validated
-	{0x25,2,"AND param0",Immediate8,false,false,true}, // validated
-	{0x26,2,"ROL param0",Immediate8,false,false,true}, // validated
-	{0x27,2,"AND [param0]",Immediate8,false,false,true}, // validated
-	{0x28,1,"PLP",None,false,false,true}, // validated
-	{0x29,2,"AND param0",Immediate,false,true,true}, // validated
-	{0x2a,1,"ROL",None,false,false,true}, // validated
-	{0x2b,1,"PLD",None,false,false,true}, // validated
-	{0x2c,3,"BIT param0",Absolute16,false,false,true}, // validated
-	{0x2d,3,"AND param0",Absolute16,false,false,true}, // validated
-	{0x2e,3,"ROL param0",Absolute16,false,false,true}, // validated
-	{0x2f,4,"AND param0",AbsoluteLong,false,false,true}, // validated
-	{0x30,2,"BMI param0",Immediate8,false,false,true}, // validated
-	{0x32,2,"AND (param0)",Immediate8,false,false,true}, // validated
-	{0x35,2,"AND param0,X",Immediate8,false,false,true}, // validated
-	{0x38,1,"SEC",None,false,false,true}, // validated
-	{0x3a,1,"DEC A",None,false,false,true}, // validated
-	{0x3b,1,"TSC",None,false,false,true}, // validated
-	{0x3d,3,"AND param0,X",Absolute16,false,false,true}, // validated
-	{0x40,1,"RTI",None,false,false,true}, // validated
+	{0x03,2,"ORA param0",Immediate8,false,false,true}, // validatedF
+	{0x06,2,"ASL param0",Immediate8,false,false,true}, // validatedF
+	{0x08,1,"PHP",None,false,false,true}, // validatedF
+	{0x05,2,"ORA param0",Immediate8,false,false,true}, // validatedF
+	{0x09,2,"ORA param0",Immediate,false,true,true}, // validatedF
+	{0x0A,1,"ASL A",None,false,false,true}, // validatedF
+	{0x0B,1,"PHD",None,false,false,true}, // validatedF
+	{0x0C,3,"TSB param0",Absolute16,false,false,true}, // validatedF
+	{0x0D,3,"ORA param0",Absolute16,false,false,true}, // validatedF
+	{0x0e,3,"ASL param0",Absolute16,false,false,true}, // validatedF
+	{0x0f,4,"ORA param0",AbsoluteLong,false,false,true}, // validatedF
+	{0x10,2,"BPL param0",Immediate8,false,false,true}, // validatedF
+	{0x14,2,"TRB param0",Immediate8,false,false,true}, // validatedF
+	{0x17,2,"ORA [param0],Y",Immediate8,false,false,true}, // validatedF
+	{0x18,1,"CLC",None,false,false,true}, // validatedF
+	{0x1A,1,"INC A",None,false,false,true}, // validatedF
+	{0x1B,1,"TCS",None,false,false,true}, // validatedF
+	{0x1d,3,"ORA param0",Absolute16,false,false,true}, // validatedF
+	{0x20,3,"JSR param0",Absolute16,false,false,true}, // validatedF
+	{0x21,2,"AND param0,X",Immediate8,false,false,true}, // validatedF
+	{0x22,4,"JSL param0",AbsoluteLong,false,false,true}, // validatedF
+	{0x24,2,"BIT param0",Immediate,false,false,true}, // validatedF
+	{0x25,2,"AND param0",Immediate8,false,false,true}, // validatedF
+	{0x26,2,"ROL param0",Immediate8,false,false,true}, // validatedF
+	{0x27,2,"AND [param0]",Immediate8,false,false,true}, // validatedF
+	{0x28,1,"PLP",None,false,false,true}, // validatedF
+	{0x29,2,"AND param0",Immediate,false,true,true}, // validatedF
+	{0x2a,1,"ROL",None,false,false,true}, // validatedF
+	{0x2b,1,"PLD",None,false,false,true}, // validatedF
+	{0x2c,3,"BIT param0",Absolute16,false,false,true}, // validatedF
+	{0x2d,3,"AND param0",Absolute16,false,false,true}, // validatedF
+	{0x2e,3,"ROL param0",Absolute16,false,false,true}, // validatedF
+	{0x2f,4,"AND param0",AbsoluteLong,false,false,true}, // validatedF
+	{0x30,2,"BMI param0",Immediate8,false,false,true}, // validatedF
+	{0x32,2,"AND (param0)",Immediate8,false,false,true}, // validatedF
+	{0x35,2,"AND param0,X",Immediate8,false,false,true}, // validatedF
+	{0x38,1,"SEC",None,false,false,true}, // validatedF
+	{0x3a,1,"DEC A",None,false,false,true}, // validatedF
+	{0x3b,1,"TSC",None,false,false,true}, // validatedF
+	{0x3d,3,"AND param0,X",Absolute16,false,false,true}, // validatedF
+	{0x40,1,"RTI",None,false,false,true}, // validatedF
 	{0x44,3,"MVP param0",Absolute16,false,false,true},
-	{0x46,2,"LSR param0",Immediate8,false,false,true}, // validated
-	{0x48,1,"PHA",None,false,false,true}, // validated
-	{0x49,2,"EOR param0",Immediate,false,true,true}, // validated
-	{0x4a,1,"LSR A",None,false,false,true}, // validated
-	{0x4c,3,"JMP param0",Absolute16,false,false,true}, // validated
-	{0x4d,3,"EOR param0",Absolute16,false,false,true}, // validated
-	{0x4e,3,"LSR param0",Absolute16,false,false,true},
-	{0x4B,1,"PHK",None,false,false,true}, // validated
-	{0x50,2,"BVC param0",Immediate8,false,false,true},
+	{0x46,2,"LSR param0",Immediate8,false,false,true}, // validatedF
+	{0x48,1,"PHA",None,false,false,true}, // validatedF
+	{0x49,2,"EOR param0",Immediate,false,true,true}, // validatedF
+	{0x4a,1,"LSR A",None,false,false,true}, // validatedF
+	{0x4c,3,"JMP param0",Absolute16,false,false,true}, // validatedF
+	{0x4d,3,"EOR param0",Absolute16,false,false,true}, // validatedF
+	{0x4e,3,"LSR param0",Absolute16,false,false,true}, // validatedF
+	{0x4B,1,"PHK",None,false,false,true}, // validatedF
+	{0x50,2,"BVC param0",Immediate8,false,false,true}, // validatedF
 	{0x54,3,"MVN param0",Absolute16,false,false,true},
-	{0x55,2,"EOR param0,X",Immediate8,false,false,true}, // validated
-	{0x58,1,"CLI",None,false,false,true}, // validated
-	{0x5a,1,"PHY",None,false,false,true}, // validated
-	{0x5b,1,"TCD",None,false,false,true}, // validated
-	{0x5c,4,"JML param0",AbsoluteLong,false,false,true}, // validated
-	{0x5d,3,"EOR param0,X",Absolute16,false,false,true}, // validated
-	{0x62,3,"PER param0,X",Absolute16,false,false,true}, // validated
-	{0x60,1,"RTS",None,false,false,true}, // validated
-	{0x64,2,"STZ param0",Immediate8,false,false,true}, // validated
+	{0x55,2,"EOR param0,X",Immediate8,false,false,true}, // validatedF
+	{0x58,1,"CLI",None,false,false,true}, // validatedF
+	{0x5a,1,"PHY",None,false,false,true}, // validatedF
+	{0x5b,1,"TCD",None,false,false,true}, // validatedF
+	{0x5c,4,"JML param0",AbsoluteLong,false,false,true}, // validatedF
+	{0x5d,3,"EOR param0,X",Absolute16,false,false,true}, // validatedF
+	{0x62,3,"PER param0,X",Absolute16,false,false,true}, // validatedF
+	{0x60,1,"RTS",None,false,false,true}, // validatedF
+	{0x64,2,"STZ param0",Immediate8,false,false,true}, // validatedF
 	{0x65,2,"ADC param0",Immediate8,false,false,true},
-	{0x68,1,"PLA",None,false,false,true}, // validated
+	{0x68,1,"PLA",None,false,false,true}, // validatedF
 	{0x69,2,"ADC param0",Immediate,false,true,true},
-	{0x6a,1,"ROR A",None,false,false,true}, // validated
-	{0x6b,1,"RTL",None,false,false,true}, // validated
+	{0x6a,1,"ROR A",None,false,false,true}, // validatedF
+	{0x6b,1,"RTL",None,false,false,true}, // validatedF
+	{0x6c,3,"JMP (param0)",Absolute16,false,false,true}, // validatedF
 	{0x6d,3,"ADC param0",Absolute16,false,false,true},
-	{0x6e,3,"ROR param0",Absolute16,false,false,true}, // validated
-	{0x70,2,"BVS param0",Immediate8,false,false,true}, // validated
+	{0x6e,3,"ROR param0",Absolute16,false,false,true}, // validatedF
+	{0x70,2,"BVS param0",Immediate8,false,false,true}, // validatedF
 	{0x73,2,"ADC (param0,S),Y",Immediate8,false,false,true},
-	{0x74,2,"STZ param0,X",Immediate8,false,false,true}, // validated
+	{0x74,2,"STZ param0,X",Immediate8,false,false,true}, // validatedF
 	{0x75,2,"ADC param0,X",Immediate8,false,false,true},
 	{0x77,2,"ADC [param0],Y",Immediate8,false,false,true},
-	{0x78,1,"SEI",None,false,false,true}, // validated
+	{0x78,1,"SEI",None,false,false,true}, // validatedF
 	{0x79,3,"ADC param0,Y",Absolute16,false,false,true},
-	{0x7a,1,"PLY",None,false,false,true}, // validated
-	{0x7c,3,"JMP (param0,X)",Absolute16,false,false,true}, // validated
-	{0x80,2,"BRA param0",Immediate8,false,false,true}, // validated
-	{0x82,3,"BRL param0",Absolute16,false,false,true}, // validated
-	{0x84,2,"STY param0",Immediate8,false,false,true}, // validated
-	{0x85,2,"STA param0",Immediate8,false,false,true}, // validated
-	{0x86,2,"STX param0",Immediate8,false,false,true}, // validated
-	{0x88,1,"DEY",None,false,false,true}, // validated
-	{0x89,2,"BIT param0",Immediate,false,true,true}, // validated
-	{0x8a,1,"TXA",None,false,false,true}, // validated
-	{0x8b,1,"PHB",None,false,false,true}, // validated
-	{0x8c,3,"STY param0",Absolute16,false,false,true}, // validated
-	{0x8d,3,"STA param0",Absolute16,false,false,true}, // validated
-	{0x8e,3,"STX param0",Absolute16,false,false,true}, // validated
-	{0x8f,4,"STA param0",AbsoluteLong,false,false,true}, // validated
-	{0x90,2,"BCC param0",Immediate8,false,false,true}, // validated
-	{0x91,2,"STA (param0),Y",Immediate8,false,false,true}, // validated
-	{0x92,2,"STA (param0)",Immediate8,false,false,true}, // validated
-	{0x94,2,"STY param0,X",Immediate8,false,false,true}, // validated
-	{0x95,2,"STA _dp_ param0,X",Immediate8,false,false,true}, // validated
-	{0x97,2,"STA [param0],Y",Immediate8,false,false,true}, // validated
-	{0x98,1,"TYA",None,false,false,true}, // validated
-	{0x99,3,"STA param0,Y",Absolute16,false,false,true}, // validated
-	{0x9c,3,"STZ param0",Absolute16,false,false,true}, // validated
-	{0x9A,1,"TXS",None,false,false,true}, // validated
-	{0x9b,1,"TXY",None,false,false,true}, // validated
-	{0x9d,3,"STA param0,X",Absolute16,false,false,true}, // validated
-	{0x9e,3,"STZ param0,X",Absolute16,false,false,true}, // validated
-	{0x9f,4,"STA param0,X",AbsoluteLong,false,false,true}, // validated
-	{0xA0,2,"LDY param0",Immediate,true,false,true}, // validated
-	{0xA2,2,"LDX param0",Immediate,true,false,true}, // validated
-	{0xA3,2,"LDA param0,S",Immediate8,false,false,true}, // validated
-	{0xA4,2,"LDY param0",Immediate8,false,false,true}, // validated
-	{0xA5,2,"LDA param0",Immediate8,false,false,true}, // validated
-	{0xA6,2,"LDX param0",Immediate8,false,false,true}, // validated
-	{0xA7,2,"LDA [param0]",Immediate8,false,false,true}, // validated
-	{0xA8,1,"TAY",None,false,false,true}, // validated
-	{0xA9,2,"LDA param0",Immediate,false,true,true}, // validated
-	{0xAA,1,"TAX",None,false,false,true}, // validated
-	{0xAB,1,"PLB",None,false,false,true}, // validated
-	{0xAC,3,"LDY param0",Absolute16,false,false,true}, // validated
-	{0xad,3,"LDA param0",Absolute16,false,false,true}, // validated
-	{0xae,3,"LDX param0",Absolute16,false,false,true}, // validated
-	{0xaf,4,"LDA param0",AbsoluteLong,false,false,true}, // validated
-	{0xB0,2,"BCS param0",Immediate8,false,false,true}, // validated
-	{0xb1,2,"LDA (param0),Y",Immediate8,false,false,true}, // validated
-	{0xb2,2,"LDA (param0)",Immediate8,false,false,true}, // validated
-	{0xb3,2,"LDA (param0,S),Y",Immediate8,false,false,true}, // validated
-	{0xB5,2,"LDA param0,X",Immediate8,false,false,true}, // validated
-	{0xB7,2,"LDA [param0],Y",Immediate8,false,false,true}, // validated
-	{0xB9,3,"LDA param0,Y",Absolute16,false,false,true}, // validated
-	{0xB8,1,"CLV",None,false,false,true}, // validated
-	{0xba,1,"TSX",None,false,false,true}, // validated
-	{0xbb,1,"TYX",None,false,false,true}, // validated
-	{0xBC,3,"LDY param0,X",Absolute16,false,false,true}, // validated
-	{0xBE,3,"LDX param0,Y",Absolute16,false,false,true}, // validated
-	{0xBf,4,"LDA param0,X",AbsoluteLong,false,false,true}, // validated
-	{0xBD,3,"LDA param0,X",Absolute16,false,false,true}, // validated
-	{0xC0,2,"CPY param0",Immediate,true,false,true}, // validated
-	{0xC5,2,"CMP param0",Immediate8,false,false,true}, // validated
-	{0xC6,2,"DEC param0",Immediate8,false,false,true}, // validated
-	{0xC8,1,"INY",None,false,false,true}, // validated
-	{0xC9,2,"CMP param0",Immediate,false,true,true}, // validated
-	{0xC2,2,"REP param0",Immediate8,false,false,true}, // validated
-	{0xC4,2,"CPY param0",Immediate8,false,false,true}, // validated
-	{0xCD,3,"CMP param0",Absolute16,false,false,true}, // validated
-	{0xCA,1,"DEX",None,false,false,true}, // validated
-	{0xCE,3,"DEC param0",Absolute16,false,false,true}, // validated
-	{0xD0,2,"BNE param0",Immediate8,false,false,true}, // validated
-	{0xD6,2,"DEC param0,X",Immediate8,false,false,true}, // validated
-	{0xd8,1,"CLD",None,false,false,true}, // validated
-	{0xD9,3,"CMP param0,Y",Absolute16,false,false,true}, // validated
-	{0xda,1,"PHX",None,false,false ,true}, // validated
+	{0x7a,1,"PLY",None,false,false,true}, // validatedF
+	{0x7c,3,"JMP (param0,X)",Absolute16,false,false,true}, // validatedF
+	{0x80,2,"BRA param0",Immediate8,false,false,true}, // validatedF
+	{0x82,3,"BRL param0",Absolute16,false,false,true}, // validatedF
+	{0x84,2,"STY param0",Immediate8,false,false,true}, // validatedF
+	{0x85,2,"STA param0",Immediate8,false,false,true}, // validatedF
+	{0x86,2,"STX param0",Immediate8,false,false,true}, // validatedF
+	{0x88,1,"DEY",None,false,false,true}, // validatedF
+	{0x89,2,"BIT param0",Immediate,false,true,true}, // validatedF
+	{0x8a,1,"TXA",None,false,false,true}, // validatedF
+	{0x8b,1,"PHB",None,false,false,true}, // validatedF
+	{0x8c,3,"STY param0",Absolute16,false,false,true}, // validatedF
+	{0x8d,3,"STA param0",Absolute16,false,false,true}, // validatedF
+	{0x8e,3,"STX param0",Absolute16,false,false,true}, // validatedF
+	{0x8f,4,"STA param0",AbsoluteLong,false,false,true}, // validatedF
+	{0x90,2,"BCC param0",Immediate8,false,false,true}, // validatedF
+	{0x91,2,"STA (param0),Y",Immediate8,false,false,true}, // validatedF
+	{0x92,2,"STA (param0)",Immediate8,false,false,true}, // validatedF
+	{0x94,2,"STY param0,X",Immediate8,false,false,true}, // validatedF
+	{0x95,2,"STA _dp_ param0,X",Immediate8,false,false,true}, // validatedF
+	{0x97,2,"STA [param0],Y",Immediate8,false,false,true}, // validatedF
+	{0x98,1,"TYA",None,false,false,true}, // validatedF
+	{0x99,3,"STA param0,Y",Absolute16,false,false,true}, // validatedF
+	{0x9c,3,"STZ param0",Absolute16,false,false,true}, // validatedF
+	{0x9A,1,"TXS",None,false,false,true}, // validatedF
+	{0x9b,1,"TXY",None,false,false,true}, // validatedF
+	{0x9d,3,"STA param0,X",Absolute16,false,false,true}, // validatedF
+	{0x9e,3,"STZ param0,X",Absolute16,false,false,true}, // validatedF
+	{0x9f,4,"STA param0,X",AbsoluteLong,false,false,true}, // validatedF
+	{0xA0,2,"LDY param0",Immediate,true,false,true}, // validatedF
+	{0xA2,2,"LDX param0",Immediate,true,false,true}, // validatedF
+	{0xA3,2,"LDA param0,S",Immediate8,false,false,true}, // validatedF
+	{0xA4,2,"LDY param0",Immediate8,false,false,true}, // validatedF
+	{0xA5,2,"LDA param0",Immediate8,false,false,true}, // validatedF
+	{0xA6,2,"LDX param0",Immediate8,false,false,true}, // validatedF
+	{0xA7,2,"LDA [param0]",Immediate8,false,false,true}, // validatedF
+	{0xA8,1,"TAY",None,false,false,true}, // validatedF
+	{0xA9,2,"LDA param0",Immediate,false,true,true}, // validatedF
+	{0xAA,1,"TAX",None,false,false,true}, // validatedF
+	{0xAB,1,"PLB",None,false,false,true}, // validatedF
+	{0xAC,3,"LDY param0",Absolute16,false,false,true}, // validatedF
+	{0xad,3,"LDA param0",Absolute16,false,false,true}, // validatedF
+	{0xae,3,"LDX param0",Absolute16,false,false,true}, // validatedF
+	{0xaf,4,"LDA param0",AbsoluteLong,false,false,true}, // validatedF
+	{0xB0,2,"BCS param0",Immediate8,false,false,true}, // validatedF
+	{0xb1,2,"LDA (param0),Y",Immediate8,false,false,true}, // validatedF
+	{0xb2,2,"LDA (param0)",Immediate8,false,false,true}, // validatedF
+	{0xb3,2,"LDA (param0,S),Y",Immediate8,false,false,true}, // validatedF
+	{0xB5,2,"LDA param0,X",Immediate8,false,false,true}, // validatedF
+	{0xB7,2,"LDA [param0],Y",Immediate8,false,false,true}, // validatedF
+	{0xB9,3,"LDA param0,Y",Absolute16,false,false,true}, // validatedF
+	{0xB8,1,"CLV",None,false,false,true}, // validatedF
+	{0xba,1,"TSX",None,false,false,true}, // validatedF
+	{0xbb,1,"TYX",None,false,false,true}, // validatedF
+	{0xBC,3,"LDY param0,X",Absolute16,false,false,true}, // validatedF
+	{0xBE,3,"LDX param0,Y",Absolute16,false,false,true}, // validatedF
+	{0xBf,4,"LDA param0,X",AbsoluteLong,false,false,true}, // validatedF
+	{0xBD,3,"LDA param0,X",Absolute16,false,false,true}, // validatedF
+	{0xC0,2,"CPY param0",Immediate,true,false,true}, // validated Fck
+	{0xC5,2,"CMP param0",Immediate8,false,false,true}, // validatedF
+	{0xC6,2,"DEC param0",Immediate8,false,false,true}, // validatedF
+	{0xC8,1,"INY",None,false,false,true}, // validatedF
+	{0xC9,2,"CMP param0",Immediate,false,true,true}, // validatedF
+	{0xC2,2,"REP param0",Immediate8,false,false,true}, // validatedF
+	{0xC4,2,"CPY param0",Immediate8,false,false,true}, // validatedF
+	{0xCA,1,"DEX",None,false,false,true }, // validatedF
+	{0xCD,3,"CMP param0",Absolute16,false,false,true}, // validatedF
+	{0xCE,3,"DEC param0",Absolute16,false,false,true}, // validatedF
+	{0xD0,2,"BNE param0",Immediate8,false,false,true}, // validatedF
+	{0xD6,2,"DEC param0,X",Immediate8,false,false,true}, // validatedF
+	{0xd8,1,"CLD",None,false,false,true}, // validatedF
+	{0xD9,3,"CMP param0,Y",Absolute16,false,false,true}, // validatedF
+	{0xda,1,"PHX",None,false,false ,true}, // validatedF
 	{0xdb,1,"STP",None,false,false,true},
-	{0xDD,3,"CMP param0,X",Absolute16,false,false,true}, // validated
-	{0xDE,3,"DEC param0,X",Absolute16,false,false,true}, // validated
-	{0xdf,4,"CMP param0,X",AbsoluteLong,false,false ,true}, // validated
-	{0xE0,2,"CPX param0",Immediate,true,false,true}, // validated
-	{0xe2,2,"SEP param0",Immediate8,false,false,true}, // validated
-	{0xe4,2,"CPX param0",Immediate8,false,false,true}, // validated
+	{0xDD,3,"CMP param0,X",Absolute16,false,false,true}, // validatedF
+	{0xDE,3,"DEC param0,X",Absolute16,false,false,true}, // validatedF
+	{0xdf,4,"CMP param0,X",AbsoluteLong,false,false ,true}, // validatedF
+	{0xE0,2,"CPX param0",Immediate,true,false,true}, // validatedF
+	{0xe2,2,"SEP param0",Immediate8,false,false,true}, // validatedF
+	{0xe4,2,"CPX param0",Immediate8,false,false,true}, // validatedF
 	{0xe5,2,"SBC param0",Immediate8,false,false,true},
-	{0xe6,2,"INC param0",Immediate8,false,false,true}, // validated
-	{0xe8,1,"INX",None,false,false,true}, // validated
+	{0xe6,2,"INC param0",Immediate8,false,false,true}, // validatedF
+	{0xe8,1,"INX",None,false,false,true}, // validatedF
 	{0xe9,2,"SBC param0",Immediate,false,true,true},
-	{0xeb,1,"XBA",None,false,false,true}, // validated
-	{0xEC,3,"CPX param0",Absolute16,false,false,true}, // validated
+	{0xeb,1,"XBA",None,false,false,true}, // validatedF
+	{0xEC,3,"CPX param0",Absolute16,false,false,true}, // validatedF
 	{0xED,3,"SBC param0",Absolute16,false,false,true},
-	{0xEE,3,"INC param0",Absolute16,false,false ,true}, // validated
-	{0xea,1,"NOP",None,false,false,true}, // validated
-	{0xf0,2,"BEQ param0",Immediate8,false,false,true}, // validated
-	{0xF4,3,"PEA param0",Absolute16,false,false,true}, // validated
-	{0xF8,1,"SED",None,false,false,true}, // validated
+	{0xEE,3,"INC param0",Absolute16,false,false ,true}, // validatedF
+	{0xea,1,"NOP",None,false,false,true}, // validatedF
+	{0xf0,2,"BEQ param0",Immediate8,false,false,true}, // validatedF
+	{0xF4,3,"PEA param0",Absolute16,false,false,true}, // validatedF
+	{0xF8,1,"SED",None,false,false,true}, // validatedF
 	{0xF9,3,"SBC param0,Y",Absolute16,false,false,true},
-	{0xFA,1,"PLX",None,false,false,true}, // validated
-	{0xFB,1,"XCE",None,false,false,true}, // validated
+	{0xFA,1,"PLX",None,false,false,true}, // validatedF
+	{0xFB,1,"XCE",None,false,false,true}, // validatedF
 	{0xfc,3,"JSR (param0,X)",Absolute16,false,false ,true}, // fuck
 	{0xfe,3,"INC param0,X",Absolute16,false,false ,true}, // validated
 	{0xff,4,"SBC param0,X",AbsoluteLong,false,false ,true},
