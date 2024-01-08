@@ -339,16 +339,18 @@ unsigned char mmu::read8(unsigned int address)
 		}
 		else if (adr == 0x4211)
 		{
-			//	PPU Interrupts - H/V-Timer IRQ Flag (R) [Read/Ack]
+			//	PPU Interrupts - H/V-Timer IRQ Flag (R) [Read/Ack] - TODO
 			return 0;
 		}
 		else if (adr == 0x4212)
 		{
-			//	PPU Interrupts - H/V-Blank Flag and Joypad Busy Flag (R)
+			//	PPU Interrupts - H/V-Blank Flag and Joypad Busy Flag (R) - TODO
 			return 0;
 		}
-
-		return snesRAM[adr];
+		else
+		{
+			return snesRAM[adr];
+		}
 	}
 	else
 	{

@@ -301,11 +301,11 @@ void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& the
 
     ImGui::SameLine();
     // step 10k
-    if (ImGui::Button("Step 10k"))
+    if (ImGui::Button("Step 100k"))
     {
         int res = 0;
         int cycs;
-        while (res < 10000)
+        while (res < 100000)
         {
             cycs = theCPU.stepOne();
             if (cycs != -1)
@@ -572,8 +572,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc"; 
-    std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc"; // 6f
-    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc";
+    //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc"; // 6f
+    std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc";
     //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc"; // 45
     //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // cb
     //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc";
