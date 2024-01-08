@@ -27,6 +27,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x1B,1,"TCS",None,false,false,true}, // validatedF
 	{0x1d,3,"ORA param0",Absolute16,false,false,true}, // validatedF
 	{0x1e,3,"ASL param0,X",Absolute16,false,false,true}, // validatedF
+	{0x1f,4,"ORA param0,X",AbsoluteLong,false,false,true}, // validatedF
 	{0x20,3,"JSR param0",Absolute16,false,false,true}, // validatedF
 	{0x21,2,"AND param0,X",Immediate8,false,false,true}, // validatedF
 	{0x22,4,"JSL param0",AbsoluteLong,false,false,true}, // validatedF
@@ -71,10 +72,12 @@ static const debugInfoRec debugInstrData[] =
 	{0x5b,1,"TCD",None,false,false,true}, // validatedF
 	{0x5c,4,"JML param0",AbsoluteLong,false,false,true}, // validatedF
 	{0x5d,3,"EOR param0,X",Absolute16,false,false,true}, // validatedF
+	{0x5e,3,"LSR param0,X",Absolute16,false,false,true}, // validatedF
 	{0x62,3,"PER param0,X",Absolute16,false,false,true}, // validatedF
 	{0x60,1,"RTS",None,false,false,true}, // validatedF
 	{0x64,2,"STZ param0",Immediate8,false,false,true}, // validatedF
 	{0x65,2,"ADC param0",Immediate8,false,false,true}, // validatedF
+	{0x66,2,"ROR param0",Immediate8,false,false,true}, // validatedF
 	{0x68,1,"PLA",None,false,false,true}, // validatedF
 	{0x69,2,"ADC param0",Immediate,false,true,true}, // validatedF
 	{0x6a,1,"ROR A",None,false,false,true}, // validatedF

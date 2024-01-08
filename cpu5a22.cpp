@@ -5188,6 +5188,105 @@ int cpu5a22::stepOne()
 			cycles = 2;
 			break;
 		}
+		case 0x5e:
+		{
+			// LSR addr,X
+			int cycAdder = 0;
+			unsigned int addr = getAbsoluteAddress16IndexedX();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				regP.setNegative(0);
+				regP.setCarry(val & 1);
+				pMMU->write8(addr, (val >> 1));
+				regP.setZero((val >> 1) == 0);
+			}
+			else
+			{
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned short int val = (hi << 8) | lo;
+				regP.setNegative(0);
+				regP.setCarry(val & 1);
+				pMMU->write8(addr, (val >> 1) & 0xff);
+				pMMU->write8(addr + 1, (val >> 1) >> 8);
+				regP.setZero((val >> 1) == 0);
+				cycAdder = 2;
+			}
+
+			regPC += 3;
+			cycles = 7 + cycAdder;
+			break;
+		}
+		case 0x1f:
+		{
+			// ORA longaddr,X
+			int cycAdder = 0;
+			unsigned int addr = getLongAddressIndexedX();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				unsigned char res = val | regA_lo;
+				regA_lo = res;
+				regP.setNegative(res >> 7);
+				regP.setZero(res == 0);
+			}
+			else
+			{
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned short int val = (hi << 8) | lo;
+				unsigned short int res = val | (regA_lo | (regA_hi << 8));
+
+				regA_lo = res & 0xff;
+				regA_hi = res >> 8;
+
+				regP.setNegative(res >> 15);
+				regP.setZero(res == 0);
+				cycAdder = 1;
+			}
+
+			regPC += 4;
+			cycles = 5 + cycAdder;
+			break;
+		}
+		case 0x66:
+		{
+			// ROR dp
+			int cycAdder = 0;
+			unsigned int addr = getDirectPageAddress();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				unsigned char old_C = regP.getCarry();
+				regP.setCarry(val & 1);
+				val = (old_C << 7) | (val >> 1);
+				pMMU->write8(addr, val);
+				regP.setZero(val == 0);
+				regP.setNegative(val >> 7);
+			}
+			else
+			{
+				unsigned short int val = (pMMU->read8(addr + 1) << 8) | pMMU->read8(addr);
+				unsigned char old_C = regP.getCarry();
+				regP.setCarry(val & 1);
+				val = (old_C << 15) | (val >> 1);
+
+				pMMU->write8(addr, val & 0xff);
+				pMMU->write8(addr + 1, val >> 8);
+
+				regP.setZero(val == 0);
+				regP.setNegative(val >> 15);
+				cycAdder += 2;
+			}
+
+			regPC += 2;
+			cycles = 5 + cycAdder;
+			break;
+		}
 		default:
 		{
 			// unknown opcode

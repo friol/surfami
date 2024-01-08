@@ -317,7 +317,7 @@ unsigned char mmu::read8(unsigned int address)
 		else if (adr == 0x213f)
 		{
 			// TODO PAL/NTSC flag
-			return 0x13;
+			return 0x03;
 		}
 		else if ((adr == 0x2140) || (adr == 0x2141))
 		{
