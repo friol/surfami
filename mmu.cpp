@@ -267,6 +267,18 @@ void mmu::write8(unsigned int address, unsigned char val)
 			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x212C (TM - Main Screen Designation)");
 			pPPU->writeRegister(adr, val);
 		}
+		else if ((adr == 0x210D) || (adr == 0x210F) || (adr == 0x2111) || (adr == 0x2113))
+		{
+			int bgid = (adr - 0x210D)>>1;
+			if (bgid==0) glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to BG "+std::to_string(bgid) + " scroll X");
+			pPPU->writeBgScrollX(bgid, val);
+		}
+		else if ((adr == 0x210E) || (adr == 0x2110) || (adr == 0x2112) || (adr == 0x2114))
+		{
+			int bgid = (adr - 0x210E)>>1;
+			if (bgid == 0) glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to BG " + std::to_string(bgid) + " scroll Y");
+			pPPU->writeBgScrollY(bgid, val);
+		}
 
 		snesRAM[adr] = val;
 	}
@@ -318,6 +330,7 @@ unsigned char mmu::read8(unsigned int address)
 		{
 			// TODO PAL/NTSC flag
 			return 0x03;
+			//return 0x13;
 		}
 		else if ((adr == 0x2140) || (adr == 0x2141))
 		{
@@ -354,8 +367,17 @@ unsigned char mmu::read8(unsigned int address)
 	}
 	else
 	{
+		// sram - some games (like tetris&dr.mario) complain if they find SRAM at this address, 
+		// and refuse to run, thinking you are using a copier 
+		if ((bank_nr >= 0x70) && (bank_nr <= 0x73))
+		{
+			return 0;
+		}
+
 		return snesRAM[address];
 	}
+
+	return snesRAM[address];
 }
 
 mmu::~mmu()

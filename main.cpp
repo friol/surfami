@@ -559,6 +559,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
 
     romLoader theRomLoader;
     //std::string romName = "d:\\prova\\snes\\HelloWorld.sfc";
+    //std::string romName = "d:\\prova\\snes\\BANKWRAM.sfc";
     //std::string romName = "d:\\prova\\snes\\CPUMOV.sfc";
     //std::string romName = "d:\\prova\\snes\\CPUDEC.sfc";
     //std::string romName = "d:\\prova\\snes\\CPUAND.sfc"; // fails for uninitialized memory
@@ -571,9 +572,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc"; // mode7
     //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
-    //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc"; 
+    //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc"; // d7
     //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc"; // 6f
-    std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc";
+    std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // d4
     //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc"; // 45
     //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // cb
     //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc";
@@ -588,6 +589,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Super Off Road (E) [!].smc"; // 34
     //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc"; 
     //std::string romName = "d:\\prova\\snes\\Sensible Soccer - International Edition (E).smc";
+    //std::string romName = "d:\\prova\\snes\\Gun Force (E).smc";
+    //std::string romName = "d:\\prova\\snes\\The Legend Of Zelda -  A Link To The Past.smc"; // jumps to nowhere after 16m cycles
+    //std::string romName = "d:\\prova\\snes\\Prince of Persia (E) [!].smc";
 
     //std::string romName = "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc";
     //std::string romName = "d:\\prova\\snes\\elix-smashit-pal.sfc"; // cb WAI
@@ -606,6 +610,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         return 1;
     }
 
+    // unfortunately, no SPC cpu is emulated at this time
     if (romName == "d:\\prova\\snes\\Super Mario World (J) [!].sfc")
     {
         theMMU.write8(0x80d6, 0xea);
@@ -615,6 +620,41 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x80ad, 0xea);
         theMMU.write8(0x80ae, 0xea);
     }
+    else if (romName == "d:\\prova\\snes\\Prince of Persia (E) [!].smc")
+    {
+        theMMU.write8(0x2985a, 0xea);
+        theMMU.write8(0x2985b, 0xea);
+        theMMU.write8(0x298a7, 0xea);
+        theMMU.write8(0x298a8, 0xea);
+        theMMU.write8(0x298b2, 0xea);
+        theMMU.write8(0x298b3, 0xea);
+        theMMU.write8(0x298c2, 0xea);
+        theMMU.write8(0x298c3, 0xea);
+        theMMU.write8(0x298d3, 0xea);
+        theMMU.write8(0x298d4, 0xea);
+        theMMU.write8(0x298df, 0xea);
+        theMMU.write8(0x298e0, 0xea);
+        theMMU.write8(0x298ed, 0xea);
+        theMMU.write8(0x298ee, 0xea);
+    }
+    else if (romName == "d:\\prova\\snes\\The Legend Of Zelda -  A Link To The Past.smc")
+    {
+        theMMU.write8(0x88ef, 0xea);
+        theMMU.write8(0x88f0, 0xea);
+        theMMU.write8(0x88b6, 0xea);
+        theMMU.write8(0x88b7, 0xea);
+        theMMU.write8(0x88c6, 0xea);
+        theMMU.write8(0x88c7, 0xea);
+    }
+    else if (romName == "d:\\prova\\snes\\Gun Force (E).smc")
+    {
+        theMMU.write8(0x8116, 0xea);
+        theMMU.write8(0x8117, 0xea);
+        theMMU.write8(0x80dd, 0xea);
+        theMMU.write8(0x80de, 0xea);
+        theMMU.write8(0x80ed, 0xea);
+        theMMU.write8(0x80ee, 0xea);
+    }
     else if (romName == "d:\\prova\\snes\\Puzzle Bobble (E).smc")
     {
         theMMU.write8(0x858b6d, 0xea);
@@ -623,7 +663,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x858b35, 0xea);
         theMMU.write8(0x858b44, 0xea);
         theMMU.write8(0x858b45, 0xea);
-
     }
     else if (romName == "d:\\prova\\snes\\Arkanoid - Doh it Again (E) [!].smc")
     {

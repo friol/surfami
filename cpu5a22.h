@@ -199,6 +199,7 @@ private:
 	unsigned int getDirectPageAddress();
 	unsigned int getDirectPageIndirectX();
 	unsigned int getDirectPageIndirectLongAddress();
+	unsigned int getDirectPageIndirectLongIndexedXAddress();
 	unsigned int getDirectPageIndirectLongIndexedYAddress();
 	unsigned int getDirectPageIndirectAddress();
 	unsigned int getDirectPageIndexedXAddress();
@@ -209,7 +210,7 @@ private:
 	unsigned int getStackRelativeIndirectIndexedY();
 
 	int doADC(unsigned int addr);
-	int doSBC(unsigned int addr,int& pcAdder);
+	int doSBC(unsigned int addr);
 
 public:
 
@@ -231,7 +232,7 @@ public:
 	bool getAccuMemSize() { return regP.getAccuMemSize(); }
 	std::vector<std::string> getRegistersInfo();
 	
-	void setState(unsigned int pc, unsigned short int a, unsigned short int x, unsigned short int y,
+	void setState(unsigned short int pc, unsigned short int a, unsigned short int x, unsigned short int y,
 		unsigned short int sp, unsigned char dbr, unsigned short int d, unsigned char pb, unsigned char p,unsigned char e);
 
 	void triggerNMI() { nmiRequested = true; }

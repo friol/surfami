@@ -7,9 +7,13 @@
 
 ppu::ppu()
 {
-	for (int bg = 0;bg < 3;bg++)
+	for (int bg = 0;bg < 4;bg++)
 	{
 		bgTileMapBaseAddress[bg] = 0;
+		bgScrollX[bg] = 0;
+		bgScrollY[bg] = 0;
+		bgScrollXFlipFlop[bg] = false;
+		bgScrollYFlipFlop[bg] = false;
 	}
 
 	for (int addr = 0;addr < 0x8000;addr++)
@@ -28,6 +32,34 @@ ppu::ppu()
 	for (int pos = 0;pos < (vramViewerXsize * vramViewerYsize * 4);pos++)
 	{
 		vramViewerBitmap[pos] = 0;
+	}
+}
+
+void ppu::writeBgScrollX(int bgId,unsigned char val)
+{
+	if (!bgScrollXFlipFlop[bgId]) 
+	{
+		bgScrollX[bgId] = (bgScrollX[bgId] & 0xff00) | val;
+		bgScrollXFlipFlop[bgId] = true;
+	}
+	else 
+	{
+		bgScrollX[bgId] = (bgScrollX[bgId] & 0xff) | (val << 8);
+		bgScrollXFlipFlop[bgId] = false;
+	}
+}
+
+void ppu::writeBgScrollY(int bgId, unsigned char val)
+{
+	if (!bgScrollYFlipFlop[bgId])
+	{
+		bgScrollY[bgId] = (bgScrollY[bgId] & 0xff00) | val;
+		bgScrollYFlipFlop[bgId] = true;
+	}
+	else
+	{
+		bgScrollY[bgId] = (bgScrollY[bgId] & 0xff) | (val << 8);
+		bgScrollYFlipFlop[bgId] = false;
 	}
 }
 
@@ -220,7 +252,7 @@ void ppu::renderBackdrop()
 	}
 }
 
-void ppu::renderTile2bpp(int px, int py, int tileNum,int palId, int bgnum)
+void ppu::renderTile2bpp(int px, int py, int tileNum,int palId, int bgnum, int xflip, int yflip)
 {
 	unsigned char* pBuf;
 	unsigned char palArr[3*4];
@@ -245,14 +277,26 @@ void ppu::renderTile2bpp(int px, int py, int tileNum,int palId, int bgnum)
 	tileAddr += ((bgTileBaseAddress >> (4 * bgnum)) & 0x0f) * 1024 * 4;
 	tileAddr &= 0x7fff;
 
-	for (int y = 0;y < 8;y++)
+	int ybase = 0; int yend = 8; int yinc = 1; int tileAddrInc = 1;
+	if (yflip)
+	{
+		ybase = 7; yend = -1; yinc = -1;
+	}
+
+	for (int y = ybase;y != yend;y+=yinc)
 	{
 		pBuf = &screenFramebuffer[(px * 4) + ((py + y) * ppuResolutionX * 4)];
 
 		int loByte = vram[tileAddr] & 0xff;
 		int hiByte = vram[tileAddr] >> 8;
 
-		for (int x = 7;x >= 0;x--)
+		int xbase = 7; int xend = -1; int xinc = -1;
+		if (xflip)
+		{
+			xbase = 0; xend = 8; xinc = 1;
+		}
+
+		for (int x = xbase;x != xend;x+=xinc)
 		{
 			int curCol = ((loByte >> x) & 1) + (((hiByte >> x) & 1) * 2);
 
@@ -269,12 +313,12 @@ void ppu::renderTile2bpp(int px, int py, int tileNum,int palId, int bgnum)
 			}
 		}
 
-		tileAddr += 1;
+		tileAddr += tileAddrInc;
 	}
 
 }
 
-void ppu::renderTile4bpp(int px, int py, int tileNum, int palId, int bgnum)
+void ppu::renderTile4bpp(int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip)
 {
 	unsigned char* pBuf;
 	const int numCols = 16;
@@ -300,19 +344,28 @@ void ppu::renderTile4bpp(int px, int py, int tileNum, int palId, int bgnum)
 	tileAddr += ((bgTileBaseAddress >> (4 * bgnum)) & 0x0f) * 1024 * 4;
 	tileAddr &= 0x7fff;
 
-	for (int y = 0;y < 8;y++)
+	int ybase = 0; int yend = 8; int yinc = 1; int tileAddrInc = 1;
+	if (yflip)
+	{
+		ybase = 7; yend = -1; yinc = -1;
+	}
+
+	for (int y = ybase;y != yend;y += yinc)
 	{
 		pBuf = &screenFramebuffer[(px * 4) + ((py + y) * ppuResolutionX * 4)];
-
-		//int loByte = vram[tileAddr] & 0xff;
-		//int hiByte = vram[tileAddr] >> 8;
 
 		const unsigned char b_1 = vram[tileAddr] & 0xff;
 		const unsigned char b_2 = vram[tileAddr] >> 8;
 		const unsigned char b_3 = vram[tileAddr + 8] & 0xff;
 		const unsigned char b_4 = vram[tileAddr + 8] >> 8;
 
-		for (int x = 7;x >= 0;x--)
+		int xbase = 7; int xend = -1; int xinc = -1;
+		if (xflip)
+		{
+			xbase = 0; xend = 8; xinc = 1;
+		}
+
+		for (int x = xbase;x != xend;x += xinc)
 		{
 			//int curCol = ((loByte >> x) & 1) + (((hiByte >> x) & 1) * 2);
 			const unsigned short int curCol = ((b_1 >> x) & 1) +
@@ -337,7 +390,7 @@ void ppu::renderTile4bpp(int px, int py, int tileNum, int palId, int bgnum)
 	}
 }
 
-void ppu::renderTile8bpp(int px, int py, int tileNum, int palId, int bgnum)
+void ppu::renderTile8bpp(int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip)
 {
 	unsigned char* pBuf;
 	const int numCols = 256;
@@ -366,9 +419,6 @@ void ppu::renderTile8bpp(int px, int py, int tileNum, int palId, int bgnum)
 	for (int y = 0;y < 8;y++)
 	{
 		pBuf = &screenFramebuffer[(px * 4) + ((py + y) * ppuResolutionX * 4)];
-
-		//int loByte = vram[tileAddr] & 0xff;
-		//int hiByte = vram[tileAddr] >> 8;
 
 		const unsigned char b_1 = vram[tileAddr] & 0xff;
 		const unsigned char b_2 = vram[tileAddr] >> 8;
@@ -408,22 +458,100 @@ void ppu::renderTile8bpp(int px, int py, int tileNum, int palId, int bgnum)
 
 }
 
-void ppu::renderBG(int bgnum,int bpp)
+void ppu::buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int baseTileAddr)
 {
-	int tileAddr = ((bgTileMapBaseAddress[bgnum] >> 2) << 10) & 0x7fff;
+	/*
+		All tilemaps are 32x32, bits 0-1 simply select the number of 32x32 tilemaps and how they're laid out in memory
 
-	for (int y = 0;y < 28;y++)
+		00  32x32   AA
+					AA
+		01  64x32   AB
+					AB
+		10  32x64   AA
+					BB
+		11  64x64   AB
+					CD
+	*/
+
+	unsigned int tilemapPos = baseTileAddr;
+
+	for (int y = 0;y < 32;y++)
 	{
 		for (int x = 0;x < 32;x++)
 		{
-				int vramWord = vram[tileAddr];
-				int tileNum = vramWord & 0x3ff;
-				int palId = (vramWord >> 10) & 0x7;
+			tilemapMap[y][x] = vram[tilemapPos];
+			tilemapPos++;
+		}
+	}
 
-				if (bpp==2) renderTile2bpp(x * 8, y * 8, tileNum, palId,bgnum);
-				else if (bpp==4) renderTile4bpp(x * 8, y * 8, tileNum, palId,bgnum);
-				else if (bpp==8) renderTile8bpp(x * 8, y * 8, tileNum, palId,bgnum);
-				tileAddr++;
+	if ((bgSize == 0) || (bgSize == 2)) tilemapPos -= 0x400;
+
+	for (int y = 0;y < 32;y++)
+	{
+		for (int x = 32;x < 64;x++)
+		{
+			tilemapMap[y][x] = vram[tilemapPos];
+			tilemapPos++;
+		}
+	}
+
+	if (bgSize == 0) tilemapPos -= 0x400;
+	else if (bgSize == 1) ;
+
+	for (int y = 32;y < 64;y++)
+	{
+		for (int x = 0;x < 32;x++)
+		{
+			tilemapMap[y][x] = vram[tilemapPos];
+			tilemapPos++;
+		}
+	}
+
+	if (bgSize == 0) tilemapPos -= 0x400;
+	else if (bgSize == 1) tilemapPos -= 0x800;
+	else if (bgSize == 2) tilemapPos-=0x400;
+
+	for (int y = 32;y < 64;y++)
+	{
+		for (int x = 32;x < 64;x++)
+		{
+			tilemapMap[y][x] = vram[tilemapPos];
+			tilemapPos++;
+		}
+	}
+
+}
+
+void ppu::renderBG(int bgnum,int bpp)
+{
+	int baseTileAddr = ((bgTileMapBaseAddress[bgnum] >> 2) << 10) & 0x7fff;
+
+	int bgSize = bgTileMapBaseAddress[bgnum] & 0x3;
+	int xscroll = bgScrollX[bgnum];
+	int yscroll = bgScrollY[bgnum];
+
+	unsigned short int tilemapMap[64][64];
+	buildTilemapMap(tilemapMap, bgSize, baseTileAddr);
+
+	for (int y = 0;y < 28;y++)
+	{
+		int realy = y + (yscroll / 8);
+
+		for (int x = 0;x < 32;x++)
+		{
+			int realx = x + (xscroll / 8);
+
+			unsigned short int vramWord = tilemapMap[realy%64][realx%64];
+
+			int tileNum = vramWord & 0x3ff;
+			int palId = (vramWord >> 10) & 0x7;
+			int bgPri = (vramWord >> 13) & 0x01;
+			int xflip= (vramWord >> 14) & 0x01;
+			int yflip= (vramWord >> 15) & 0x01;
+
+			if (bpp==2) renderTile2bpp(x * 8, y * 8, tileNum, palId,bgnum,xflip,yflip);
+			else if (bpp==4) renderTile4bpp(x * 8, y * 8, tileNum, palId,bgnum, xflip, yflip);
+			else if (bpp==8) renderTile8bpp(x * 8, y * 8, tileNum, palId,bgnum, xflip, yflip);
 		}
 	}
 }

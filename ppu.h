@@ -26,6 +26,10 @@ private:
 	unsigned char obSel = 0;
 
 	int bgTileMapBaseAddress[4];
+	bool bgScrollXFlipFlop[4];
+	bool bgScrollYFlipFlop[4];
+	unsigned short int bgScrollX[4];
+	unsigned short int bgScrollY[4];
 
 	const int vramViewerXsize = 256;
 	const int vramViewerYsize = 256;
@@ -35,15 +39,17 @@ private:
 	int ppuResolutionX = 256;
 	int ppuResolutionY = 224;
 	unsigned char* screenFramebuffer;
-	void renderTile2bpp(int px, int py, int tileNum, int palId, int bgnum);
-	void renderTile4bpp(int px, int py, int tileNum, int palId, int bgnum);
-	void renderTile8bpp(int px, int py, int tileNum, int palId, int bgnum);
+	void renderTile2bpp(int px, int py, int tileNum, int palId, int bgnum,int xflip,int yflip);
+	void renderTile4bpp(int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip);
+	void renderTile8bpp(int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip);
 
 	void renderSprite(int px, int py, int tileNum, int palId);
 
 	void renderBackdrop();
 	void renderBG(int bgnum,int bpp);
 	void renderSprites();
+
+	void buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int baseTileAddr);
 
 	unsigned int scanline=0;
 	unsigned int internalCyclesCounter = 0;
@@ -58,6 +64,8 @@ public:
 	void writeRegister(int reg, unsigned char val);
 	void setINIDISP(unsigned char val) { iniDisp = val; }
 	void setOBSEL(unsigned char val) { obSel = val; }
+	void writeBgScrollX(int bgId, unsigned char val);
+	void writeBgScrollY(int bgId, unsigned char val);
 	
 	void writeOAMAddressLow(unsigned char val) { OAMAddr = (OAMAddr & 0xff00) | val; }
 	void writeOAMAddressHigh(unsigned char val) { OAMAddr = (OAMAddr & 0xff) | (val<<8); }
