@@ -663,6 +663,18 @@ void ppu::renderScreen()
 
 	// rendering depends on screen mode
 	int screenMode = (bgMode & 0x07);
+
+	int bgTileSize[4];
+	bgTileSize[0] = (bgMode >> 4)&0x01;
+	bgTileSize[1] = (bgMode >> 5)&0x01;
+	bgTileSize[2] = (bgMode >> 6)&0x01;
+	bgTileSize[3] = (bgMode >> 7)&0x01;
+
+	//if ((bgTileSize[0] == 1)|| (bgTileSize[1] == 1)|| (bgTileSize[2] == 1)|| (bgTileSize[3] == 1))
+	//{
+	//	int err = 1;
+	//}
+
 	if (screenMode == 0)
 	{
 		// 0      4-color     4-color     4-color     4-color   ;Normal   

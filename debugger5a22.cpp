@@ -201,6 +201,7 @@ static const debugInfoRec debugInstrData[] =
 	{0xf0,2,"BEQ param0",Immediate8,false,false,true}, // validatedF
 	{0xF4,3,"PEA param0",Absolute16,false,false,true}, // validatedF
 	{0xf5,2,"SBC param0,X",Immediate8,false,false,true}, // validatedF
+	{0xf6,2,"INC param0,X",Immediate8,false,false,true}, // validatedF
 	{0xF8,1,"SED",None,false,false,true}, // validatedF
 	{0xF9,3,"SBC param0,Y",Absolute16,false,false,true}, // validatedF
 	{0xFA,1,"PLX",None,false,false,true}, // validatedF
@@ -322,11 +323,6 @@ std::string debugger5a22::processDisasmTemplate(std::string disasmTmpl,const deb
 	{
 		std::stringstream strr;
 		std::string hexPaddedConst;
-
-		if (bytez.size() < 3)
-		{
-			int err = 1;
-		}
 
 		unsigned short int mem = bytez[1];
 		mem |= ((int)bytez[2]) << 8;

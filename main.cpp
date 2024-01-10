@@ -573,8 +573,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc"; // d7
-    //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc"; // 6f
-    std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // d4
+    std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
+    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc";
     //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc"; // 45
     //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // cb
     //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc";
@@ -593,7 +593,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\The Legend Of Zelda -  A Link To The Past.smc"; // jumps to nowhere after 16m cycles
     //std::string romName = "d:\\prova\\snes\\Prince of Persia (E) [!].smc";
 
-    //std::string romName = "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc";
+    //std::string romName = "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc"; // WAI
     //std::string romName = "d:\\prova\\snes\\elix-smashit-pal.sfc"; // cb WAI
 
     if (theRomLoader.loadRom(romName,theMMU,romLoadingLog) != 0)
@@ -619,6 +619,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x809e, 0xea);
         theMMU.write8(0x80ad, 0xea);
         theMMU.write8(0x80ae, 0xea);
+    }
+    else if (romName == "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc")
+    {
+        theMMU.write8(0xa239, 0xea);
+        theMMU.write8(0xa23a, 0xea);
+        theMMU.write8(0xa253, 0xea);
+        theMMU.write8(0xa254, 0xea);
+        theMMU.write8(0xa2a1, 0xea);
+        theMMU.write8(0xa2a2, 0xea);
+        theMMU.write8(0xa278, 0xea);
+        theMMU.write8(0xa279, 0xea);
+        theMMU.write8(0xa2c4, 0xea);
+        theMMU.write8(0xa2c5, 0xea);
+
     }
     else if (romName == "d:\\prova\\snes\\Prince of Persia (E) [!].smc")
     {
@@ -888,6 +902,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
                     thePPU.step(cycs, theMMU, theCPU);
                 }
             }
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))
+        {
+            theMMU.pressDownKey();
         }
 
         ImGui_ImplOpenGL3_NewFrame();

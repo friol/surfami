@@ -26,6 +26,8 @@ private:
 
 	unsigned char wram281x[3];
 
+	bool isDownPressed = false;
+
 public:
 
 	mmu(ppu& thePPU,apu& theAPU);
@@ -33,9 +35,12 @@ public:
 	void write8(unsigned int address, unsigned char val);
 	unsigned char read8(unsigned int address);
 	unsigned char* getInternalRAMPtr() { return snesRAM; }
+
 	bool isVblankNMIEnabled() { return ((nmiTimen & 0x80) == 0x80); }
 	void setNMIFlag() { nmiFlag = true; }
 	void clearNMIFlag() { nmiFlag = false; }
+
+	void pressDownKey() { isDownPressed = true; }
 	~mmu();
 };
 

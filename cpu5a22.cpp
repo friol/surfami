@@ -5435,6 +5435,41 @@ int cpu5a22::stepOne()
 			cycles = 6 + cycAdder;
 			break;
 		}
+		case 0xf6:
+		{
+			// INC dp,X
+			int cycAdder = 0;
+			unsigned int addr = getDirectPageIndexedXAddress();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				val++;
+				pMMU->write8(addr, val);
+				regP.setNegative(val >> 7);
+				regP.setZero(val == 0);
+			}
+			else
+			{
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+
+				unsigned short int val = (hi << 8) | lo;
+				val++;
+
+				pMMU->write8(addr, val & 0xff);
+				pMMU->write8(addr + 1, val >> 8);
+				regP.setNegative(val >> 15);
+				regP.setZero(val == 0);
+				cycAdder += 2;
+			}
+
+			if (regP.isDPLowNotZero()) cycAdder += 1;
+
+			regPC += 2;
+			cycles = 6 + cycAdder;
+			break;
+		}
 		default:
 		{
 			// unknown opcode

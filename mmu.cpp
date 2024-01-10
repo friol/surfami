@@ -360,6 +360,21 @@ unsigned char mmu::read8(unsigned int address)
 			//	PPU Interrupts - H/V-Blank Flag and Joypad Busy Flag (R) - TODO
 			return 0;
 		}
+		else if (adr == 0x4218)
+		{
+			return 0;
+		}
+		else if (adr == 0x4219)
+		{
+			unsigned char res = 0;
+			if (isDownPressed)
+			{
+				isDownPressed = false;
+				res |= 0x10;
+			}
+
+			return res;
+		}
 		else
 		{
 			return snesRAM[adr];

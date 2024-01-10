@@ -41,24 +41,13 @@ int romLoader::loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>
 
 	loadLog.push_back("ROM was read correctly. Size is " + std::to_string(romContents.size()/1024) + "kb.");
 
-	/*if (romContents.size() != 0x8000)
-	{
-		// other roms not supported for now
-		return 1;
-	}
-
-	for (int i = 0;i < 0x8000;i++)
-	{
-		theMMU.write8(i + 0x8000, romContents[i]);
-	}*/
-
 	unsigned char* pSnesRAM = theMMU.getInternalRAMPtr();
-	unsigned short int filesizeInKb = romContents.size() / 1024;
+	unsigned short int filesizeInKb = (unsigned short int)(romContents.size() / 1024);
 
 	//	map rom to memory
 	unsigned char bank = 0x80;
 	unsigned char shadow_bank = 0x00;
-	unsigned char chunks = filesizeInKb / 32;
+	unsigned char chunks = (unsigned char)(filesizeInKb / 32);
 	for (unsigned long int i = 0; i < romContents.size(); i++) 
 	{
 		//	write to all locations that mirror our ROM
