@@ -362,15 +362,52 @@ unsigned char mmu::read8(unsigned int address)
 		}
 		else if (adr == 0x4218)
 		{
-			return 0;
+			unsigned char res = 0;
+			if (isKeyAPressed)
+			{
+				isKeyAPressed = false;
+				res |= 0x80;
+			}
+			if (isKeyXPressed)
+			{
+				isKeyXPressed = false;
+				res |= 0x40;
+			}
+
+			return res;
 		}
 		else if (adr == 0x4219)
 		{
 			unsigned char res = 0;
-			if (isDownPressed)
+			if (isKeySelectPressed)
 			{
-				isDownPressed = false;
+				isKeySelectPressed = false;
+				res |= 0x20;
+			}
+			if (isKeyStartPressed)
+			{
+				isKeyStartPressed = false;
 				res |= 0x10;
+			}
+			if (isKeyRightPressed)
+			{
+				isKeyRightPressed = false;
+				res |= 0x01;
+			}
+			if (isKeyLeftPressed)
+			{
+				isKeyLeftPressed = false;
+				res |= 0x02;
+			}
+			if (isKeyDownPressed)
+			{
+				isKeyDownPressed = false;
+				res |= 0x04;
+			}
+			if (isKeyUpPressed)
+			{
+				isKeyUpPressed = false;
+				res |= 0x08;
 			}
 
 			return res;

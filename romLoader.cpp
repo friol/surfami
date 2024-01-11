@@ -5,9 +5,17 @@ romLoader::romLoader()
 {
 }
 
-std::vector<unsigned char> romLoader::readFile(std::string& filename)
+std::vector<unsigned char> romLoader::readFile(std::string& filename,int& error)
 {
+	std::vector<unsigned char> vec;
+
+	error = 0;
 	std::ifstream file(filename, std::ios::binary);
+	if (!file)
+	{
+		error = 1;
+		return vec;
+	}
 
 	file.unsetf(std::ios::skipws);
 
@@ -24,7 +32,6 @@ std::vector<unsigned char> romLoader::readFile(std::string& filename)
 		file.seekg(0, std::ios::beg);
 	}
 
-	std::vector<unsigned char> vec;
 	vec.reserve(fileSize);
 
 	vec.insert(vec.begin(),std::istream_iterator<unsigned char>(file),std::istream_iterator<unsigned char>());
@@ -37,7 +44,14 @@ int romLoader::loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>
 	std::vector<unsigned char> romContents;
 
 	loadLog.push_back("Loading rom [" + romPath+"]");
-	romContents = readFile(romPath);
+
+	int error = 0;
+	romContents = readFile(romPath,error);
+	if (error != 0)
+	{
+		loadLog.push_back("Error loading rom.");
+		return 1;
+	}
 
 	loadLog.push_back("ROM was read correctly. Size is " + std::to_string(romContents.size()/1024) + "kb.");
 

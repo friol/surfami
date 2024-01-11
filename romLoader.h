@@ -14,7 +14,7 @@ class romLoader
 {
 private:
 
-	std::vector<unsigned char> readFile(std::string& filename);
+	std::vector<unsigned char> readFile(std::string& filename,int& error);
 
 public:
 

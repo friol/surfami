@@ -26,7 +26,14 @@ private:
 
 	unsigned char wram281x[3];
 
-	bool isDownPressed = false;
+	bool isKeyDownPressed = false;
+	bool isKeyUpPressed = false;
+	bool isKeyLeftPressed = false;
+	bool isKeyRightPressed = false;
+	bool isKeyStartPressed = false;
+	bool isKeySelectPressed = false;
+	bool isKeyAPressed = false;
+	bool isKeyXPressed = false;
 
 public:
 
@@ -40,7 +47,14 @@ public:
 	void setNMIFlag() { nmiFlag = true; }
 	void clearNMIFlag() { nmiFlag = false; }
 
-	void pressDownKey() { isDownPressed = true; }
+	void pressSelectKey() { isKeySelectPressed = true; }
+	void pressStartKey() { isKeyStartPressed = true; }
+	void pressRightKey() { isKeyRightPressed = true; }
+	void pressLeftKey() { isKeyLeftPressed = true; }
+	void pressUpKey() { isKeyUpPressed = true; }
+	void pressDownKey() { isKeyDownPressed = true; }
+	void pressAKey() { isKeyAPressed = true; }
+	void pressXKey() { isKeyXPressed = true; }
 	~mmu();
 };
 

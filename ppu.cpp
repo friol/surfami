@@ -65,6 +65,11 @@ void ppu::writeBgScrollY(int bgId, unsigned char val)
 
 void ppu::writeOAM(unsigned char val)
 {
+	/*if (OAMAddr >= 0x220)
+	{
+		OAMAddr = 0;
+	}*/
+
 	if (OAMAddr % 2 == 0) 
 	{
 		OAM_Lsb = val;
@@ -78,6 +83,7 @@ void ppu::writeOAM(unsigned char val)
 	{
 		OAM[OAMAddr] = val;
 	}
+	
 	OAMAddr++;
 }
 
@@ -416,7 +422,13 @@ void ppu::renderTile8bpp(int px, int py, int tileNum, int palId, int bgnum, int 
 	tileAddr += ((bgTileBaseAddress >> (4 * bgnum)) & 0x0f) * 1024 * 4;
 	tileAddr &= 0x7fff;
 
-	for (int y = 0;y < 8;y++)
+	int ybase = 0; int yend = 8; int yinc = 1; int tileAddrInc = 1;
+	if (yflip)
+	{
+		ybase = 7; yend = -1; yinc = -1;
+	}
+
+	for (int y = ybase;y != yend;y += yinc)
 	{
 		pBuf = &screenFramebuffer[(px * 4) + ((py + y) * ppuResolutionX * 4)];
 
@@ -429,7 +441,13 @@ void ppu::renderTile8bpp(int px, int py, int tileNum, int palId, int bgnum, int 
 		const unsigned char b_7 = vram[tileAddr + 24] & 0xff;
 		const unsigned char b_8 = vram[tileAddr + 24] >> 8;
 
-		for (int x = 7;x >= 0;x--)
+		int xbase = 7; int xend = -1; int xinc = -1;
+		if (xflip)
+		{
+			xbase = 0; xend = 8; xinc = 1;
+		}
+
+		for (int x = xbase;x != xend;x += xinc)
 		{
 			const unsigned short int curCol = ((b_1 >> x) & 1) +
 				(2 * ((b_2 >> x) & 1)) +
@@ -440,17 +458,10 @@ void ppu::renderTile8bpp(int px, int py, int tileNum, int palId, int bgnum, int 
 				(64 * ((b_7 >> x) & 1)) +
 				(128 * ((b_8 >> x) & 1));
 
-			if ((curCol % 256) != 0)
-			{
-				*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
-				*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
-				*pBuf = palArr[(curCol * 3) + 2]; pBuf++;
-				*pBuf = 0xff; pBuf++;
-			}
-			else
-			{
-				pBuf++;
-			}
+			*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
+			*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
+			*pBuf = palArr[(curCol * 3) + 2]; pBuf++;
+			*pBuf = 0xff; pBuf++;
 		}
 
 		tileAddr += 1;

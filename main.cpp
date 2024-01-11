@@ -420,9 +420,15 @@ void displayVRAMViewerWindow(GLuint renderTexture,int image_width,int image_heig
     ImGui::End();
 }
 
-void displaySNESScreenWindow(GLuint renderTexture, int image_width, int image_height, unsigned char* parr, ppu& thePPU)
+void displaySNESScreenWindow(GLuint renderTexture, int image_width, int image_height, unsigned char* parr, ppu& thePPU,bool& isWindowFocused)
 {
     ImGui::Begin("SNES TV Output");
+
+    if (ImGui::IsWindowFocused())
+    {
+        isWindowFocused = true;
+    }
+    else isWindowFocused = false;
 
     thePPU.renderScreen();
     renderToTexture(renderTexture, image_width, image_height, parr);
@@ -560,38 +566,54 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     romLoader theRomLoader;
     //std::string romName = "d:\\prova\\snes\\HelloWorld.sfc";
     //std::string romName = "d:\\prova\\snes\\BANKWRAM.sfc";
+
     //std::string romName = "d:\\prova\\snes\\CPUMOV.sfc";
     //std::string romName = "d:\\prova\\snes\\CPUDEC.sfc";
     //std::string romName = "d:\\prova\\snes\\CPUAND.sfc"; // fails for uninitialized memory
     //std::string romName = "d:\\prova\\snes\\CPUASL.sfc";
+    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\ADC\\CPUADC.sfc";
+    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\BIT\\CPUBIT.sfc";
+    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\RET\\CPURET.sfc";
+    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\JMP\\CPUJMP.sfc";
+    //std::string romName = "D:\\prova\\snes\\SNES-master\\Compress\\LZ77\\LZ77WRAMGFX\\LZ77WRAMGFX.sfc"; // mode 5
+
     //std::string romName = "d:\\prova\\snes\\8x8BG1Map2BPP32x328PAL.sfc";
     //std::string romName = "d:\\prova\\snes\\8x8BGMap4BPP32x328PAL.sfc";
+    //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\BGMAP\\8x8\\2BPP\\8x8BG2Map2BPP32x328PAL\\8x8BG2Map2BPP32x328PAL.sfc"; //check
+    //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\BGMAP\\8x8\\8BPP\\TileFlip\\8x8BGMapTileFlip.sfc";
+    //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\BGMAP\\8x8\\8BPP\\32x32\\8x8BGMap8BPP32x32.sfc";
     //std::string romName = "d:\\prova\\snes\\Rings.sfc";
     //std::string romName = "d:\\prova\\snes\\MosaicMode3.sfc";
 
-    //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc"; // mode7
-    //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
-    //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
-    //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc"; // d7
-    std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
+    //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc";
+    //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc"; // d7
+    std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc"; // d7
+    //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc";
+    //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
     //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc";
-    //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc"; // 45
+    //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc";
     //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // cb
     //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc";
-    //std::string romName = "d:\\prova\\snes\\Frogger (U).smc";
+    //std::string romName = "d:\\prova\\snes\\Frogger (U).smc"; // SPC?
     //std::string romName = "d:\\prova\\snes\\Race Drivin' (U).smc"; 
-    //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc";
+    //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc"; // SPC
     //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc"; // mode7 
-    //std::string romName = "d:\\prova\\snes\\Arkanoid - Doh it Again (E) [!].smc"; // 87 mode7
-    //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc"; // waits for joypad?
+    //std::string romName = "d:\\prova\\snes\\Arkanoid - Doh it Again (E) [!].smc"; // mode7
+    //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc"; // waits for joypad (?)
     //std::string romName = "d:\\prova\\snes\\Home Alone (E) [!].smc"; // 57
     //std::string romName = "d:\\prova\\snes\\Kick Off (E).smc";
     //std::string romName = "d:\\prova\\snes\\Super Off Road (E) [!].smc"; // 34
     //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc"; 
     //std::string romName = "d:\\prova\\snes\\Sensible Soccer - International Edition (E).smc";
-    //std::string romName = "d:\\prova\\snes\\Gun Force (E).smc";
-    //std::string romName = "d:\\prova\\snes\\The Legend Of Zelda -  A Link To The Past.smc"; // jumps to nowhere after 16m cycles
-    //std::string romName = "d:\\prova\\snes\\Prince of Persia (E) [!].smc";
+    //std::string romName = "d:\\prova\\snes\\Gun Force (E).smc"; // 02
+    //std::string romName = "d:\\prova\\snes\\The Legend Of Zelda -  A Link To The Past.smc"; // dma modes 3-7 - fucks up
+    //std::string romName = "d:\\prova\\snes\\Prince of Persia (E) [!].smc"; // e3
+    //std::string romName = "d:\\prova\\snes\\Yoshi's Cookie (E).smc"; // SPC
+    //std::string romName = "d:\\prova\\snes\\Sim City (E) [!].smc"; // 02
+    //std::string romName = "d:\\prova\\snes\\James Pond's Crazy Sports (E).smc"; // SPC
+    //std::string romName = "d:\\prova\\snes\\Spanky's Quest (E).smc"; // SPC
+    //std::string romName = "d:\\prova\\snes\\Spectre (E) [!].smc";
+    //std::string romName = "D:\\prova\\snes\\SNES-master\\Games\\MonsterFarmJump\\MonsterFarmJump.sfc";
 
     //std::string romName = "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc"; // WAI
     //std::string romName = "d:\\prova\\snes\\elix-smashit-pal.sfc"; // cb WAI
@@ -619,6 +641,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x809e, 0xea);
         theMMU.write8(0x80ad, 0xea);
         theMMU.write8(0x80ae, 0xea);
+    }
+    else if (romName == "d:\\prova\\snes\\Space Invaders (U).smc")
+    {
+        theMMU.write8(0x809a95, 0xea);
+        theMMU.write8(0x809a96, 0xea);
+        theMMU.write8(0x809ab1, 0xea);
+        theMMU.write8(0x809ab2, 0xea);
+
     }
     else if (romName == "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc")
     {
@@ -650,6 +680,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x298e0, 0xea);
         theMMU.write8(0x298ed, 0xea);
         theMMU.write8(0x298ee, 0xea);
+        theMMU.write8(0x2990b, 0xea);
+        theMMU.write8(0x2990c, 0xea);
+        theMMU.write8(0x29921, 0xea);
+        theMMU.write8(0x29922, 0xea);
+        theMMU.write8(0x2992f, 0xea);
+        theMMU.write8(0x29930, 0xea);
+        theMMU.write8(0x29962, 0xea);
+        theMMU.write8(0x29963, 0xea);
+        theMMU.write8(0x29999, 0xea);
+        theMMU.write8(0x2999a, 0xea);
     }
     else if (romName == "d:\\prova\\snes\\The Legend Of Zelda -  A Link To The Past.smc")
     {
@@ -834,7 +874,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x838774, 0xea);
         theMMU.write8(0x8387aa, 0xea);
         theMMU.write8(0x8387ab, 0xea);
-        
         theMMU.write8(0x838c60, 0xea);
         theMMU.write8(0x838c61, 0xea);
         theMMU.write8(0x8389d7, 0xea);
@@ -845,8 +884,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x838a29, 0xea);
         theMMU.write8(0x838a3b, 0xea);
         theMMU.write8(0x838a3c, 0xea);
+        theMMU.write8(0x838c02, 0xea);
+        theMMU.write8(0x838c03, 0xea);
         theMMU.write8(0x838c2c, 0xea);
         theMMU.write8(0x838c2d, 0xea);
+        theMMU.write8(0x838bd4, 0xea);
+        theMMU.write8(0x838bd5, 0xea);
+        theMMU.write8(0x8388f9, 0xea);
+        theMMU.write8(0x8388fa, 0xea);
+        theMMU.write8(0x838954, 0xea);
+        theMMU.write8(0x838955, 0xea);
+        theMMU.write8(0x838966, 0xea);
+        theMMU.write8(0x838967, 0xea);
+        theMMU.write8(0x838974, 0xea);
+        theMMU.write8(0x838975, 0xea);
     }
     
     //
@@ -867,6 +918,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
 
     bool done = false;
     bool isDebugWindowFocused = false;
+    bool isTVWindowFocused = false;
     char jumpToAppoBuf[256];
     jumpToAppoBuf[0] = '\0';
     int baseMemoryAddress = 0;
@@ -903,9 +955,41 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
                 }
             }
         }
-        if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))
+
+        if (isTVWindowFocused)
         {
-            theMMU.pressDownKey();
+            if (ImGui::IsKeyPressed(ImGuiKey_N))
+            {
+                theMMU.pressSelectKey();
+            }
+            else if (ImGui::IsKeyPressed(ImGuiKey_M))
+            {
+                theMMU.pressStartKey();
+            }
+            else if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
+            {
+                theMMU.pressRightKey();
+            }
+            else if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+            {
+                theMMU.pressLeftKey();
+            }
+            else if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))
+            {
+                theMMU.pressUpKey();
+            }
+            else if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))
+            {
+                theMMU.pressDownKey();
+            }
+            else if (ImGui::IsKeyPressed(ImGuiKey_Z))
+            {
+                theMMU.pressAKey();
+            }
+            else if (ImGui::IsKeyPressed(ImGuiKey_X))
+            {
+                theMMU.pressXKey();
+            }
         }
 
         ImGui_ImplOpenGL3_NewFrame();
@@ -922,7 +1006,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         displayPaletteWindow(thePPU);
         displayLogWindow();
         displayVRAMViewerWindow(vramRenderTexture, thePPU.getVRAMViewerXsize(), thePPU.getVRAMViewerYsize(), thePPU.getVRAMViewerBitmap(),thePPU);
-        displaySNESScreenWindow(screenRenderTexture, thePPU.getPPUResolutionX(), thePPU.getPPUResolutionY(), thePPU.getPPUFramebuffer(), thePPU);
+        displaySNESScreenWindow(screenRenderTexture, thePPU.getPPUResolutionX(), thePPU.getPPUResolutionY(), thePPU.getPPUFramebuffer(), thePPU,isTVWindowFocused);
         displayMemoryWindow(theMMU,baseMemoryAddress);
 
         if (emustatus == 1)

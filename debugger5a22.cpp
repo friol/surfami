@@ -5,6 +5,7 @@
 
 static const debugInfoRec debugInstrData[] =
 {
+	{0x00,1,"BRK",None,false,false,false},
 	{0x03,2,"ORA param0",Immediate8,false,false,true}, // validatedF
 	{0x06,2,"ASL param0",Immediate8,false,false,true}, // validatedF
 	{0x08,1,"PHP",None,false,false,true}, // validatedF
@@ -19,6 +20,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x0e,3,"ASL param0",Absolute16,false,false,true}, // validatedF
 	{0x0f,4,"ORA param0",AbsoluteLong,false,false,true}, // validatedF
 	{0x10,2,"BPL param0",Immediate8,false,false,true}, // validatedF
+	{0x11,2,"ORA (param0),Y",Immediate8,false,false,true}, // validatedF
 	{0x14,2,"TRB param0",Immediate8,false,false,true}, // validatedF
 	{0x15,2,"ORA param0,X",Immediate8,false,false,true}, // validatedF
 	{0x17,2,"ORA [param0],Y",Immediate8,false,false,true}, // validatedF
@@ -26,6 +28,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x19,3,"ORA param0,Y",Absolute16,false,false,true}, // validatedF
 	{0x1A,1,"INC A",None,false,false,true}, // validatedF
 	{0x1B,1,"TCS",None,false,false,true}, // validatedF
+	{0x1c,3,"TRB param0",Absolute16,false,false,true}, // validatedF
 	{0x1d,3,"ORA param0",Absolute16,false,false,true}, // validatedF
 	{0x1e,3,"ASL param0,X",Absolute16,false,false,true}, // validatedF
 	{0x1f,4,"ORA param0,X",AbsoluteLong,false,false,true}, // validatedF
@@ -53,6 +56,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x3a,1,"DEC A",None,false,false,true}, // validatedF
 	{0x3b,1,"TSC",None,false,false,true}, // validatedF
 	{0x3d,3,"AND param0,X",Absolute16,false,false,true}, // validatedF
+	{0x3e,3,"ROL param0,X",Absolute16,false,false,true}, // validatedF
 	{0x3f,4,"AND param0,X",AbsoluteLong,false,false,true}, // validatedF
 	{0x40,1,"RTI",None,false,false,true}, // validatedF
 	{0x44,3,"MVP param0",Absolute16,false,false,true},
