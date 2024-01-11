@@ -115,10 +115,8 @@ void prepareVRAMViewerTexture(GLuint& image_texture, int image_width, int image_
     glBindTexture(GL_TEXTURE_2D, image_texture);
 
     // Setup filtering parameters for display
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // This is required on WebGL for non power-of-two textures
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     // Upload pixels into texture
 #if defined(GL_UNPACK_ROW_LENGTH) && !defined(__EMSCRIPTEN__)
@@ -586,8 +584,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\MosaicMode3.sfc";
 
     //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc";
-    //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc"; // d7
-    std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc"; // d7
+    //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc"; // e7
+    std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc";
     //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
     //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc";
@@ -596,10 +594,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc";
     //std::string romName = "d:\\prova\\snes\\Frogger (U).smc"; // SPC?
     //std::string romName = "d:\\prova\\snes\\Race Drivin' (U).smc"; 
-    //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc"; // SPC
-    //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc"; // mode7 
+    //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc";
+    //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc";  
     //std::string romName = "d:\\prova\\snes\\Arkanoid - Doh it Again (E) [!].smc"; // mode7
-    //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc"; // waits for joypad (?)
+    //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc";
     //std::string romName = "d:\\prova\\snes\\Home Alone (E) [!].smc"; // 57
     //std::string romName = "d:\\prova\\snes\\Kick Off (E).smc";
     //std::string romName = "d:\\prova\\snes\\Super Off Road (E) [!].smc"; // 34
@@ -612,7 +610,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Sim City (E) [!].smc"; // 02
     //std::string romName = "d:\\prova\\snes\\James Pond's Crazy Sports (E).smc"; // SPC
     //std::string romName = "d:\\prova\\snes\\Spanky's Quest (E).smc"; // SPC
-    //std::string romName = "d:\\prova\\snes\\Spectre (E) [!].smc";
+    //std::string romName = "d:\\prova\\snes\\Spectre (E) [!].smc"; // joy poll
     //std::string romName = "D:\\prova\\snes\\SNES-master\\Games\\MonsterFarmJump\\MonsterFarmJump.sfc";
 
     //std::string romName = "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc"; // WAI
@@ -642,13 +640,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x80ad, 0xea);
         theMMU.write8(0x80ae, 0xea);
     }
+    else if (romName == "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc")
+    {
+        theMMU.write8(0x80bb89, 0xea);
+        theMMU.write8(0x80bb8a, 0xea);
+        theMMU.write8(0x80bb9d, 0xea);
+        theMMU.write8(0x80bb9e, 0xea);
+    }
     else if (romName == "d:\\prova\\snes\\Space Invaders (U).smc")
     {
         theMMU.write8(0x809a95, 0xea);
         theMMU.write8(0x809a96, 0xea);
         theMMU.write8(0x809ab1, 0xea);
         theMMU.write8(0x809ab2, 0xea);
-
     }
     else if (romName == "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc")
     {
@@ -774,6 +778,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x867a, 0xea);
         theMMU.write8(0xd8008, 0xea);
         theMMU.write8(0xd8009, 0xea);
+        theMMU.write8(0xd85f8, 0xea);
+        theMMU.write8(0xd85f9, 0xea);
     }
     else if (romName == "d:\\prova\\snes\\Home Alone (E) [!].smc")
     {

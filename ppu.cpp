@@ -174,7 +174,7 @@ void ppu::writeRegister(int reg, unsigned char val)
 		  3-0   BG1 Tile Base Address (in 4K-word steps)
 		  Ignored in Mode 7 (Base is always zero).
 		*/
-		bgTileBaseAddress = bgTileBaseAddress | val;
+		bgTileBaseAddress = (bgTileBaseAddress&0xff00) | val;
 	}
 	else if (reg == 0x210c)
 	{
@@ -581,6 +581,13 @@ void ppu::renderSprites()
 	};
 
 	int spriteDim = (obSel >> 5)&0x7;
+
+	// 4 - 3   Gap between OBJ 0FFh and 100h(0 = None) (4K - word steps) (8K - byte steps)
+	int spriteGap = (obSel >> 3) & 0x03;
+	if (spriteGap != 0)
+	{
+		int err = 1;
+	}
 
 	for (auto i = 127; i >= 0; i--)
 	{

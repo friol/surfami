@@ -182,6 +182,7 @@ static const debugInfoRec debugInstrData[] =
 	{0xD0,2,"BNE param0",Immediate8,false,false,true}, // validatedF
 	{0xD5,2,"CMP param0,X",Immediate8,false,false,true}, // validatedF
 	{0xD6,2,"DEC param0,X",Immediate8,false,false,true}, // validatedF
+	{0xD7,2,"CMP [param0],Y",Immediate8,false,false,true}, // fck
 	{0xd8,1,"CLD",None,false,false,true}, // validatedF
 	{0xD9,3,"CMP param0,Y",Absolute16,false,false,true}, // validatedF
 	{0xda,1,"PHX",None,false,false ,true}, // validatedF

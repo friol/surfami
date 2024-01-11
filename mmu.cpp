@@ -329,12 +329,19 @@ unsigned char mmu::read8(unsigned int address)
 		else if (adr == 0x213f)
 		{
 			// TODO PAL/NTSC flag
-			return 0x03;
-			//return 0x13;
+			//return 0x03;
+			return 0x13;
 		}
 		else if ((adr == 0x2140) || (adr == 0x2141))
 		{
 			return pAPU->read8(adr);
+		}
+		else if (adr == 0x4016)
+		{
+			// 4016h / Read - JOYA - Joypad Input Register A(R)
+			// manual reading
+
+			return 0;
 		}
 		else if (adr==0x4200) 
 		{
@@ -358,9 +365,13 @@ unsigned char mmu::read8(unsigned int address)
 		else if (adr == 0x4212)
 		{
 			//	PPU Interrupts - H/V-Blank Flag and Joypad Busy Flag (R) - TODO
+			if (isKeySelectPressed || isKeyStartPressed)
+			{
+				return 0x01;
+			}
 			return 0;
 		}
-		else if (adr == 0x4218)
+		else if ((adr == 0x4218)|| (adr == 0x421a))
 		{
 			unsigned char res = 0;
 			if (isKeyAPressed)
@@ -376,7 +387,7 @@ unsigned char mmu::read8(unsigned int address)
 
 			return res;
 		}
-		else if (adr == 0x4219)
+		else if ((adr == 0x4219)|| (adr == 0x421b))
 		{
 			unsigned char res = 0;
 			if (isKeySelectPressed)
