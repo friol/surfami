@@ -224,8 +224,12 @@ void mmu::write8(unsigned int address, unsigned char val)
 		else if (adr == 0x2122)
 		{
 			// write to cgram
-			//glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2122 (CGRAM write reg)");
 			pPPU->writeRegister(0x2122, val);
+		}
+		else if (adr == 0x212d)
+		{
+			// write to sub screen designation 
+			pPPU->writeRegister(0x212d, val);
 		}
 		else if (adr == 0x2115)
 		{
@@ -329,8 +333,8 @@ unsigned char mmu::read8(unsigned int address)
 		else if (adr == 0x213f)
 		{
 			// TODO PAL/NTSC flag
-			//return 0x03;
-			return 0x13;
+			return 0x03;
+			//return 0x13;
 		}
 		else if ((adr == 0x2140) || (adr == 0x2141))
 		{

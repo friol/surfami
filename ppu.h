@@ -22,6 +22,7 @@ private:
 	int bgMode;
 	int bgTileBaseAddress=0;
 	int mainScreenDesignation=0;
+	int subScreenDesignation = 0;
 	unsigned char iniDisp = 0;
 	unsigned char obSel = 0;
 
