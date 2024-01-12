@@ -474,6 +474,9 @@ void displayAppoWindow(ppu& thePPU, debugger5a22& theDebugger5a22)
     std::string bgModeString = "BG Screen Mode:";
     bgModeString += std::to_string(thePPU.getCurrentBGMode());
 
+    float fps=ImGui::GetIO().Framerate;
+    bgModeString += " --- fps: "+std::to_string(fps);
+
     ImGui::SameLine();
     ImGui::Text(bgModeString.c_str());
 
@@ -584,7 +587,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\MosaicMode3.sfc";
 
     //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc";
-    std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc"; // e7
+    //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc"; // e7
     //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc";
     //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
@@ -592,12 +595,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc";
     //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // cb
     //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc";
-    //std::string romName = "d:\\prova\\snes\\Frogger (U).smc"; // SPC?
+    //std::string romName = "d:\\prova\\snes\\Frogger (U).smc";
     //std::string romName = "d:\\prova\\snes\\Race Drivin' (U).smc"; 
     //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc";  
     //std::string romName = "d:\\prova\\snes\\Arkanoid - Doh it Again (E) [!].smc"; // mode7
-    //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc";
+    //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc"; // SPC
     //std::string romName = "d:\\prova\\snes\\Home Alone (E) [!].smc"; // 57
     //std::string romName = "d:\\prova\\snes\\Kick Off (E).smc";
     //std::string romName = "d:\\prova\\snes\\Super Off Road (E) [!].smc"; // 34
@@ -605,12 +608,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Sensible Soccer - International Edition (E).smc";
     //std::string romName = "d:\\prova\\snes\\Gun Force (E).smc"; // 02
     //std::string romName = "d:\\prova\\snes\\The Legend Of Zelda -  A Link To The Past.smc"; // dma modes 3-7 - fucks up
-    //std::string romName = "d:\\prova\\snes\\Prince of Persia (E) [!].smc"; // e3
+    //std::string romName = "d:\\prova\\snes\\Prince of Persia (E) [!].smc"; // 43
     //std::string romName = "d:\\prova\\snes\\Yoshi's Cookie (E).smc"; // SPC
     //std::string romName = "d:\\prova\\snes\\Sim City (E) [!].smc"; // 02
     //std::string romName = "d:\\prova\\snes\\James Pond's Crazy Sports (E).smc"; // SPC
-    //std::string romName = "d:\\prova\\snes\\Spanky's Quest (E).smc"; // SPC
-    //std::string romName = "d:\\prova\\snes\\Spectre (E) [!].smc"; // joy poll
+    //std::string romName = "d:\\prova\\snes\\Spanky's Quest (E).smc";
+    //std::string romName = "d:\\prova\\snes\\Spectre (E) [!].smc";
+    //std::string romName = "d:\\prova\\snes\\Tetris Attack (E).smc"; // crash
     //std::string romName = "D:\\prova\\snes\\SNES-master\\Games\\MonsterFarmJump\\MonsterFarmJump.sfc";
 
     //std::string romName = "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc"; // WAI
@@ -631,14 +635,45 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     }
 
     // unfortunately, no SPC cpu is emulated at this time
-    if (romName == "d:\\prova\\snes\\Super Mario World (J) [!].sfc")
+    if (romName == "d:\\prova\\snes\\Frogger (U).smc")
     {
-        theMMU.write8(0x80d6, 0xea);
-        theMMU.write8(0x80d7, 0xea);
-        theMMU.write8(0x809d, 0xea);
-        theMMU.write8(0x809e, 0xea);
-        theMMU.write8(0x80ad, 0xea);
-        theMMU.write8(0x80ae, 0xea);
+        theMMU.write8(0x8ff1fa, 0xea);
+        theMMU.write8(0x8ff1fb, 0xea);
+        theMMU.write8(0x8ff141, 0xea);
+        theMMU.write8(0x8ff142, 0xea);
+        theMMU.write8(0x8ff108, 0xea);
+        theMMU.write8(0x8ff109, 0xea);
+        theMMU.write8(0x8ff118, 0xea);
+        theMMU.write8(0x8ff119, 0xea);
+        theMMU.write8(0x8ff2ce, 0xea);
+        theMMU.write8(0x8ff2cf, 0xea);
+        theMMU.write8(0x8ff353, 0xea);
+        theMMU.write8(0x8ff354, 0xea);
+        theMMU.write8(0x8ff378, 0xea);
+        theMMU.write8(0x8ff379, 0xea);
+        theMMU.write8(0x8ff38e, 0xea);
+        theMMU.write8(0x8ff38f, 0xea);
+        theMMU.write8(0x8ff201, 0xea);
+        theMMU.write8(0x8ff202, 0xea);
+
+    }
+    else if (romName == "d:\\prova\\snes\\Tetris Attack (E).smc")
+    {
+        theMMU.write8(0x809473, 0xea);
+        theMMU.write8(0x809474, 0xea);
+        theMMU.write8(0x80947c, 0xea);
+        theMMU.write8(0x80947d, 0xea);
+        theMMU.write8(0x809481, 0xea);
+        theMMU.write8(0x809482, 0xea);
+        theMMU.write8(0x80948b, 0xea);
+        theMMU.write8(0x80948c, 0xea);
+        theMMU.write8(0x80942e, 0xea);
+        theMMU.write8(0x80942f, 0xea);
+        theMMU.write8(0x809439, 0xea);
+        theMMU.write8(0x80943a, 0xea);
+        theMMU.write8(0x80943e, 0xea);
+        theMMU.write8(0x80943f, 0xea);
+
     }
     else if (romName == "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc")
     {
@@ -646,13 +681,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x80bb8a, 0xea);
         theMMU.write8(0x80bb9d, 0xea);
         theMMU.write8(0x80bb9e, 0xea);
-    }
-    else if (romName == "d:\\prova\\snes\\Space Invaders (U).smc")
-    {
-        theMMU.write8(0x809a95, 0xea);
-        theMMU.write8(0x809a96, 0xea);
-        theMMU.write8(0x809ab1, 0xea);
-        theMMU.write8(0x809ab2, 0xea);
     }
     else if (romName == "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc")
     {
@@ -966,35 +994,74 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         {
             if (ImGui::IsKeyPressed(ImGuiKey_N))
             {
-                theMMU.pressSelectKey();
+                theMMU.pressSelectKey(true);
             }
-            else if (ImGui::IsKeyPressed(ImGuiKey_M))
+            else if (ImGui::IsKeyReleased(ImGuiKey_N))
             {
-                theMMU.pressStartKey();
+                theMMU.pressSelectKey(false);
             }
-            else if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
+
+            if (ImGui::IsKeyPressed(ImGuiKey_M))
             {
-                theMMU.pressRightKey();
+                theMMU.pressStartKey(true);
             }
-            else if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+            else if (ImGui::IsKeyReleased(ImGuiKey_M))
             {
-                theMMU.pressLeftKey();
+                theMMU.pressStartKey(false);
             }
-            else if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))
+
+            if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
             {
-                theMMU.pressUpKey();
+                theMMU.pressRightKey(true);
             }
-            else if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))
+            else if (ImGui::IsKeyReleased(ImGuiKey_RightArrow))
             {
-                theMMU.pressDownKey();
+                theMMU.pressRightKey(false);
             }
-            else if (ImGui::IsKeyPressed(ImGuiKey_Z))
+
+            if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
             {
-                theMMU.pressAKey();
+                theMMU.pressLeftKey(true);
             }
-            else if (ImGui::IsKeyPressed(ImGuiKey_X))
+            else if (ImGui::IsKeyReleased(ImGuiKey_LeftArrow))
             {
-                theMMU.pressXKey();
+                theMMU.pressLeftKey(false);
+            }
+
+            if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))
+            {
+                theMMU.pressUpKey(true);
+            }
+            else if (ImGui::IsKeyReleased(ImGuiKey_UpArrow))
+            {
+                theMMU.pressUpKey(false);
+            }
+
+            if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))
+            {
+                theMMU.pressDownKey(true);
+            }
+            else if (ImGui::IsKeyReleased(ImGuiKey_DownArrow))
+            {
+                theMMU.pressDownKey(false);
+            }
+
+            if (ImGui::IsKeyPressed(ImGuiKey_Z))
+            {
+                theMMU.pressAKey(true);
+            }
+            else if (ImGui::IsKeyReleased(ImGuiKey_Z))
+            {
+                theMMU.pressAKey(false);
+            }
+
+            if (ImGui::IsKeyPressed(ImGuiKey_X))
+            {
+                theMMU.pressXKey(true);
+            }
+            else if (ImGui::IsKeyReleased(ImGuiKey_X))
+            {
+                theMMU.pressXKey(false);
             }
         }
 

@@ -5,7 +5,7 @@
 
 static const debugInfoRec debugInstrData[] =
 {
-	{0x00,1,"BRK",None,false,false,false},
+	{0x00,1,"BRK",None,false,false,true}, // validatedF
 	{0x03,2,"ORA param0",Immediate8,false,false,true}, // validatedF
 	{0x06,2,"ASL param0",Immediate8,false,false,true}, // validatedF
 	{0x08,1,"PHP",None,false,false,true}, // validatedF
@@ -169,6 +169,7 @@ static const debugInfoRec debugInstrData[] =
 	{0xC0,2,"CPY param0",Immediate,true,false,true}, // validated Fck
 	{0xC5,2,"CMP param0",Immediate8,false,false,true}, // validatedF
 	{0xC6,2,"DEC param0",Immediate8,false,false,true}, // validatedF
+	{0xC7,2,"CMP [param0]",Immediate8,false,false,true}, // validatedF
 	{0xC8,1,"INY",None,false,false,true}, // validatedF
 	{0xC9,2,"CMP param0",Immediate,false,true,true}, // validatedF
 	{0xC2,2,"REP param0",Immediate8,false,false,true}, // validatedF
@@ -193,6 +194,7 @@ static const debugInfoRec debugInstrData[] =
 	{0xdf,4,"CMP param0,X",AbsoluteLong,false,false ,true}, // validatedF
 	{0xE0,2,"CPX param0",Immediate,true,false,true}, // validatedF
 	{0xe2,2,"SEP param0",Immediate8,false,false,true}, // validatedF
+	{0xe3,2,"SBC param0,S",Immediate8,false,false,true}, // validatedF
 	{0xe4,2,"CPX param0",Immediate8,false,false,true}, // validatedF
 	{0xe5,2,"SBC param0",Immediate8,false,false,true}, // validatedF
 	{0xe6,2,"INC param0",Immediate8,false,false,true}, // validatedF

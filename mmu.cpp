@@ -283,6 +283,10 @@ void mmu::write8(unsigned int address, unsigned char val)
 			if (bgid == 0) glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to BG " + std::to_string(bgid) + " scroll Y");
 			pPPU->writeBgScrollY(bgid, val);
 		}
+		else if ((adr == 0x2140) || (adr == 0x2141) || (adr == 0x2142) || (adr == 0x2143))
+		{
+			pAPU->write8(adr, val);
+		}
 
 		snesRAM[adr] = val;
 	}
@@ -333,10 +337,10 @@ unsigned char mmu::read8(unsigned int address)
 		else if (adr == 0x213f)
 		{
 			// TODO PAL/NTSC flag
-			return 0x03;
-			//return 0x13;
+			//return 0x03;
+			return 0x13;
 		}
-		else if ((adr == 0x2140) || (adr == 0x2141))
+		else if ((adr == 0x2140) || (adr == 0x2141) || (adr == 0x2142) || (adr == 0x2143))
 		{
 			return pAPU->read8(adr);
 		}
@@ -345,7 +349,7 @@ unsigned char mmu::read8(unsigned int address)
 			// 4016h / Read - JOYA - Joypad Input Register A(R)
 			// manual reading
 
-			return 0;
+			return 0x01;
 		}
 		else if (adr==0x4200) 
 		{
@@ -369,23 +373,26 @@ unsigned char mmu::read8(unsigned int address)
 		else if (adr == 0x4212)
 		{
 			//	PPU Interrupts - H/V-Blank Flag and Joypad Busy Flag (R) - TODO
+			unsigned char res = 0;
+			if (pPPU->isVBlankActive()) res |= 0x80;
+
 			if (isKeySelectPressed || isKeyStartPressed)
 			{
-				return 0x01;
+				res|=0x01;
 			}
-			return 0;
+			
+			return res;
+			//return 0;
 		}
 		else if ((adr == 0x4218)|| (adr == 0x421a))
 		{
 			unsigned char res = 0;
 			if (isKeyAPressed)
 			{
-				isKeyAPressed = false;
 				res |= 0x80;
 			}
 			if (isKeyXPressed)
 			{
-				isKeyXPressed = false;
 				res |= 0x40;
 			}
 
@@ -396,32 +403,26 @@ unsigned char mmu::read8(unsigned int address)
 			unsigned char res = 0;
 			if (isKeySelectPressed)
 			{
-				isKeySelectPressed = false;
 				res |= 0x20;
 			}
 			if (isKeyStartPressed)
 			{
-				isKeyStartPressed = false;
 				res |= 0x10;
 			}
 			if (isKeyRightPressed)
 			{
-				isKeyRightPressed = false;
 				res |= 0x01;
 			}
 			if (isKeyLeftPressed)
 			{
-				isKeyLeftPressed = false;
 				res |= 0x02;
 			}
 			if (isKeyDownPressed)
 			{
-				isKeyDownPressed = false;
 				res |= 0x04;
 			}
 			if (isKeyUpPressed)
 			{
-				isKeyUpPressed = false;
 				res |= 0x08;
 			}
 

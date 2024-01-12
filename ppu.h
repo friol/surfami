@@ -87,6 +87,7 @@ public:
 	unsigned char* getPPUFramebuffer() { return screenFramebuffer; }
 
 	void step(int numCycles,mmu& theMMU,cpu5a22& theCPU);
+	bool isVBlankActive() { return scanline >= vblankStartScanline; }
 
 	~ppu();
 };

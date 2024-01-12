@@ -47,14 +47,14 @@ public:
 	void setNMIFlag() { nmiFlag = true; }
 	void clearNMIFlag() { nmiFlag = false; }
 
-	void pressSelectKey() { isKeySelectPressed = true; }
-	void pressStartKey() { isKeyStartPressed = true; }
-	void pressRightKey() { isKeyRightPressed = true; }
-	void pressLeftKey() { isKeyLeftPressed = true; }
-	void pressUpKey() { isKeyUpPressed = true; }
-	void pressDownKey() { isKeyDownPressed = true; }
-	void pressAKey() { isKeyAPressed = true; }
-	void pressXKey() { isKeyXPressed = true; }
+	void pressSelectKey(bool val) { isKeySelectPressed = val; }
+	void pressStartKey(bool val) { isKeyStartPressed = val; }
+	void pressRightKey(bool val) { isKeyRightPressed = val; }
+	void pressLeftKey(bool val) { isKeyLeftPressed = val; }
+	void pressUpKey(bool val) { isKeyUpPressed = val; }
+	void pressDownKey(bool val) { isKeyDownPressed = val; }
+	void pressAKey(bool val) { isKeyAPressed = val; }
+	void pressXKey(bool val) { isKeyXPressed = val; }
 	~mmu();
 };
 

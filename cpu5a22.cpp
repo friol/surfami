@@ -5620,6 +5620,48 @@ int cpu5a22::stepOne()
 			cycles = 6 + cycAdder;
 			break;
 		}
+		case 0xe3:
+		{
+			// SBC sr,S
+			int cycAdder = 0;
+			unsigned int addr = getStackRelative();
+			doSBC(addr);
+			regPC += 2;
+			cycles = 4 + cycAdder;
+			break;
+		}
+		case 0xc7:
+		{
+			// CMP [dp]
+			int cycAdder = 0;
+			unsigned int addr = getDirectPageIndirectLongAddress();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char m = pMMU->read8(addr);
+				unsigned char val = regA_lo - m;
+				regP.setNegative(val >> 7);
+				regP.setZero(val == 0);
+				regP.setCarry(regA_lo >= m);
+			}
+			else
+			{
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned short int m = (hi << 8) | lo;
+				unsigned short int val = (regA_lo | (regA_hi << 8)) - m;
+				regP.setNegative(val >> 15);
+				regP.setZero(val == 0);
+				regP.setCarry((regA_lo | (regA_hi << 8)) >= m);
+				cycAdder = 1;
+			}
+
+			if (regP.isDPLowNotZero()) cycAdder += 1;
+
+			regPC += 2;
+			cycles = 6 + cycAdder;
+			break;
+		}
 		default:
 		{
 			// unknown opcode

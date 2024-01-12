@@ -330,6 +330,8 @@ void ppu::renderTile2bpp(int px, int py, int tileNum,int palId, int bgnum, int x
 
 void ppu::renderTile4bpp(int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip)
 {
+	if (px >= 256) return;
+
 	unsigned char* pBuf;
 	const int numCols = 16;
 	unsigned char palArr[3 * numCols];
@@ -564,9 +566,9 @@ void ppu::renderBG(int bgnum,int bpp)
 			int xflip= (vramWord >> 14) & 0x01;
 			int yflip= (vramWord >> 15) & 0x01;
 
-			if (bpp==2) renderTile2bpp(x * 8, y * 8, tileNum, palId,bgnum,xflip,yflip);
-			else if (bpp==4) renderTile4bpp(x * 8, y * 8, tileNum, palId,bgnum, xflip, yflip);
-			else if (bpp==8) renderTile8bpp(x * 8, y * 8, tileNum, palId,bgnum, xflip, yflip);
+			if (bpp==2) renderTile2bpp((x * 8)+((8-xscroll)%8), y * 8, tileNum, palId, bgnum, xflip, yflip);
+			else if (bpp==4) renderTile4bpp((x * 8) + ((8-xscroll) % 8), y * 8, tileNum, palId,bgnum, xflip, yflip);
+			else if (bpp==8) renderTile8bpp((x * 8)+((8-xscroll)%8), y * 8, tileNum, palId,bgnum, xflip, yflip);
 		}
 	}
 }
@@ -659,10 +661,18 @@ void ppu::renderSprites()
 					if (pixaddr < (ppuResolutionX * ppuResolutionY * 4))
 					{
 						unsigned char* pBuf = &screenFramebuffer[pixaddr];
-						*pBuf = palArr[(pixPalIdx * 3) + 0]; pBuf++;
-						*pBuf = palArr[(pixPalIdx * 3) + 1]; pBuf++;
-						*pBuf = palArr[(pixPalIdx * 3) + 2]; pBuf++;
-						*pBuf = 0xff;
+						
+						if (((x_pos + realx) >=0 ) && ((x_pos + realx) < 256))
+						{
+							*pBuf = palArr[(pixPalIdx * 3) + 0]; pBuf++;
+							*pBuf = palArr[(pixPalIdx * 3) + 1]; pBuf++;
+							*pBuf = palArr[(pixPalIdx * 3) + 2]; pBuf++;
+							*pBuf = 0xff;
+						}
+						else
+						{
+							pBuf += 4;
+						}
 					}
 				}
 
@@ -713,12 +723,9 @@ void ppu::renderScreen()
 	{
 		// 1      16-color    16-color    4-color     -         ;Normal
 		renderBackdrop();
-		if (((mainScreenDesignation & 0x1f) & (1 << 2)) > 0) renderBG(2, 2);
-		if ( (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1)) > 0) )
-		{
-			renderBG(1, 4);
-		}
+		if ((((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1)) > 0)) renderBG(1, 4);
 		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBG(0, 4);
+		if (((mainScreenDesignation & 0x1f) & (1 << 2)) > 0) renderBG(2, 2);
 	}
 	else if (screenMode == 0x03)
 	{
