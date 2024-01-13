@@ -224,7 +224,7 @@ unsigned int cpu5a22::getAbsoluteIndexedIndirectX()
 {
 	unsigned char lo = pMMU->read8((regPB << 16) | ((regPC+1)&0xffff));
 	unsigned char hi = pMMU->read8((regPB << 16) | ((regPC+2)&0xffff));
-	unsigned int adr = (regPB << 16) | ((hi << 8) | lo) + (regX_lo|(regX_hi<<8))&0xffff;
+	unsigned int adr = (regPB << 16) | (((hi << 8) | lo) + (regX_lo|(regX_hi<<8))&0xffff);
 	unsigned char i_lo = pMMU->read8(adr);
 	unsigned char i_hi = pMMU->read8((adr + 1));
 	return ((regPB << 16) | (i_hi << 8) | i_lo)&0xffffff;
@@ -237,7 +237,7 @@ unsigned int cpu5a22::getAbsoluteIndexedIndirectLong()
 	unsigned short int adr = ((hi << 8) | lo);
 	unsigned char i_lo = pMMU->read8(adr);
 	unsigned char i_hi = pMMU->read8((adr + 1)&0xffff);
-	regPB=(pMMU->read8(adr + 2) & 0xffff);
+	regPB=(pMMU->read8((adr + 2) & 0xffff));
 	return ((regPB << 16) | (((i_hi << 8) | i_lo)&0xffff));
 }
 
@@ -853,7 +853,7 @@ int cpu5a22::stepOne()
 		{
 			// STA - Store Accumulator to Memory - Absolute
 			int cycleAdder = 0;
-			int addr = getAbsoluteAddress16();
+			unsigned int addr = getAbsoluteAddress16();
 
 			pMMU->write8(addr, regA_lo);
 			if (regP.getAccuMemSize() == false)
@@ -1766,6 +1766,12 @@ int cpu5a22::stepOne()
 			unsigned short int regY = regY_lo | (regY_hi << 8);
 			regX += 1; regY += 1;
 
+			if (regP.getIndexSize())
+			{
+				regX &= 0xff;
+				regY &= 0xff;
+			}
+
 			regX_lo = regX & 0xff; regY_lo = regY & 0xff;
 			regX_hi = regX >>8; regY_hi = regY >>8;
 		
@@ -1856,6 +1862,12 @@ int cpu5a22::stepOne()
 			unsigned short int regX = regX_lo | (regX_hi << 8);
 			unsigned short int regY = regY_lo | (regY_hi << 8);
 			regX -= 1; regY -= 1;
+
+			if (regP.getIndexSize())
+			{
+				regX &= 0xff;
+				regY &= 0xff;
+			}
 
 			regX_lo = regX & 0xff; regY_lo = regY & 0xff;
 			regX_hi = regX >> 8; regY_hi = regY >> 8;
@@ -5771,6 +5783,34 @@ int cpu5a22::stepOne()
 			regPC += 2;
 			cycles = 7 + cycAdder;
 			break;
+		}
+		case 0xef:
+		{
+			// sbc long 
+			int cycAdder = 0;
+			unsigned int addr = getLongAddress();
+			doSBC(addr);
+
+			if (regP.getAccuMemSize() == 0) cycAdder += 1;
+
+			regPC += 4;
+			cycles = 5 + cycAdder;
+			break;
+		}
+		case 0x67:
+		{
+			// ADC [dp]
+			int cycAdder = 0;
+			unsigned int addr = getDirectPageIndirectLongAddress();
+			doADC(addr);
+			if (!regP.getAccuMemSize())
+			{
+				cycAdder += 1;
+			}
+
+			regPC += 2;
+			cycles = 6 + cycAdder;
+			break; // TODO cycles
 		}
 		default:
 		{

@@ -389,52 +389,7 @@ unsigned char mmu::read8(unsigned int address)
 		}
 		else if ((adr == 0x2139) || (adr == 0x213a))
 		{
-			//	PPU - VMDATAL - VRAM Write - Low (R)
-			//	PPU - VMDATAH - VRAM Write - High (R)
-
-			unsigned short int adr = (snesRAM[0x2117] << 8) | snesRAM[0x2116];
-			unsigned char _v_hi_lo = snesRAM[0x2115] >> 7;
-			unsigned char _v_trans = (snesRAM[0x2115] & 0b1100) >> 2;
-			unsigned char _v_step = snesRAM[0x2115] & 0b11;
-			unsigned short int _t_st, _t_off, _t_in;
-			switch (_v_trans) 
-			{ //	PPU - Apply address translation if necessary (leftshift thrice lower 8, 9 or 10 bits)
-			case 0b00:
-				break;
-			case 0b01:		//	8 bit, aaaaaaaYYYxxxxx becomes aaaaaaaxxxxxYYY
-				_t_st = (adr & 0b1111111100000000);
-				_t_off = (adr & 0b11100000) >> 5;
-				_t_in = (adr & 0b11111) << 3;
-				adr = _t_st | _t_off | _t_in;
-				break;
-			case 0b10:		//	9 bit, aaaaaaYYYxxxxxP becomes aaaaaaxxxxxPYYY
-				_t_st = (adr & 0b1111111000000000);
-				_t_off = (adr & 0b111000000) >> 6;
-				_t_in = (adr & 0b111111) << 3;
-				adr = _t_st | _t_off | _t_in;
-				break;
-			case 0b11:		//	10 bit, aaaaaYYYxxxxxPP becomes aaaaaxxxxxPPYYY
-				_t_st = (adr & 0b1111110000000000);
-				_t_off = (adr & 0b1110000000) >> 7;
-				_t_in = (adr & 0b1111111) << 3;
-				adr = _t_st | _t_off | _t_in;
-				break;
-			}
-			if (((adr == 0x2139 && !_v_hi_lo) || (adr == 0x213a && _v_hi_lo)) && _v_trans != 0) 
-			{
-				unsigned short int _t = (snesRAM[0x2117] << 8) | snesRAM[0x2116];
-				switch (_v_step)
-				{
-				case 0b00: _t += 1;	break;
-				case 0b01: _t += 32; break;
-				case 0b10: _t += 128; break;
-				case 0b11: _t += 128; break;
-				default: break;
-				}
-				snesRAM[0x2116] = _t & 0xff;
-				snesRAM[0x2117] = _t >> 8;
-			}
-			return (adr == 0x2139) ? pPPU->getVRAMPtr()[adr & 0x7fff] & 0xff : pPPU->getVRAMPtr()[adr&0x7fff] >> 8;
+			return pPPU->vmDataRead(adr);
 		}
 		else if (adr == 0x213b)
 		{

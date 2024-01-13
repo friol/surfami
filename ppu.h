@@ -67,6 +67,7 @@ public:
 	void setOBSEL(unsigned char val) { obSel = val; }
 	void writeBgScrollX(int bgId, unsigned char val);
 	void writeBgScrollY(int bgId, unsigned char val);
+	unsigned char vmDataRead(unsigned int port);
 	
 	void writeOAMAddressLow(unsigned char val) { OAMAddr = (OAMAddr & 0xff00) | val; }
 	void writeOAMAddressHigh(unsigned char val) { OAMAddr = (OAMAddr & 0xff) | (val<<8); }

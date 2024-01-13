@@ -87,6 +87,56 @@ void ppu::writeOAM(unsigned char val)
 	OAMAddr++;
 }
 
+unsigned char ppu::vmDataRead(unsigned int port)
+{
+	//	PPU - VMDATAL - VRAM Write - Low (R)
+	//	PPU - VMDATAH - VRAM Write - High (R)
+
+	unsigned short int adr = (vramAddressUpper << 8) | vramAddressLower;
+	unsigned char _v_hi_lo = vmainVRAMAddrIncrMode >> 7;
+	unsigned char _v_trans = (vmainVRAMAddrIncrMode & 0b1100) >> 2;
+	unsigned char _v_step = vmainVRAMAddrIncrMode & 0b11;
+	unsigned short int _t_st, _t_off, _t_in;
+	switch (_v_trans)
+	{ //	PPU - Apply address translation if necessary (leftshift thrice lower 8, 9 or 10 bits)
+	case 0b00:
+		break;
+	case 0b01:		//	8 bit, aaaaaaaYYYxxxxx becomes aaaaaaaxxxxxYYY
+		_t_st = (adr & 0b1111111100000000);
+		_t_off = (adr & 0b11100000) >> 5;
+		_t_in = (adr & 0b11111) << 3;
+		adr = _t_st | _t_off | _t_in;
+		break;
+	case 0b10:		//	9 bit, aaaaaaYYYxxxxxP becomes aaaaaaxxxxxPYYY
+		_t_st = (adr & 0b1111111000000000);
+		_t_off = (adr & 0b111000000) >> 6;
+		_t_in = (adr & 0b111111) << 3;
+		adr = _t_st | _t_off | _t_in;
+		break;
+	case 0b11:		//	10 bit, aaaaaYYYxxxxxPP becomes aaaaaxxxxxPPYYY
+		_t_st = (adr & 0b1111110000000000);
+		_t_off = (adr & 0b1110000000) >> 7;
+		_t_in = (adr & 0b1111111) << 3;
+		adr = _t_st | _t_off | _t_in;
+		break;
+	}
+	if (((port == 0x2139 && !_v_hi_lo) || (port == 0x213a && _v_hi_lo)) && _v_trans != 0)
+	{
+		unsigned short int _t = (vramAddressUpper << 8) | vramAddressLower;
+		switch (_v_step)
+		{
+		case 0b00: _t += 1;	break;
+		case 0b01: _t += 32; break;
+		case 0b10: _t += 128; break;
+		case 0b11: _t += 128; break;
+		default: break;
+		}
+		vramAddressLower = _t & 0xff;
+		vramAddressUpper = _t >> 8;
+	}
+	return (port == 0x2139) ? vram[adr & 0x7fff] & 0xff : vram[adr & 0x7fff] >> 8;
+}
+
 void ppu::writeRegister(int reg, unsigned char val)
 {
 	if (reg == 0x2121)
@@ -137,6 +187,12 @@ void ppu::writeRegister(int reg, unsigned char val)
 
 		int vramAddr = (vramAddressLower | (vramAddressUpper << 8));
 		unsigned char _v_hi_lo = vmainVRAMAddrIncrMode >> 7;
+		unsigned char _v_trans = (vmainVRAMAddrIncrMode & 0b1100) >> 2;
+
+		if (_v_trans != 0)
+		{
+			int err = 1;
+		}
 
 		int adrIncrStep = 1;
 		int addrIncrementStep = vmainVRAMAddrIncrMode & 0x03;
@@ -149,6 +205,10 @@ void ppu::writeRegister(int reg, unsigned char val)
 
 		if (reg == 0x2118)
 		{
+			if (vramAddr == 0x20e0)
+			{
+				int w = 1;
+			}
 			vram[vramAddr & 0x7fff] = (vram[vramAddr & 0x7fff] & 0xff00) | val;
 		}
 		else 
@@ -160,6 +220,7 @@ void ppu::writeRegister(int reg, unsigned char val)
 		{
 			unsigned int nextAddr = vramAddr;
 			nextAddr+=adrIncrStep;
+			nextAddr &= 0x7fff;
 			vramAddressLower = nextAddr & 0xff;
 			vramAddressUpper = nextAddr >> 8;
 		}
@@ -573,6 +634,10 @@ void ppu::renderBG(int bgnum,int bpp)
 			unsigned short int vramWord = tilemapMap[realy%64][realx%64];
 
 			int tileNum = vramWord & 0x3ff;
+			if (tileNum == 0x0e)
+			{
+				int brk = 1;
+			}
 			int palId = (vramWord >> 10) & 0x7;
 			int bgPri = (vramWord >> 13) & 0x01;
 			int xflip= (vramWord >> 14) & 0x01;
@@ -650,8 +715,15 @@ void ppu::renderSprites()
 		//const unsigned int OAMBase = 0xc000 / 2;
 		const unsigned int OAMBase = (obSel & 0x03) * 0x2000;
 
-		for (int y = 0;y < spriteDimY;y++)
+		int ybase = 0; int yend = spriteDimY; int yinc = 1; 
+		if (y_flip)
 		{
+			ybase = spriteDimY-1; yend = -1; yinc = -1;
+		}
+
+		for (int y = ybase;y != yend;y+=yinc)
+		{
+			int realy = y;
 			for (int x = 0;x != spriteDimX; x+=1)
 			{
 				const unsigned char shift_x = 7 - (x % 8);
@@ -669,7 +741,8 @@ void ppu::renderSprites()
 				{
 					int realx = x;
 					if (x_flip) realx = spriteDimX - x - 1;
-					unsigned int pixaddr = ((x_pos + realx) + ((y_pos + y) * ppuResolutionX)) * 4;
+					if (y_flip) realy = spriteDimY - y - 1;
+					unsigned int pixaddr = ((x_pos + realx) + ((y_pos + realy) * ppuResolutionX)) * 4;
 					if (pixaddr < (ppuResolutionX * ppuResolutionY * 4))
 					{
 						unsigned char* pBuf = &screenFramebuffer[pixaddr];
@@ -738,6 +811,13 @@ void ppu::renderScreen()
 		if ((((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1)) > 0)) renderBG(1, 4);
 		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBG(0, 4);
 		if (((mainScreenDesignation & 0x1f) & (1 << 2)) > 0) renderBG(2, 2);
+	}
+	else if (screenMode == 0x02)
+	{
+		// 1      16-color    16-color    opt     -         ;Normal
+		renderBackdrop();
+		if ((((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1)) > 0)) renderBG(1, 4);
+		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBG(0, 4);
 	}
 	else if (screenMode == 0x03)
 	{

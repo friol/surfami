@@ -434,7 +434,7 @@ void displaySNESScreenWindow(GLuint renderTexture, int image_width, int image_he
     ImGui::End();
 }
 
-void displayMemoryWindow(mmu& theMMU,int& baseAddress)
+void displayMemoryWindow(mmu& theMMU,ppu& thePPU,int& baseAddress)
 {
     ImGui::Begin("Memory viewer");
 
@@ -449,13 +449,19 @@ void displayMemoryWindow(mmu& theMMU,int& baseAddress)
         strr << std::hex << std::setw(6) << std::setfill('0') << curAddr;
         sRow += strr.str() + "  ";
 
-        for (int x = 0;x < hSteps;x++)
+        for (int x = 0;x < hSteps;x+=2)
         {
-            unsigned char byteSized = theMMU.read8(curAddr);
+            //unsigned char byteSized = theMMU.read8(curAddr);
+            unsigned char byteSized0 = thePPU.getVRAMPtr()[curAddr]&0xff;
+            unsigned char byteSized1 = thePPU.getVRAMPtr()[curAddr]>>8;
 
             std::stringstream strr;
-            strr << std::hex << std::setw(2) << std::setfill('0') << (int)byteSized;
+            strr << std::hex << std::setw(2) << std::setfill('0') << (int)byteSized0;
             sRow += strr.str()+" ";
+
+            std::stringstream strr2;
+            strr2 << std::hex << std::setw(2) << std::setfill('0') << (int)byteSized1;
+            sRow += strr2.str() + " ";
 
             curAddr += 1;
         }
@@ -487,7 +493,7 @@ void displayAppoWindow(ppu& thePPU, debugger5a22& theDebugger5a22)
         for (auto& testCase : *pOpcodeList)
         {
             if (testCase.validatedTomHarte == false)
-            //if (testCase.opcode>=0xfe)
+            //if (testCase.opcode>=0x00)
             {
                 testMMU testMMU;
                 cpu5a22 testCPU(&testMMU, true);
@@ -595,16 +601,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc";
     //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // cb
     //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc";
-    //std::string romName = "d:\\prova\\snes\\Frogger (U).smc";
+    //std::string romName = "d:\\prova\\snes\\Frogger (U).smc"; // strange sprites at the bottom, background is not scrolling
     //std::string romName = "d:\\prova\\snes\\Race Drivin' (U).smc"; 
     //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc";  
     //std::string romName = "d:\\prova\\snes\\Arkanoid - Doh it Again (E) [!].smc";
-    //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc"; // ef
+    //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc";
     //std::string romName = "d:\\prova\\snes\\Home Alone (E) [!].smc"; // 57
     //std::string romName = "d:\\prova\\snes\\Kick Off (E).smc";
     //std::string romName = "d:\\prova\\snes\\Super Off Road (E) [!].smc"; // 34
-    //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc"; // 23
+    //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc";
     //std::string romName = "d:\\prova\\snes\\Sensible Soccer - International Edition (E).smc";
     //std::string romName = "d:\\prova\\snes\\Gun Force (E).smc"; // 02
     //std::string romName = "d:\\prova\\snes\\The Legend Of Zelda -  A Link To The Past.smc"; // dma modes 3-7 - fucks up
@@ -614,7 +620,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\James Pond's Crazy Sports (E).smc"; // SPC
     //std::string romName = "d:\\prova\\snes\\Spanky's Quest (E).smc";
     //std::string romName = "d:\\prova\\snes\\Spectre (E) [!].smc";
-    //std::string romName = "d:\\prova\\snes\\Tetris Attack (E).smc"; // ef
+    //std::string romName = "d:\\prova\\snes\\Tetris Attack (E).smc"; 
     //std::string romName = "D:\\prova\\snes\\SNES-master\\Games\\MonsterFarmJump\\MonsterFarmJump.sfc";
 
     //std::string romName = "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc"; // WAI
@@ -997,7 +1003,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     bool isTVWindowFocused = false;
     char jumpToAppoBuf[256];
     jumpToAppoBuf[0] = '\0';
-    int baseMemoryAddress = 0;
+    int baseMemoryAddress = 0x20e0;
     unsigned long int totCPUCycles = 0;
     int emustatus = 0; // 0 debugging, 1 running
 
@@ -1122,13 +1128,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         displayLogWindow();
         displayVRAMViewerWindow(vramRenderTexture, thePPU.getVRAMViewerXsize(), thePPU.getVRAMViewerYsize(), thePPU.getVRAMViewerBitmap(),thePPU);
         displaySNESScreenWindow(screenRenderTexture, thePPU.getPPUResolutionX(), thePPU.getPPUResolutionY(), thePPU.getPPUFramebuffer(), thePPU,isTVWindowFocused);
-        displayMemoryWindow(theMMU,baseMemoryAddress);
+        displayMemoryWindow(theMMU,thePPU,baseMemoryAddress);
 
         if (emustatus == 1)
         {
             int inst = 0;
             while ((inst < 100000)&&(emustatus==1))
             {
+                /*if (theCPU.getPC() == 0xd914)
+                {
+                    int b = 1;
+                    emustatus = 0;
+                }*/
+
                 int cycs= theCPU.stepOne();
                 if (cycs!=-1)
                 {
@@ -1147,7 +1159,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         while (rush)
         {
             int curPC = (theCPU.getPB()<<16) | theCPU.getPC();
-            if (curPC == rushToAddress)
+            if ((curPC&0xffff) == rushToAddress)
             {
                 rush = false;
             }
