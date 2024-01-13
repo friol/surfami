@@ -159,33 +159,39 @@ void mmu::write8(unsigned int address, unsigned char val)
 			// 2100h - INIDISP - Display Control 1
 			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2100 (INIDISP - Display Control 1)");
 			pPPU->setINIDISP(val);
+			return;
 		}
 		else if (adr == 0x2101)
 		{
 			// 2101h - OBSEL - Object Size and Object Base
 			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2101 (OBSEL - Object Size and Object Base)");
 			pPPU->setOBSEL(val);
+			return;
 		}
 		else if (adr == 0x2102)
 		{
 			// 2102h/2103h - OAMADDL/OAMADDH - OAM Address and Priority Rotation (W)
 			pPPU->writeOAMAddressLow(val);
+			return;
 		}
 		else if (adr == 0x2103)
 		{
 			// 2102h/2103h - OAMADDL/OAMADDH - OAM Address and Priority Rotation (W)
 			pPPU->writeOAMAddressHigh(val);
+			return;
 		}
 		else if (adr == 0x2104)
 		{
 			// 2104h - OAMDATA - OAM Data Write(W)
 			pPPU->writeOAM(val);
+			return;
 		}
 		else if (adr == 0x4200)
 		{
 			// NMITIMEN - Interrupt Enable and Joypad Request (W)
 			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x4200 (NMITIMEN - Interrupt Enable and Joypad Request)");
 			nmiTimen = val;
+			return;
 		}
 		else if (adr == 0x2180)
 		{
@@ -196,11 +202,13 @@ void mmu::write8(unsigned int address, unsigned char val)
 			wram281x[0] = waddr & 0xff;
 			wram281x[1] = (waddr>>8) & 0xff;
 			wram281x[2] = (waddr>>16) & 0x01;
+			return;
 		}
 		else if ((adr == 0x2181) || (adr == 0x2182) || (adr == 0x2183))
 		{
 			unsigned int byte = adr - 0x2181;
 			wram281x[byte] = val;
+			return;
 		}
 		else if (adr == 0x420B) // DMA start reg
 		{
@@ -210,82 +218,139 @@ void mmu::write8(unsigned int address, unsigned char val)
 		{
 			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2105 (BG Mode and Character Size Register)");
 			pPPU->writeRegister(0x2105, val);
+			return;
 		}
 		else if ((adr == 0x2107) || (adr == 0x2108) || (adr == 0x2109) || (adr == 0x210A))
 		{
 			glbTheLogger.logMsg("Writing [" + strr.str() + "] to 0x2107/8/9/A (BGx Screen Base and Screen Size)");
 			pPPU->writeRegister(adr, val);
+			return;
 		}
 		else if (adr == 0x2121)
 		{
 			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2121 (CGRAM index)");
 			pPPU->writeRegister(0x2121, val);
+			return;
 		}
 		else if (adr == 0x2122)
 		{
 			// write to cgram
 			pPPU->writeRegister(0x2122, val);
+			return;
 		}
 		else if (adr == 0x212d)
 		{
 			// write to sub screen designation 
 			pPPU->writeRegister(0x212d, val);
+			return;
 		}
 		else if (adr == 0x2115)
 		{
 			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2115 (VRAM Address Increment Mode)");
 			pPPU->writeRegister(0x2115, val);
+			return;
 		}
 		else if (adr == 0x2116)
 		{
 			glbTheLogger.logMsg("Writing [" + strr.str() + "] to 0x2116 (VRAM Address Lower)");
 			pPPU->writeRegister(0x2116, val);
+			return;
 		}
 		else if (adr == 0x2117)
 		{
 			glbTheLogger.logMsg("Writing [" + strr.str() + "] to 0x2117 (VRAM Address Upper)");
 			pPPU->writeRegister(0x2117, val);
+			return;
 		}
 		else if (adr == 0x2118)
 		{
 			//glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2118 (VRAM data write lower 8-bit)");
 			pPPU->writeRegister(0x2118, val);
+			return;
 		}
 		else if (adr == 0x2119)
 		{
 			//glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2118 (VRAM data write upper 8-bit)");
 			pPPU->writeRegister(0x2119, val);
+			return;
 		}
 		else if (adr == 0x210B)
 		{
 			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x210B (BG tile base address lower)");
 			pPPU->writeRegister(0x210B, val);
+			return;
 		}
 		else if (adr == 0x210C)
 		{
 			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x210C (BG tile base address upper)");
 			pPPU->writeRegister(0x210C, val);
+			return;
 		}
 		else if (adr == 0x212c)
 		{
 			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x212C (TM - Main Screen Designation)");
 			pPPU->writeRegister(adr, val);
+			return;
 		}
 		else if ((adr == 0x210D) || (adr == 0x210F) || (adr == 0x2111) || (adr == 0x2113))
 		{
 			int bgid = (adr - 0x210D)>>1;
 			if (bgid==0) glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to BG "+std::to_string(bgid) + " scroll X");
 			pPPU->writeBgScrollX(bgid, val);
+			return;
 		}
 		else if ((adr == 0x210E) || (adr == 0x2110) || (adr == 0x2112) || (adr == 0x2114))
 		{
 			int bgid = (adr - 0x210E)>>1;
 			if (bgid == 0) glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to BG " + std::to_string(bgid) + " scroll Y");
 			pPPU->writeBgScrollY(bgid, val);
+			return;
 		}
 		else if ((adr == 0x2140) || (adr == 0x2141) || (adr == 0x2142) || (adr == 0x2143))
 		{
 			pAPU->write8(adr, val);
+			return;
+		}
+		else if (adr == 0x4202)			//	CPU MATH - WRMPYA - Multiplicand
+		{
+			snesRAM[adr] = val;
+			return;
+		}
+		else if (adr == 0x4203)			//	CPU MATH - WRMPYB - Multiplier & Start Multiplication
+		{
+			snesRAM[adr] = val;
+			snesRAM[0x4216] = (val * snesRAM[0x4202]) & 0xff;
+			snesRAM[0x4217] = (val * snesRAM[0x4202]) >> 8;
+			snesRAM[0x4214] = val;
+			snesRAM[0x4215] = 0x00;
+			return;
+		}
+		else if (adr == 0x4204)			//	CPU MATH - WRDIVL - 16 Bit Dividend (lower 8 Bit)
+		{
+			snesRAM[adr] = val;
+			return;
+		}
+		else if (adr == 0x4205)			//	CPU MATH - WRDIVH - 16 Bit Dividend (upper 8 Bit)
+		{
+			snesRAM[adr] = val;
+			return;
+		}
+		else if (adr == 0x4206)			//	CPU MATH - WRDIVB - 8 Bit Divisor & Start Division
+		{
+			snesRAM[adr] = val;
+			if (!val) 
+			{			//	Division by zero, return 0xFFFF as Result, Remainder is Dividend
+				snesRAM[0x4214] = 0xff;
+				snesRAM[0x4215] = 0xff;
+				snesRAM[0x4216] = snesRAM[0x4204];
+				snesRAM[0x4217] = snesRAM[0x4205];
+				return;
+			}
+			snesRAM[0x4214] = (unsigned short int)(((snesRAM[0x4205] << 8) | snesRAM[0x4204]) / val) & 0xff;
+			snesRAM[0x4215] = (unsigned short int)(((snesRAM[0x4205] << 8) | snesRAM[0x4204]) / val) >> 8;
+			snesRAM[0x4216] = (unsigned short int)(((snesRAM[0x4205] << 8) | snesRAM[0x4204]) % val) & 0xff;
+			snesRAM[0x4217] = (unsigned short int)(((snesRAM[0x4205] << 8) | snesRAM[0x4204]) % val) >> 8;
+			return;
 		}
 
 		snesRAM[adr] = val;
@@ -326,7 +391,50 @@ unsigned char mmu::read8(unsigned int address)
 		{
 			//	PPU - VMDATAL - VRAM Write - Low (R)
 			//	PPU - VMDATAH - VRAM Write - High (R)
-			glbTheLogger.logMsg("Error: reading from 2139-213a");
+
+			unsigned short int adr = (snesRAM[0x2117] << 8) | snesRAM[0x2116];
+			unsigned char _v_hi_lo = snesRAM[0x2115] >> 7;
+			unsigned char _v_trans = (snesRAM[0x2115] & 0b1100) >> 2;
+			unsigned char _v_step = snesRAM[0x2115] & 0b11;
+			unsigned short int _t_st, _t_off, _t_in;
+			switch (_v_trans) 
+			{ //	PPU - Apply address translation if necessary (leftshift thrice lower 8, 9 or 10 bits)
+			case 0b00:
+				break;
+			case 0b01:		//	8 bit, aaaaaaaYYYxxxxx becomes aaaaaaaxxxxxYYY
+				_t_st = (adr & 0b1111111100000000);
+				_t_off = (adr & 0b11100000) >> 5;
+				_t_in = (adr & 0b11111) << 3;
+				adr = _t_st | _t_off | _t_in;
+				break;
+			case 0b10:		//	9 bit, aaaaaaYYYxxxxxP becomes aaaaaaxxxxxPYYY
+				_t_st = (adr & 0b1111111000000000);
+				_t_off = (adr & 0b111000000) >> 6;
+				_t_in = (adr & 0b111111) << 3;
+				adr = _t_st | _t_off | _t_in;
+				break;
+			case 0b11:		//	10 bit, aaaaaYYYxxxxxPP becomes aaaaaxxxxxPPYYY
+				_t_st = (adr & 0b1111110000000000);
+				_t_off = (adr & 0b1110000000) >> 7;
+				_t_in = (adr & 0b1111111) << 3;
+				adr = _t_st | _t_off | _t_in;
+				break;
+			}
+			if (((adr == 0x2139 && !_v_hi_lo) || (adr == 0x213a && _v_hi_lo)) && _v_trans != 0) 
+			{
+				unsigned short int _t = (snesRAM[0x2117] << 8) | snesRAM[0x2116];
+				switch (_v_step)
+				{
+				case 0b00: _t += 1;	break;
+				case 0b01: _t += 32; break;
+				case 0b10: _t += 128; break;
+				case 0b11: _t += 128; break;
+				default: break;
+				}
+				snesRAM[0x2116] = _t & 0xff;
+				snesRAM[0x2117] = _t >> 8;
+			}
+			return (adr == 0x2139) ? pPPU->getVRAMPtr()[adr & 0x7fff] & 0xff : pPPU->getVRAMPtr()[adr&0x7fff] >> 8;
 		}
 		else if (adr == 0x213b)
 		{
@@ -349,7 +457,7 @@ unsigned char mmu::read8(unsigned int address)
 			// 4016h / Read - JOYA - Joypad Input Register A(R)
 			// manual reading
 
-			return 0x01;
+			return 0x00;
 		}
 		else if (adr==0x4200) 
 		{
@@ -383,6 +491,11 @@ unsigned char mmu::read8(unsigned int address)
 			
 			return res;
 			//return 0;
+		}
+		else if (adr == 0x4017)
+		{
+			// 4017h/Read - JOYB - Joypad Input Register B (R) TODO
+			return 0x1c;
 		}
 		else if ((adr == 0x4218)|| (adr == 0x421a))
 		{
@@ -427,6 +540,14 @@ unsigned char mmu::read8(unsigned int address)
 			}
 
 			return res;
+		}
+		else if ((adr == 0x4214)|| (adr == 0x4215)|| (adr == 0x4216)|| (adr == 0x4217))
+		{
+			//4214h - RDDIVL - Unsigned Division Result(Quotient) (lower 8bit) (R)
+			//4215h - RDDIVH - Unsigned Division Result(Quotient) (upper 8bit) (R)
+			//4216h - RDMPYL - Unsigned Division Remainder / Multiply Product(lo.8bit) (R)
+			//4217h - RDMPYH - Unsigned Division Remainder / Multiply Product(up.8bit) (R)
+			return snesRAM[adr];
 		}
 		else
 		{

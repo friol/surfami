@@ -89,6 +89,8 @@ public:
 	void step(int numCycles,mmu& theMMU,cpu5a22& theCPU);
 	bool isVBlankActive() { return scanline >= vblankStartScanline; }
 
+	unsigned short int* getVRAMPtr() { return vram; }
+
 	~ppu();
 };
 

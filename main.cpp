@@ -599,22 +599,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Race Drivin' (U).smc"; 
     //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc";  
-    //std::string romName = "d:\\prova\\snes\\Arkanoid - Doh it Again (E) [!].smc"; // mode7
-    //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc"; // SPC
+    //std::string romName = "d:\\prova\\snes\\Arkanoid - Doh it Again (E) [!].smc";
+    //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc"; // ef
     //std::string romName = "d:\\prova\\snes\\Home Alone (E) [!].smc"; // 57
     //std::string romName = "d:\\prova\\snes\\Kick Off (E).smc";
     //std::string romName = "d:\\prova\\snes\\Super Off Road (E) [!].smc"; // 34
-    //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc"; 
+    //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc"; // 23
     //std::string romName = "d:\\prova\\snes\\Sensible Soccer - International Edition (E).smc";
     //std::string romName = "d:\\prova\\snes\\Gun Force (E).smc"; // 02
     //std::string romName = "d:\\prova\\snes\\The Legend Of Zelda -  A Link To The Past.smc"; // dma modes 3-7 - fucks up
-    //std::string romName = "d:\\prova\\snes\\Prince of Persia (E) [!].smc"; // 43
+    //std::string romName = "d:\\prova\\snes\\Prince of Persia (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Yoshi's Cookie (E).smc"; // SPC
     //std::string romName = "d:\\prova\\snes\\Sim City (E) [!].smc"; // 02
     //std::string romName = "d:\\prova\\snes\\James Pond's Crazy Sports (E).smc"; // SPC
     //std::string romName = "d:\\prova\\snes\\Spanky's Quest (E).smc";
     //std::string romName = "d:\\prova\\snes\\Spectre (E) [!].smc";
-    //std::string romName = "d:\\prova\\snes\\Tetris Attack (E).smc"; // crash
+    //std::string romName = "d:\\prova\\snes\\Tetris Attack (E).smc"; // ef
     //std::string romName = "D:\\prova\\snes\\SNES-master\\Games\\MonsterFarmJump\\MonsterFarmJump.sfc";
 
     //std::string romName = "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc"; // WAI
@@ -655,7 +655,47 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x8ff38f, 0xea);
         theMMU.write8(0x8ff201, 0xea);
         theMMU.write8(0x8ff202, 0xea);
-
+    }
+    else if (romName == "d:\\prova\\snes\\Tetris Attack (E).smc")
+    {
+        theMMU.write8(0x80941a, 0xea);
+        theMMU.write8(0x80941b, 0xea);
+        theMMU.write8(0x80947c, 0xea);
+        theMMU.write8(0x80947d, 0xea);
+        theMMU.write8(0x809481, 0xea);
+        theMMU.write8(0x809482, 0xea);
+        theMMU.write8(0x8094c7, 0xea);
+        theMMU.write8(0x8094c8, 0xea);
+        theMMU.write8(0x8094cc, 0xea);
+        theMMU.write8(0x8094cd, 0xea);
+        theMMU.write8(0x8094d8, 0xea);
+        theMMU.write8(0x8094d9, 0xea);
+        theMMU.write8(0x8094dd, 0xea);
+        theMMU.write8(0x8094de, 0xea);
+        theMMU.write8(0x809556, 0xea);
+        theMMU.write8(0x809557, 0xea);
+        theMMU.write8(0x80955b, 0xea);
+        theMMU.write8(0x80955c, 0xea);
+        theMMU.write8(0x809571, 0xea);
+        theMMU.write8(0x809572, 0xea);
+        theMMU.write8(0x809576, 0xea);
+        theMMU.write8(0x809577, 0xea);
+        theMMU.write8(0x809583, 0xea);
+        theMMU.write8(0x809584, 0xea);
+        theMMU.write8(0x809588, 0xea);
+        theMMU.write8(0x809589, 0xea);
+        
+    }
+    else if (romName == "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc")
+    {
+        theMMU.write8(0x80842e, 0xea);
+        theMMU.write8(0x80842f, 0xea);
+        theMMU.write8(0x80845c, 0xea);
+        theMMU.write8(0x80845d, 0xea);
+        theMMU.write8(0x808485, 0xea);
+        theMMU.write8(0x808486, 0xea);
+        theMMU.write8(0x8084bc, 0xea);
+        theMMU.write8(0x8084bd, 0xea);
     }
     else if (romName == "d:\\prova\\snes\\Tetris Attack (E).smc")
     {
@@ -681,6 +721,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x80bb8a, 0xea);
         theMMU.write8(0x80bb9d, 0xea);
         theMMU.write8(0x80bb9e, 0xea);
+        theMMU.write8(0x80bb45, 0xea);
+        theMMU.write8(0x80bb46, 0xea);
     }
     else if (romName == "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc")
     {

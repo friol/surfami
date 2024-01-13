@@ -5662,6 +5662,116 @@ int cpu5a22::stepOne()
 			cycles = 6 + cycAdder;
 			break;
 		}
+		case 0x43:
+		{
+			// EOR SR,S
+			int cycAdder = 0;
+			unsigned int addr = getStackRelative();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				unsigned char res = val ^ (regA_lo & 0xff);
+				regA_lo = res;
+				regP.setNegative(res >> 7);
+				regP.setZero(res == 0);
+			}
+			else
+			{
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned short int val = (hi << 8) | lo;
+				unsigned short int res = val ^ (regA_lo | (regA_hi << 8));
+				regA_lo = res & 0xff;
+				regA_hi = res >> 8;
+				regP.setNegative(res >> 15);
+				regP.setZero(res == 0);
+			}
+
+			regPC += 2;
+			cycles = 4 + cycAdder;
+			break;
+		}
+		case 0xc3:
+		{
+			// CMP sr,S
+			int cycAdder = 0;
+			unsigned int addr = getStackRelative();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char m = pMMU->read8(addr);
+				unsigned char val = regA_lo - m;
+				regP.setNegative(val >> 7);
+				regP.setZero(val == 0);
+				regP.setCarry(regA_lo >= m);
+			}
+			else
+			{
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned short int m = (hi << 8) | lo;
+				unsigned short int val = (regA_lo | (regA_hi << 8)) - m;
+				regP.setNegative(val >> 15);
+				regP.setZero(val == 0);
+				regP.setCarry((regA_lo | (regA_hi << 8)) >= m);
+				cycAdder = 1;
+			}
+
+			regPC += 2;
+			cycles = 4 + cycAdder;
+			break;
+		}
+		case 0x23:
+		{
+			// AND sr,s
+			int cycAdder = 0;
+			unsigned int addr = getStackRelative();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				regA_lo = regA_lo & val;
+				regP.setNegative(regA_lo >> 7);
+				regP.setZero((regA_lo & 0xff) == 0);
+			}
+			else {
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned short int val = (hi << 8) | lo;
+
+				int accu = regA_lo | (regA_hi << 8);
+
+				unsigned short int res = ((unsigned short)(accu & val));
+				regA_lo = res & 0xff;
+				regA_hi = res >> 8;
+
+				regP.setNegative((regA_lo | (regA_hi << 8)) >> 15);
+				regP.setZero((regA_lo | (regA_hi << 8)) == 0);
+				cycAdder = 1;
+			}
+
+			regPC += 2;
+			cycles = 4 + cycAdder;
+			break;
+		}
+		case 0x93:
+		{
+			// STA (sr,S),Y
+			int cycAdder = 0;
+			unsigned int addr = getStackRelativeIndirectIndexedY();
+
+			pMMU->write8(addr, regA_lo);
+			if (regP.getAccuMemSize() == 0)
+			{
+				pMMU->write8(addr + 1, regA_hi);
+				cycAdder = 1;
+			}
+
+			regPC += 2;
+			cycles = 7 + cycAdder;
+			break;
+		}
 		default:
 		{
 			// unknown opcode
