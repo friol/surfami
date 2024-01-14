@@ -620,7 +620,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc";
     //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // breaks
     //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc"; // f1
-    //std::string romName = "d:\\prova\\snes\\Frogger (U).smc"; // strange sprites at the bottom, background is not scrolling
+    //std::string romName = "d:\\prova\\snes\\Frogger (U).smc"; // corrupted sprites at the bottom, background is not scrolling
     //std::string romName = "d:\\prova\\snes\\Race Drivin' (U).smc"; 
     std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc";  
@@ -632,7 +632,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc";
     //std::string romName = "d:\\prova\\snes\\Sensible Soccer - International Edition (E).smc";
     //std::string romName = "d:\\prova\\snes\\Gun Force (E).smc"; // 02
-    //std::string romName = "d:\\prova\\snes\\The Legend Of Zelda -  A Link To The Past.smc"; // dma modes 3-7 - fucks up
+    //std::string romName = "d:\\prova\\snes\\The Legend Of Zelda -  A Link To The Past.smc";
     //std::string romName = "d:\\prova\\snes\\Prince of Persia (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Yoshi's Cookie (E).smc"; 
     //std::string romName = "d:\\prova\\snes\\Sim City (E) [!].smc"; // 02

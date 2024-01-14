@@ -23,6 +23,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x11,2,"ORA (param0),Y",Immediate8,false,false,true}, // validatedF
 	{0x14,2,"TRB param0",Immediate8,false,false,true}, // validatedF
 	{0x15,2,"ORA param0,X",Immediate8,false,false,true}, // validatedF
+	{0x16,2,"ASL param0,X",Immediate8,false,false,true}, // validatedF
 	{0x17,2,"ORA [param0],Y",Immediate8,false,false,true}, // validatedF
 	{0x18,1,"CLC",None,false,false,true}, // validatedF
 	{0x19,3,"ORA param0,Y",Absolute16,false,false,true}, // validatedF
@@ -50,6 +51,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x2f,4,"AND param0",AbsoluteLong,false,false,true}, // validatedF
 	{0x30,2,"BMI param0",Immediate8,false,false,true}, // validatedF
 	{0x32,2,"AND (param0)",Immediate8,false,false,true}, // validatedF
+	{0x34,2,"BIT param0,X",Immediate8,false,false,true}, // validatedF
 	{0x35,2,"AND param0,X",Immediate8,false,false,true}, // validatedF
 	{0x37,2,"AND [param0],Y",Immediate8,false,false,true}, // fck
 	{0x38,1,"SEC",None,false,false,true}, // validatedF

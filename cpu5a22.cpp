@@ -1744,10 +1744,10 @@ int cpu5a22::stepOne()
 		}
 		case 0x54:
 		{
-			// MVP xx,xx
+			// MVN xx,xx - move block negative
 
-			unsigned char dst_bank = pMMU->read8(regPC + 1);
-			unsigned char src_bank = pMMU->read8(regPC + 2);
+			unsigned char dst_bank = pMMU->read8((regPB<<16)| (regPC + 1));
+			unsigned char src_bank = pMMU->read8((regPB << 16) | (regPC + 2));
 		
 			regDBR = dst_bank;
 
@@ -1843,8 +1843,8 @@ int cpu5a22::stepOne()
 		case 0x44:
 		{
 			// MVP - block move positive
-			unsigned char dst_bank = pMMU->read8(regPC + 1);
-			unsigned char src_bank = pMMU->read8(regPC + 2);
+			unsigned char dst_bank = pMMU->read8((regPB << 16) | (regPC + 1));
+			unsigned char src_bank = pMMU->read8((regPB << 16) | (regPC + 2));
 
 			regDBR = dst_bank;
 
@@ -5806,6 +5806,71 @@ int cpu5a22::stepOne()
 			regPC += 2;
 			cycles = 6 + cycAdder;
 			break; // TODO cycles
+		}
+		case 0x34:
+		{
+			// BIT dp,x
+			int cycAdder = 0;
+			unsigned int addr = getDirectPageIndexedXAddress();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				regP.setNegative(val >> 7);
+				regP.setOverflow((val >> 6) & 1);
+				regP.setZero((val & regA_lo) == 0x00);
+			}
+			else
+			{
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned short val = (hi << 8) | lo;
+
+				regP.setNegative(val >> 15);
+				regP.setOverflow((val >> 14) & 1);
+				regP.setZero((val & (regA_lo | (regA_hi << 8))) == 0x0000);
+
+				cycAdder += 1;
+			}
+
+			if (regP.isDPLowNotZero()) cycAdder += 1;
+
+			regPC += 2;
+			cycles = 4 + cycAdder;
+			break;
+		}
+		case 0x16:
+		{
+			// ASL dp,X
+			int cycAdder = 0;
+			unsigned int addr = getDirectPageIndexedXAddress();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				regP.setCarry(val >> 7);
+				pMMU->write8(addr, (unsigned char)(val << 1));
+				regP.setZero((unsigned char)(val << 1) == 0);
+				regP.setNegative((unsigned char)(val << 1) >> 7);
+			}
+			else
+			{
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned short int val = (hi << 8) | lo;
+				regP.setCarry(val >> 15);
+				pMMU->write8(addr, (val << 1) & 0xff);
+				pMMU->write8(addr + 1, (val << 1) >> 8);
+				regP.setZero((unsigned short int)(val << 1) == 0);
+				regP.setNegative((unsigned short int)(val << 1) >> 15);
+				cycAdder += 2;
+			}
+
+			if (regP.isDPLowNotZero()) cycAdder += 1;
+
+			regPC += 2;
+			cycles = 6 + cycAdder;
+			break;
 		}
 		default:
 		{
