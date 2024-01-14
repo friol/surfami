@@ -3486,13 +3486,10 @@ int cpu5a22::stepOne()
 		case 0x82:
 		{
 			// Branch Long Always
-			unsigned int addrj = getImmediateAddress16();
-
-			unsigned long int addr = (regPB << 16) | addrj;
+			unsigned int addr = getImmediateAddress16();
 			signed short int offset = (pMMU->read8((regPB << 16) | (addr + 1)) << 8) | pMMU->read8((regPB << 16) | addr);
 			regPC+=3;
 			regPC += offset;
-
 			cycles = 4;
 			break;
 		}

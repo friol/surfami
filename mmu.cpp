@@ -42,7 +42,11 @@ void mmu::DMAstart(unsigned char val)
 			unsigned char dma_step = (DMAConfig >> 3) & 0b11;       //  0 - increment, 2 - decrement, 1/3 = none
 			unsigned char dma_mode = (DMAConfig & 0b111);
 
-			unsigned int targetAddr = (snesRAM[0x4304 + (dmaChannel * 0x10)] << 16) | (snesRAM[0x4303 + (dmaChannel * 0x10)] << 8) | snesRAM[0x4302 + (dmaChannel * 0x10)];
+			unsigned char hiBank = snesRAM[0x4304 + (dmaChannel * 0x10)];
+			unsigned char hiAddr = snesRAM[0x4303 + (dmaChannel * 0x10)];
+			unsigned char loAddr = snesRAM[0x4302 + (dmaChannel * 0x10)];
+
+			unsigned int targetAddr = (hiBank << 16) | (hiAddr << 8) | loAddr;
 			unsigned short int byteCount = (snesRAM[0x4306 + (dmaChannel * 0x10)] << 8) | snesRAM[0x4305 + (dmaChannel * 0x10)];
 
 			std::stringstream strstrdgb;
@@ -82,6 +86,9 @@ void mmu::DMAstart(unsigned char val)
 					snesRAM[0x4305 + (dmaChannel * 0x10)] = byteCount & 0xff;
 					targetAddr += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
 				}
+
+				snesRAM[0x4306 + (dmaChannel * 0x10)] = 0;
+				snesRAM[0x4305 + (dmaChannel * 0x10)] = 0;
 			}
 			else if (dma_mode == 1)
 			{
@@ -106,6 +113,9 @@ void mmu::DMAstart(unsigned char val)
 					snesRAM[0x4305 + (dmaChannel * 0x10)] = byteCount & 0xff;
 					targetAddr += (dma_step == 0) ? 2 : ((dma_step == 2) ? -2 : 0);
 				}
+
+				snesRAM[0x4306 + (dmaChannel * 0x10)] = 0;
+				snesRAM[0x4305 + (dmaChannel * 0x10)] = 0;
 			}
 			else if (dma_mode == 2)
 			{
@@ -130,6 +140,9 @@ void mmu::DMAstart(unsigned char val)
 					snesRAM[0x4305 + (dmaChannel * 0x10)] = byteCount & 0xff;
 					targetAddr += (dma_step == 0) ? 2 : ((dma_step == 2) ? -2 : 0);
 				}
+
+				snesRAM[0x4306 + (dmaChannel * 0x10)] = 0;
+				snesRAM[0x4305 + (dmaChannel * 0x10)] = 0;
 			}
 			else
 			{
@@ -137,6 +150,8 @@ void mmu::DMAstart(unsigned char val)
 			}
 		}
 	}
+
+	snesRAM[0x420b] = 0x00;
 }
 
 void mmu::write8(unsigned int address, unsigned char val)
@@ -153,6 +168,8 @@ void mmu::write8(unsigned int address, unsigned char val)
 		if (adr < 0x2000)
 		{
 			snesRAM[0x7e0000 + adr] = val;
+			//snesRAM[adr] = val;
+			//return;
 		}
 		else if (adr == 0x2100)
 		{
@@ -213,6 +230,7 @@ void mmu::write8(unsigned int address, unsigned char val)
 		else if (adr == 0x420B) // DMA start reg
 		{
 			DMAstart(val);
+			return;
 		}
 		else if (adr == 0x2105)
 		{

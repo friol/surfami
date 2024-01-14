@@ -205,7 +205,7 @@ void ppu::writeRegister(int reg, unsigned char val)
 
 		if (reg == 0x2118)
 		{
-			if (vramAddr == 0x20e0)
+			if (vramAddr == 0x2000)
 			{
 				int w = 1;
 			}
@@ -631,7 +631,7 @@ void ppu::renderBG(int bgnum,int bpp)
 		{
 			int realx = x + (xscroll / 8);
 
-			unsigned short int vramWord = tilemapMap[realy%64][realx%64];
+			unsigned short int vramWord = tilemapMap[realy&0x3f][realx&0x3f];
 
 			int tileNum = vramWord & 0x3ff;
 			if (tileNum == 0x0e)
