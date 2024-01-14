@@ -28,8 +28,8 @@ int cpu65816tester::executeTest()
 	{
 		bool breakkk = false;
 
-		std::string testName = testData[testId]["name"];
-		unsigned int initialPC = testData[testId]["initial"]["pc"];
+		std::string testName = cpuTest["name"];
+		unsigned short int initialPC = testData[testId]["initial"]["pc"];
 		unsigned short int initialSP = testData[testId]["initial"]["s"];
 		unsigned char initialP = testData[testId]["initial"]["p"];
 		unsigned short int initialA = testData[testId]["initial"]["a"];

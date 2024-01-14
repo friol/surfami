@@ -159,7 +159,7 @@ void mmu::write8(unsigned int address, unsigned char val)
 	std::stringstream strr;
 	strr << std::hex << std::setw(2) << std::setfill('0') << (int)val;
 
-	unsigned char bank_nr = address >> 16;
+	unsigned char bank_nr = (unsigned char)(address >> 16);
 	unsigned short int adr = address & 0xffff;
 
 	if (adr < 0x8000 && ((bank_nr < 0x40) || (bank_nr >= 0x80 && bank_nr < 0xc0)))
@@ -213,7 +213,7 @@ void mmu::write8(unsigned int address, unsigned char val)
 		else if (adr == 0x2180)
 		{
 			// WMDATA - WRAM Data Read/Write (R/W)
-			unsigned int waddr = wram281x[0] | (wram281x[1] << 8) | (wram281x[2] << 16) & 0x1ffff;
+			unsigned int waddr = (wram281x[0] | (wram281x[1] << 8) | (wram281x[2] << 16)) & 0x1ffff;
 			snesRAM[0x7e0000 + waddr] = val;
 			waddr += 1; waddr &= 0x1ffff;
 			wram281x[0] = waddr & 0xff;
@@ -381,7 +381,7 @@ void mmu::write8(unsigned int address, unsigned char val)
 
 unsigned char mmu::read8(unsigned int address)
 {
-	unsigned char bank_nr = address >> 16;
+	unsigned char bank_nr = (unsigned char)(address >> 16);
 	unsigned short int adr = address & 0xffff;
 
 	if (adr < 0x8000 && ((bank_nr < 0x40) || (bank_nr >= 0x80 && bank_nr < 0xc0)))

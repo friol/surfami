@@ -192,6 +192,7 @@ void ppu::writeRegister(int reg, unsigned char val)
 		if (_v_trans != 0)
 		{
 			int err = 1;
+			err = 2;
 		}
 
 		int adrIncrStep = 1;
@@ -205,10 +206,11 @@ void ppu::writeRegister(int reg, unsigned char val)
 
 		if (reg == 0x2118)
 		{
-			if (vramAddr == 0x2000)
-			{
-				int w = 1;
-			}
+			//if (vramAddr == 0x2000)
+			//{
+			//	int w = 1;
+			//	w = 2;
+			//}
 			vram[vramAddr & 0x7fff] = (vram[vramAddr & 0x7fff] & 0xff00) | val;
 		}
 		else 
@@ -222,7 +224,7 @@ void ppu::writeRegister(int reg, unsigned char val)
 			nextAddr+=adrIncrStep;
 			nextAddr &= 0x7fff;
 			vramAddressLower = nextAddr & 0xff;
-			vramAddressUpper = nextAddr >> 8;
+			vramAddressUpper = (nextAddr >> 8)&0xff;
 		}
 	}
 	else if (reg == 0x210b)
@@ -276,7 +278,7 @@ void ppu::tileViewerRenderTile2bpp(int px, int py, int tileAddr)
 
 	unsigned char grayArr[] = { 0,0x80,0xc0,0xff };
 
-	/*for (int y = 0;y < 8;y++)
+	for (int y = 0;y < 8;y++)
 	{
 		pBuf = &vramViewerBitmap[(px * 4) + ((py+y) * vramViewerXsize * 4)];
 
@@ -291,7 +293,7 @@ void ppu::tileViewerRenderTile2bpp(int px, int py, int tileAddr)
 		}
 
 		tileAddr += 1;
-	}*/
+	}
 }
 
 void ppu::tileViewerRenderTiles()
@@ -339,9 +341,9 @@ void ppu::renderTile2bpp(int px, int py, int tileNum,int palId, int bgnum, int x
 		int green = (palcol >> 5) & 0x1f; green <<= 3;
 		int blue = (palcol >> 10) & 0x1f; blue <<= 3;
 
-		palArr[(col * 3) + 0] = red;
-		palArr[(col * 3) + 1] = green;
-		palArr[(col * 3) + 2] = blue;
+		palArr[(col * 3) + 0] = (unsigned char)red;
+		palArr[(col * 3) + 1] = (unsigned char)green;
+		palArr[(col * 3) + 2] = (unsigned char)blue;
 
 		colidx += 2;
 	}
@@ -408,9 +410,9 @@ void ppu::renderTile4bpp(int px, int py, int tileNum, int palId, int bgnum, int 
 		int green = (palcol >> 5) & 0x1f; green <<= 3;
 		int blue = (palcol >> 10) & 0x1f; blue <<= 3;
 
-		palArr[(col * 3) + 0] = red;
-		palArr[(col * 3) + 1] = green;
-		palArr[(col * 3) + 2] = blue;
+		palArr[(col * 3) + 0] = (unsigned char)red;
+		palArr[(col * 3) + 1] = (unsigned char)green;
+		palArr[(col * 3) + 2] = (unsigned char)blue;
 
 		colidx += 2;
 	}
@@ -419,7 +421,7 @@ void ppu::renderTile4bpp(int px, int py, int tileNum, int palId, int bgnum, int 
 	tileAddr += ((bgTileBaseAddress >> (4 * bgnum)) & 0x0f) * 1024 * 4;
 	tileAddr &= 0x7fff;
 
-	int ybase = 0; int yend = 8; int yinc = 1; int tileAddrInc = 1;
+	int ybase = 0; int yend = 8; int yinc = 1;
 	if (yflip)
 	{
 		ybase = 7; yend = -1; yinc = -1;
@@ -427,7 +429,7 @@ void ppu::renderTile4bpp(int px, int py, int tileNum, int palId, int bgnum, int 
 
 	for (int y = ybase;y != yend;y += yinc)
 	{
-		int ppos = (px * 4) + ((py + y) * ppuResolutionX * 4);
+		unsigned int ppos = (px * 4) + ((py + y) * ppuResolutionX * 4);
 		if ((ppos >= 0) && (ppos < (ppuResolutionX * ppuResolutionY * 4)))
 		{
 			pBuf = &screenFramebuffer[ppos];
@@ -490,9 +492,9 @@ void ppu::renderTile8bpp(int px, int py, int tileNum, int palId, int bgnum, int 
 		int green = (palcol >> 5) & 0x1f; green <<= 3;
 		int blue = (palcol >> 10) & 0x1f; blue <<= 3;
 
-		palArr[(col * 3) + 0] = red;
-		palArr[(col * 3) + 1] = green;
-		palArr[(col * 3) + 2] = blue;
+		palArr[(col * 3) + 0] = (unsigned char)red;
+		palArr[(col * 3) + 1] = (unsigned char)green;
+		palArr[(col * 3) + 2] = (unsigned char)blue;
 
 		colidx += 2;
 	}
@@ -501,7 +503,7 @@ void ppu::renderTile8bpp(int px, int py, int tileNum, int palId, int bgnum, int 
 	tileAddr += ((bgTileBaseAddress >> (4 * bgnum)) & 0x0f) * 1024 * 4;
 	tileAddr &= 0x7fff;
 
-	int ybase = 0; int yend = 8; int yinc = 1; int tileAddrInc = 1;
+	int ybase = 0; int yend = 8; int yinc = 1;
 	if (yflip)
 	{
 		ybase = 7; yend = -1; yinc = -1;
@@ -586,7 +588,6 @@ void ppu::buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int b
 	}
 
 	if (bgSize == 0) tilemapPos -= 0x400;
-	else if (bgSize == 1) ;
 
 	for (int y = 32;y < 64;y++)
 	{
@@ -636,10 +637,10 @@ void ppu::renderBG(int bgnum,int bpp)
 			int tileNum = vramWord & 0x3ff;
 			if (tileNum == 0x0e)
 			{
-				int brk = 1;
+				int brk = 1; brk = 2;
 			}
 			int palId = (vramWord >> 10) & 0x7;
-			int bgPri = (vramWord >> 13) & 0x01;
+			//int bgPri = (vramWord >> 13) & 0x01;
 			int xflip= (vramWord >> 14) & 0x01;
 			int yflip= (vramWord >> 15) & 0x01;
 
@@ -669,7 +670,7 @@ void ppu::renderSprites()
 	int spriteGap = (obSel >> 3) & 0x03;
 	if (spriteGap != 0)
 	{
-		int err = 1;
+		int err = 1; err = 2;
 	}
 
 	for (auto i = 127; i >= 0; i--)
@@ -687,7 +688,7 @@ void ppu::renderSprites()
 		int x_flip = (byte4 >> 6) & 1;
 		int paletteNum = (byte4 >> 1) & 0b111;
 		//priority = (byte4 >> 4) & 0b11;
-		int spriteSize = (attr >> 1) & 0x01;
+		//int spriteSize = (attr >> 1) & 0x01;
 
 		if (attr & 0x01) x_pos -= 256;
 
@@ -705,9 +706,9 @@ void ppu::renderSprites()
 			int green = (palcol >> 5) & 0x1f; green <<= 3;
 			int blue = (palcol >> 10) & 0x1f; blue <<= 3;
 
-			palArr[(col * 3) + 0] = red;
-			palArr[(col * 3) + 1] = green;
-			palArr[(col * 3) + 2] = blue;
+			palArr[(col * 3) + 0] = (unsigned char)red;
+			palArr[(col * 3) + 1] = (unsigned char)green;
+			palArr[(col * 3) + 2] = (unsigned char)blue;
 
 			colidx += 2;
 		}
@@ -727,7 +728,7 @@ void ppu::renderSprites()
 			for (int x = 0;x != spriteDimX; x+=1)
 			{
 				const unsigned char shift_x = 7 - (x % 8);
-				const unsigned short int tile_address = OAMBase + (tile_nr + x / 8) * 0x10 + (y % 8) + (y / 8 * 0x100);
+				const unsigned int tile_address = OAMBase + (tile_nr + x / 8) * 0x10 + (y % 8) + (y / 8 * 0x100);
 				const unsigned char b_1 = vram[tile_address] & 0xff;
 				const unsigned char b_2 = vram[tile_address] >> 8;
 				const unsigned char b_3 = vram[tile_address + 8] & 0xff;
@@ -836,23 +837,23 @@ void ppu::renderScreen()
 
 	if (brightness != 15)
 	{
-		for (int pos = 0;pos < (ppuResolutionX * ppuResolutionY * 4);pos += 4)
+		for (unsigned int pos = 0;pos < (ppuResolutionX * ppuResolutionY * 4);pos += 4)
 		{
 			int val;
 			val = screenFramebuffer[pos + 0];
 			val *= brightness;
 			val >>= 4;
-			screenFramebuffer[pos + 0] = val;
+			screenFramebuffer[pos + 0] = (unsigned char)val;
 
 			val = screenFramebuffer[pos + 1];
 			val *= brightness;
 			val >>= 4;
-			screenFramebuffer[pos + 1] = val;
+			screenFramebuffer[pos + 1] = (unsigned char)val;
 
 			val = screenFramebuffer[pos + 2];
 			val *= brightness;
 			val >>= 4;
-			screenFramebuffer[pos + 2] = val;
+			screenFramebuffer[pos + 2] = (unsigned char)val;
 		}
 	}
 }

@@ -13,7 +13,7 @@ private:
 	unsigned short int vram[0x8000];
 	unsigned char OAM[0x220];
 	unsigned short int OAMAddr=0;
-	unsigned short int OAM_Lsb = 0;
+	unsigned char OAM_Lsb = 0;
 
 	unsigned char vmainVRAMAddrIncrMode;
 	unsigned char vramAddressLower;
@@ -37,8 +37,8 @@ private:
 	unsigned char* vramViewerBitmap;
 	void tileViewerRenderTile2bpp(int px, int py, int tileAddr);
 
-	int ppuResolutionX = 256;
-	int ppuResolutionY = 224;
+	unsigned int ppuResolutionX = 256;
+	unsigned int ppuResolutionY = 224;
 	unsigned char* screenFramebuffer;
 	void renderTile2bpp(int px, int py, int tileNum, int palId, int bgnum,int xflip,int yflip);
 	void renderTile4bpp(int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip);
@@ -55,9 +55,9 @@ private:
 	unsigned int scanline=0;
 	unsigned int internalCyclesCounter = 0;
 
-	const int vblankStartScanline = 0xf0;
-	const int cyclesPerScanline = 1364;
-	const int totScanlines = 262;
+	const unsigned int vblankStartScanline = 0xf0;
+	const unsigned int cyclesPerScanline = 1364;
+	const unsigned int totScanlines = 262;
 
 public:
 
