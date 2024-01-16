@@ -5872,6 +5872,89 @@ int cpu5a22::stepOne()
 			cycles = 6 + cycAdder;
 			break;
 		}
+		case 0xf1:
+		{
+			// SBC (dp),Y
+			int cycAdder = 0;
+			unsigned int addr = getDirectPageIndirectIndexedYAddress();
+
+			doSBC(addr);
+			if (regP.getAccuMemSize())
+			{
+				cycAdder += 1;;
+			}
+
+			if (regP.isDPLowNotZero()) cycAdder += 1;
+
+			regPC += 2;
+			cycles = 5 + cycAdder;
+			break; // TODO check page bound
+		}
+		case 0x76:
+		{
+			// ROR dp,X
+			int cycAdder = 0;
+			unsigned int addr = getDirectPageIndexedXAddress();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				unsigned char old_C = regP.getCarry();
+				regP.setCarry(val & 1);
+				val = (old_C << 7) | (val >> 1);
+				pMMU->write8(addr, val);
+				regP.setZero(val == 0);
+				regP.setNegative(val >> 7);
+			}
+			else
+			{
+				unsigned short int val = (pMMU->read8(addr + 1) << 8) | pMMU->read8(addr);
+				unsigned char old_C = regP.getCarry();
+				regP.setCarry(val & 1);
+				val = (old_C << 15) | (val >> 1);
+
+				pMMU->write8(addr, val & 0xff);
+				pMMU->write8(addr + 1, val >> 8);
+
+				regP.setZero(val == 0);
+				regP.setNegative(val >> 15);
+				cycAdder += 2;
+			}
+
+			regPC += 2;
+			cycles = 6 + cycAdder;
+			break;
+		}
+		case 0x3c:
+		{
+			// BIT addr,X
+			int cycAdder = 0;
+			unsigned int addr = getAbsoluteAddress16IndexedX();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				regP.setNegative(val >> 7);
+				regP.setOverflow((val >> 6) & 1);
+				regP.setZero((val & regA_lo) == 0x00);
+			}
+			else
+			{
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned short val = (hi << 8) | lo;
+
+				regP.setNegative(val >> 15);
+				regP.setOverflow((val >> 14) & 1);
+				regP.setZero((val & (regA_lo | (regA_hi << 8))) == 0x0000);
+
+				cycAdder += 1;
+			}
+
+			regPC += 3;
+			cycles = 4 + cycAdder;
+			break; // TODO check page bound
+		}
 		default:
 		{
 			// unknown opcode

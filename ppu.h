@@ -40,10 +40,8 @@ private:
 	unsigned int ppuResolutionX = 256;
 	unsigned int ppuResolutionY = 224;
 	unsigned char* screenFramebuffer;
-	void renderTile2bpp(int px, int py, int tileNum, int palId, int bgnum,int xflip,int yflip);
-	void renderTile4bpp(int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip);
-	void renderTile8bpp(int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip);
-
+	
+	void renderTile(int bpp,int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip);
 	void renderSprite(int px, int py, int tileNum, int palId);
 
 	void renderBackdrop();

@@ -81,6 +81,35 @@ int romLoader::loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>
 		}
 	}
 
+	// load SRAM, if present
+	int romBeg=(int)romPath.find_last_of("/\\")+1;
+	std::string romName = romPath.substr(romBeg);
+	int pointPos = (int)romName.find_last_of(".");
+	std::string onlyRomName = romName.substr(0, pointPos);
+	std::string sramFileName = "D:\\prova\\snes\\sram\\" + onlyRomName + ".srm";
+
+	std::vector<unsigned char> sramData;
+	std::ifstream file(sramFileName, std::ios::binary);
+	if (file)
+	{
+		file.unsetf(std::ios::skipws);
+
+		std::streampos fileSize;
+		file.seekg(0, std::ios::end);
+		fileSize = file.tellg();
+		file.seekg(0, std::ios::beg);
+
+		sramData.reserve(fileSize);
+		sramData.insert(sramData.begin(), std::istream_iterator<unsigned char>(file), std::istream_iterator<unsigned char>());
+
+		for (int pos = 0;pos < fileSize;pos++)
+		{
+			theMMU.write8(0x700000 + pos, sramData[pos]);
+		}
+
+		theMMU.hasSram(sramFileName);
+	}
+
 	// RESET (emulation)	0xFFFC / 0xFFFD
 	int loReset = theMMU.read8(0xfffc);
 	int hiReset = theMMU.read8(0xfffd);

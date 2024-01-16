@@ -607,39 +607,43 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\BGMAP\\8x8\\2BPP\\8x8BG2Map2BPP32x328PAL\\8x8BG2Map2BPP32x328PAL.sfc"; // black screen
     //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\BGMAP\\8x8\\8BPP\\TileFlip\\8x8BGMapTileFlip.sfc";
     //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\BGMAP\\8x8\\8BPP\\32x32\\8x8BGMap8BPP32x32.sfc";
-    //std::string romName = "d:\\prova\\snes\\Rings.sfc"; // both are red
+    //std::string romName = "d:\\prova\\snes\\Rings.sfc";
     //std::string romName = "d:\\prova\\snes\\MosaicMode3.sfc";
 
     //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc";
     //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc"; // e7
     //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc";
+    std::string romName = "d:\\prova\\snes\\Lemmings (E).sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars + Super Mario World (USA).sfc"; // reads from 2134
     //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
     //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // corrupted bg
     //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc";
-    //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // breaks
-    //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc"; // f1
+    //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // 02 (COP)
+    //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc"; 
     //std::string romName = "d:\\prova\\snes\\Frogger (U).smc"; // corrupted sprites at the bottom, background is not scrolling
     //std::string romName = "d:\\prova\\snes\\Race Drivin' (U).smc"; 
-    std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc";
+    //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc";  
     //std::string romName = "d:\\prova\\snes\\Arkanoid - Doh it Again (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc";
     //std::string romName = "d:\\prova\\snes\\Home Alone (E) [!].smc"; // 57
     //std::string romName = "d:\\prova\\snes\\Kick Off (E).smc";
     //std::string romName = "d:\\prova\\snes\\Super Off Road (E) [!].smc"; // 34
-    //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc";
+    //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc"; // 72
     //std::string romName = "d:\\prova\\snes\\Sensible Soccer - International Edition (E).smc";
     //std::string romName = "d:\\prova\\snes\\Gun Force (E).smc"; // 02
     //std::string romName = "d:\\prova\\snes\\The Legend Of Zelda -  A Link To The Past.smc";
     //std::string romName = "d:\\prova\\snes\\Prince of Persia (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Yoshi's Cookie (E).smc"; 
     //std::string romName = "d:\\prova\\snes\\Sim City (E) [!].smc"; // 02
-    //std::string romName = "d:\\prova\\snes\\James Pond's Crazy Sports (E).smc"; // SPC
+    //std::string romName = "d:\\prova\\snes\\James Pond's Crazy Sports (E).smc"; // 71
     //std::string romName = "d:\\prova\\snes\\Spanky's Quest (E).smc";
     //std::string romName = "d:\\prova\\snes\\Spectre (E) [!].smc"; // hblank?
     //std::string romName = "d:\\prova\\snes\\Tetris Attack (E).smc"; 
+    //std::string romName = "d:\\prova\\snes\\Lawnmower Man, The (E).smc"; // SPC
+    //std::string romName = "d:\\prova\\snes\\Williams Arcade's Greatest Hits (E) [!].smc"; // SPC
+    //std::string romName = "d:\\prova\\snes\\Unirally (E) [!].smc"; // SPC
     //std::string romName = "D:\\prova\\snes\\SNES-master\\Games\\MonsterFarmJump\\MonsterFarmJump.sfc";
 
     //std::string romName = "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc"; // WAI
@@ -696,6 +700,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x0d8163, 0xea);
         theMMU.write8(0x0d8179, 0xea);
         theMMU.write8(0x0d817a, 0xea);
+        theMMU.write8(0x0d844c, 0xea);
+        theMMU.write8(0x0d844d, 0xea);
+        theMMU.write8(0x0d8459, 0xea);
+        theMMU.write8(0x0d845a, 0xea);
+        theMMU.write8(0x0d846c, 0xea);
+        theMMU.write8(0x0d846d, 0xea);
 
     }
     else if (romName == "d:\\prova\\snes\\Tetris Attack (E).smc")
@@ -990,6 +1000,47 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x838974, 0xea);
         theMMU.write8(0x838975, 0xea);
     }
+    else if (romName == "d:\\prova\\snes\\James Pond's Crazy Sports (E).smc")
+    {
+        theMMU.write8(0x81f408, 0xea);
+        theMMU.write8(0x81f409, 0xea);
+        theMMU.write8(0x81f429, 0xea);
+        theMMU.write8(0x81f42a, 0xea);
+        theMMU.write8(0x81f44a, 0xea);
+        theMMU.write8(0x81f44b, 0xea);
+        theMMU.write8(0x81f46b, 0xea);
+        theMMU.write8(0x81f46c, 0xea);
+
+    }
+    else if (romName == "d:\\prova\\snes\\Lemmings (E).sfc")
+    {
+        theMMU.write8(0x08d45a, 0xea);
+        theMMU.write8(0x08d45b, 0xea);
+        theMMU.write8(0x08d46c, 0xea);
+        theMMU.write8(0x08d46d, 0xea);
+        theMMU.write8(0x08d0f2, 0xea);
+        theMMU.write8(0x08d0f3, 0xea);
+        theMMU.write8(0x08d0fe, 0xea);
+        theMMU.write8(0x08d0ff, 0xea);
+        theMMU.write8(0x08d133, 0xea);
+        theMMU.write8(0x08d134, 0xea);
+        theMMU.write8(0x08d140, 0xea);
+        theMMU.write8(0x08d141, 0xea);
+        theMMU.write8(0x08d14d, 0xea);
+        theMMU.write8(0x08d14e, 0xea);
+        theMMU.write8(0x08d3b3, 0xea);
+        theMMU.write8(0x08d3b4, 0xea);
+        theMMU.write8(0x08d3cd, 0xea);
+        theMMU.write8(0x08d3ce, 0xea);
+        theMMU.write8(0x08d2c2, 0xea);
+        theMMU.write8(0x08d2c3, 0xea);
+        theMMU.write8(0x08d2dd, 0xea);
+        theMMU.write8(0x08d2de, 0xea);
+        theMMU.write8(0x08d396, 0xea);
+        theMMU.write8(0x08d397, 0xea);
+        theMMU.write8(0x08d07e, 0xea);
+        theMMU.write8(0x08d07f, 0xea);
+    }
     
     //
 
@@ -1119,6 +1170,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
             else if (ImGui::IsKeyReleased(ImGuiKey_X))
             {
                 theMMU.pressXKey(false);
+            }
+
+            if (ImGui::IsKeyPressed(ImGuiKey_C))
+            {
+                theMMU.pressBKey(true);
+            }
+            else if (ImGui::IsKeyReleased(ImGuiKey_C))
+            {
+                theMMU.pressBKey(false);
+            }
+
+            if (ImGui::IsKeyPressed(ImGuiKey_V))
+            {
+                theMMU.pressYKey(true);
+            }
+            else if (ImGui::IsKeyReleased(ImGuiKey_V))
+            {
+                theMMU.pressYKey(false);
             }
         }
 

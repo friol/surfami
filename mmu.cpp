@@ -511,6 +511,14 @@ unsigned char mmu::read8(unsigned int address)
 			{
 				res |= 0x08;
 			}
+			if (isKeyBPressed)
+			{
+				res |= 0x80;
+			}
+			if (isKeyYPressed)
+			{
+				res |= 0x40;
+			}
 
 			return res;
 		}
@@ -531,9 +539,13 @@ unsigned char mmu::read8(unsigned int address)
 	{
 		// sram - some games (like tetris&dr.mario) complain if they find SRAM at this address, 
 		// and refuse to run, thinking you are using a copier 
-		if ((bank_nr >= 0x70) && (bank_nr <= 0x73))
+		if (!hasSRAM)
 		{
-			return 0;
+			if ((bank_nr >= 0x70) && (bank_nr <= 0x73))
+			{
+				return 0;
+			}
+			else return snesRAM[address];
 		}
 
 		return snesRAM[address];
@@ -544,5 +556,16 @@ unsigned char mmu::read8(unsigned int address)
 
 mmu::~mmu()
 {
+	// save SRAM if present
+	if (hasSRAM)
+	{
+		std::fstream fout(sramFileName, std::fstream::out | std::fstream::binary);
+		for (int b = 0;b < 0x800;b++)
+		{
+			unsigned char theByte = read8(0x700000 + b);
+			fout.write(reinterpret_cast<char*>(&theByte), 1);
+		}
+	}
+
 	delete(snesRAM);
 }

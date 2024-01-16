@@ -20,8 +20,6 @@ public:
 
 	romLoader();
 	int loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>& loadLog);
-	
-
 };
 
 #endif

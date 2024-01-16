@@ -58,6 +58,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x39,3,"AND param0,Y",Absolute16,false,false,true}, // validatedF
 	{0x3a,1,"DEC A",None,false,false,true}, // validatedF
 	{0x3b,1,"TSC",None,false,false,true}, // validatedF
+	{0x3c,3,"BIT param0,X",Absolute16,false,false,true}, // validatedF
 	{0x3d,3,"AND param0,X",Absolute16,false,false,true}, // validatedF
 	{0x3e,3,"ROL param0,X",Absolute16,false,false,true}, // validatedF
 	{0x3f,4,"AND param0,X",AbsoluteLong,false,false,true}, // validatedF
@@ -102,6 +103,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x73,2,"ADC (param0,S),Y",Immediate8,false,false,true}, // validatedF
 	{0x74,2,"STZ param0,X",Immediate8,false,false,true}, // validatedF
 	{0x75,2,"ADC param0,X",Immediate8,false,false,true}, // validatedF
+	{0x76,2,"ROR param0,X",Immediate8,false,false,true}, // validatedF
 	{0x77,2,"ADC [param0],Y",Immediate8,false,false,true}, // validatedF
 	{0x78,1,"SEI",None,false,false,true}, // validatedF
 	{0x79,3,"ADC param0,Y",Absolute16,false,false,true}, // validatedF
@@ -214,6 +216,7 @@ static const debugInfoRec debugInstrData[] =
 	{0xef,4,"SBC param0",AbsoluteLong,false,false,true}, // validatedF
 	{0xea,1,"NOP",None,false,false,true}, // validatedF
 	{0xf0,2,"BEQ param0",Immediate8,false,false,true}, // validatedF
+	{0xf1,2,"SBC (param0),Y",Immediate8,false,false,true}, // validatedF
 	{0xF4,3,"PEA param0",Absolute16,false,false,true}, // validatedF
 	{0xf5,2,"SBC param0,X",Immediate8,false,false,true}, // validatedF
 	{0xf6,2,"INC param0,X",Immediate8,false,false,true}, // validatedF
