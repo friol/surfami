@@ -5955,6 +5955,24 @@ int cpu5a22::stepOne()
 			cycles = 4 + cycAdder;
 			break; // TODO check page bound
 		}
+		case 0xe7:
+		{
+			// SBC [dp]
+			int cycAdder = 0;
+			unsigned int addr = getDirectPageIndirectLongAddress();
+			doSBC(addr);
+
+			if (regP.getAccuMemSize())
+			{
+				cycAdder = 1;
+			}
+
+			if (regP.isDPLowNotZero()) cycAdder += 1;
+
+			regPC += 2;
+			cycles = 6 + cycAdder;
+			break;
+		}
 		default:
 		{
 			// unknown opcode

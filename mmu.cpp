@@ -28,7 +28,7 @@ void mmu::DMAstart(unsigned char val)
 	strr << std::hex << std::setw(2) << std::setfill('0') << (int)dmaMask;
 	std::string sDMAmask = strr.str();
 
-	glbTheLogger.logMsg("DMA start called. DMA channels:"+sDMAmask);
+	//glbTheLogger.logMsg("DMA start called. DMA channels:"+sDMAmask);
 
 	if (dmaMask == 0) return; // nothing to do, I hope
 
@@ -56,15 +56,15 @@ void mmu::DMAstart(unsigned char val)
 			strstrdgb2 << std::hex << std::setw(4) << std::setfill('0') << (int)(0x2100 + BBusAddr);
 			std::string sDMATargetAddr2 = strstrdgb2.str();
 
-			glbTheLogger.logMsg("DMA chan:" + std::to_string(dmaChannel)+ " DMA mode:"+std::to_string(dma_mode)+" DMA direction:"+std::to_string(dma_dir));
+			//glbTheLogger.logMsg("DMA chan:" + std::to_string(dmaChannel)+ " DMA mode:"+std::to_string(dma_mode)+" DMA direction:"+std::to_string(dma_dir));
 
 			if (dma_dir == 0)
 			{
-				glbTheLogger.logMsg("Data will be written to:" + sDMATargetAddr2 + " DMA bytes to move:" + std::to_string(byteCount));
+				//glbTheLogger.logMsg("Data will be written to:" + sDMATargetAddr2 + " DMA bytes to move:" + std::to_string(byteCount));
 			}
 			else
 			{
-				glbTheLogger.logMsg("DMA will be written to:" + sDMATargetAddr + " DMA bytes to move:" + std::to_string(byteCount));
+				//glbTheLogger.logMsg("DMA will be written to:" + sDMATargetAddr + " DMA bytes to move:" + std::to_string(byteCount));
 			}
 
 			if (dma_mode == 0)
@@ -174,14 +174,14 @@ void mmu::write8(unsigned int address, unsigned char val)
 		else if (adr == 0x2100)
 		{
 			// 2100h - INIDISP - Display Control 1
-			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2100 (INIDISP - Display Control 1)");
+			//glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2100 (INIDISP - Display Control 1)");
 			pPPU->setINIDISP(val);
 			return;
 		}
 		else if (adr == 0x2101)
 		{
 			// 2101h - OBSEL - Object Size and Object Base
-			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2101 (OBSEL - Object Size and Object Base)");
+			//glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2101 (OBSEL - Object Size and Object Base)");
 			pPPU->setOBSEL(val);
 			return;
 		}
@@ -232,21 +232,27 @@ void mmu::write8(unsigned int address, unsigned char val)
 			DMAstart(val);
 			return;
 		}
+		else if (adr == 0x420C) // HDMA start reg
+		{
+			//DMAstart(val);
+			return;
+		}
 		else if (adr == 0x2105)
 		{
-			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2105 (BG Mode and Character Size Register)");
+			//glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2105 (BG Mode and Character Size Register)");
 			pPPU->writeRegister(0x2105, val);
 			return;
 		}
 		else if ((adr == 0x2107) || (adr == 0x2108) || (adr == 0x2109) || (adr == 0x210A))
 		{
-			glbTheLogger.logMsg("Writing [" + strr.str() + "] to 0x2107/8/9/A (BGx Screen Base and Screen Size)");
+			int bgid = adr - 0x2107 +1;
+			glbTheLogger.logMsg("Writing [" + strr.str() + "] for BG"+std::to_string(bgid)+" (BGx Screen Base and Screen Size)");
 			pPPU->writeRegister(adr, val);
 			return;
 		}
 		else if (adr == 0x2121)
 		{
-			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2121 (CGRAM index)");
+			//glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2121 (CGRAM index)");
 			pPPU->writeRegister(0x2121, val);
 			return;
 		}
@@ -264,19 +270,19 @@ void mmu::write8(unsigned int address, unsigned char val)
 		}
 		else if (adr == 0x2115)
 		{
-			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2115 (VRAM Address Increment Mode)");
+			//glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2115 (VRAM Address Increment Mode)");
 			pPPU->writeRegister(0x2115, val);
 			return;
 		}
 		else if (adr == 0x2116)
 		{
-			glbTheLogger.logMsg("Writing [" + strr.str() + "] to 0x2116 (VRAM Address Lower)");
+			//glbTheLogger.logMsg("Writing [" + strr.str() + "] to 0x2116 (VRAM Address Lower)");
 			pPPU->writeRegister(0x2116, val);
 			return;
 		}
 		else if (adr == 0x2117)
 		{
-			glbTheLogger.logMsg("Writing [" + strr.str() + "] to 0x2117 (VRAM Address Upper)");
+			//glbTheLogger.logMsg("Writing [" + strr.str() + "] to 0x2117 (VRAM Address Upper)");
 			pPPU->writeRegister(0x2117, val);
 			return;
 		}
@@ -306,21 +312,21 @@ void mmu::write8(unsigned int address, unsigned char val)
 		}
 		else if (adr == 0x212c)
 		{
-			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x212C (TM - Main Screen Designation)");
+			//glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x212C (TM - Main Screen Designation)");
 			pPPU->writeRegister(adr, val);
 			return;
 		}
 		else if ((adr == 0x210D) || (adr == 0x210F) || (adr == 0x2111) || (adr == 0x2113))
 		{
 			int bgid = (adr - 0x210D)>>1;
-			if (bgid==0) glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to BG "+std::to_string(bgid) + " scroll X");
+			//if (bgid==0) glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to BG "+std::to_string(bgid) + " scroll X");
 			pPPU->writeBgScrollX(bgid, val);
 			return;
 		}
 		else if ((adr == 0x210E) || (adr == 0x2110) || (adr == 0x2112) || (adr == 0x2114))
 		{
 			int bgid = (adr - 0x210E)>>1;
-			if (bgid == 0) glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to BG " + std::to_string(bgid) + " scroll Y");
+			//if (bgid == 0) glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to BG " + std::to_string(bgid) + " scroll Y");
 			pPPU->writeBgScrollY(bgid, val);
 			return;
 		}
@@ -418,8 +424,8 @@ unsigned char mmu::read8(unsigned int address)
 		else if (adr == 0x213f)
 		{
 			// TODO PAL/NTSC flag
-			//return 0x03;
-			return 0x13;
+			return 0x03;
+			//return 0x13;
 		}
 		else if ((adr == 0x2140) || (adr == 0x2141) || (adr == 0x2142) || (adr == 0x2143))
 		{
@@ -457,10 +463,10 @@ unsigned char mmu::read8(unsigned int address)
 			unsigned char res = 0;
 			if (pPPU->isVBlankActive()) res |= 0x80;
 
-			if (isKeySelectPressed || isKeyStartPressed)
+			/*if (isKeySelectPressed || isKeyStartPressed)
 			{
 				res|=0x01;
-			}
+			}*/
 			
 			return res;
 			//return 0;

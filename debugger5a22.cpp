@@ -207,6 +207,7 @@ static const debugInfoRec debugInstrData[] =
 	{0xe4,2,"CPX param0",Immediate8,false,false,true}, // validatedF
 	{0xe5,2,"SBC param0",Immediate8,false,false,true}, // validatedF
 	{0xe6,2,"INC param0",Immediate8,false,false,true}, // validatedF
+	{0xe7,2,"SBC [param0]",Immediate8,false,false,true}, // validatedF
 	{0xe8,1,"INX",None,false,false,true}, // validatedF
 	{0xe9,2,"SBC param0",Immediate,false,true,true}, // validatedF
 	{0xeb,1,"XBA",None,false,false,true}, // validatedF

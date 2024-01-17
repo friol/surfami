@@ -27,7 +27,6 @@ private:
 	bool hasSRAM = false;
 	std::string sramFileName = "";
 
-
 	void DMAstart(unsigned char val);
 
 	unsigned char wram281x[3];
@@ -51,6 +50,7 @@ public:
 	unsigned char read8(unsigned int address);
 	unsigned char* getInternalRAMPtr() { return snesRAM; }
 	void hasSram(std::string& sramName) { hasSRAM = true; sramFileName = sramName; }
+	unsigned char get4200() { return nmiTimen; }
 
 	bool isVblankNMIEnabled() { return ((nmiTimen & 0x80) == 0x80); }
 	void setNMIFlag() { nmiFlag = true; }

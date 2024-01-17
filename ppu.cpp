@@ -532,7 +532,8 @@ void ppu::buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int b
 
 void ppu::renderBG(int bgnum,int bpp)
 {
-	int baseTileAddr = ((bgTileMapBaseAddress[bgnum] >> 2) << 10) & 0x7fff;
+	int baseTileAddr = ((bgTileMapBaseAddress[bgnum] >> 2) << 10);// &0x7fff;
+	//int baseTileAddr = 0x5800;
 
 	int bgSize = bgTileMapBaseAddress[bgnum] & 0x3;
 	int xscroll = bgScrollX[bgnum];
@@ -552,10 +553,6 @@ void ppu::renderBG(int bgnum,int bpp)
 			unsigned short int vramWord = tilemapMap[realy&0x3f][realx&0x3f];
 
 			int tileNum = vramWord & 0x3ff;
-			if (tileNum == 0x0e)
-			{
-				int brk = 1; brk = 2;
-			}
 			int palId = (vramWord >> 10) & 0x7;
 			//int bgPri = (vramWord >> 13) & 0x01;
 			int xflip= (vramWord >> 14) & 0x01;
