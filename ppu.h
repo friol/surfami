@@ -27,10 +27,12 @@ private:
 	unsigned char obSel = 0;
 
 	int bgTileMapBaseAddress[4];
-	bool bgScrollXFlipFlop[4];
-	bool bgScrollYFlipFlop[4];
+	//bool bgScrollXFlipFlop[4];
+	//bool bgScrollYFlipFlop[4];
 	unsigned short int bgScrollX[4];
 	unsigned short int bgScrollY[4];
+	unsigned char BGSCROLL_L1;
+	unsigned char BGSCROLL_L2;
 
 	const int vramViewerXsize = 256;
 	const int vramViewerYsize = 256;

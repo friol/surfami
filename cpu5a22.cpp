@@ -5973,6 +5973,49 @@ int cpu5a22::stepOne()
 			cycles = 6 + cycAdder;
 			break;
 		}
+		case 0xf7:
+		{
+			// SBC [dp],Y
+			int cycAdder = 0;
+			unsigned int addr = getDirectPageIndirectLongIndexedYAddress();
+			doSBC(addr);
+
+			if (regP.getAccuMemSize())
+			{
+				cycAdder = 1;
+			}
+
+			if (regP.isDPLowNotZero()) cycAdder += 1;
+
+			regPC += 2;
+			cycles = 6 + cycAdder;
+			break;
+		}
+		case 0x02:
+		{
+			// (call the) COP(s) const
+
+			pushToStack8(regPB);
+
+			regPC += 2;
+
+			pushToStack8((unsigned char)(regPC >> 8));
+			pushToStack8((unsigned char)(regPC & 0xff));
+			pushToStack8(regP.getByte());
+			regP.setIRQDisable(1);
+			
+			//regs.setProgramBankRegister(0x00);
+			regPB = 0;
+			
+			int loCOPVec = pMMU->read8(0xffe4);
+			int hiCOPVec = pMMU->read8(0xffe5);
+			regPC = (unsigned short int)(loCOPVec | (hiCOPVec << 8));
+
+			regP.setDecimal(0);
+
+			cycles = 8; // TODO check
+			break;
+		}
 		default:
 		{
 			// unknown opcode

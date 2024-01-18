@@ -12,8 +12,8 @@ ppu::ppu()
 		bgTileMapBaseAddress[bg] = 0;
 		bgScrollX[bg] = 0;
 		bgScrollY[bg] = 0;
-		bgScrollXFlipFlop[bg] = false;
-		bgScrollYFlipFlop[bg] = false;
+		//bgScrollXFlipFlop[bg] = false;
+		//bgScrollYFlipFlop[bg] = false;
 	}
 
 	for (int addr = 0;addr < 0x8000;addr++)
@@ -37,7 +37,7 @@ ppu::ppu()
 
 void ppu::writeBgScrollX(int bgId,unsigned char val)
 {
-	if (!bgScrollXFlipFlop[bgId]) 
+	/*if (!bgScrollXFlipFlop[bgId])
 	{
 		bgScrollX[bgId] = (bgScrollX[bgId] & 0xff00) | val;
 		bgScrollXFlipFlop[bgId] = true;
@@ -46,12 +46,16 @@ void ppu::writeBgScrollX(int bgId,unsigned char val)
 	{
 		bgScrollX[bgId] = (bgScrollX[bgId] & 0xff) | (val << 8);
 		bgScrollXFlipFlop[bgId] = false;
-	}
+	}*/
+	
+	bgScrollX[bgId] = (val << 8) | (BGSCROLL_L1 & ~7) | (BGSCROLL_L2);
+	BGSCROLL_L1 = val;
+	BGSCROLL_L2 = val;
 }
 
 void ppu::writeBgScrollY(int bgId, unsigned char val)
 {
-	if (!bgScrollYFlipFlop[bgId])
+	/*if (!bgScrollYFlipFlop[bgId])
 	{
 		bgScrollY[bgId] = (bgScrollY[bgId] & 0xff00) | val;
 		bgScrollYFlipFlop[bgId] = true;
@@ -60,7 +64,9 @@ void ppu::writeBgScrollY(int bgId, unsigned char val)
 	{
 		bgScrollY[bgId] = (bgScrollY[bgId] & 0xff) | (val << 8);
 		bgScrollYFlipFlop[bgId] = false;
-	}
+	}*/
+	bgScrollY[bgId] = (val << 8) | BGSCROLL_L1;
+	BGSCROLL_L1 = val;
 }
 
 void ppu::writeOAM(unsigned char val)
@@ -532,12 +538,12 @@ void ppu::buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int b
 
 void ppu::renderBG(int bgnum,int bpp)
 {
-	int baseTileAddr = ((bgTileMapBaseAddress[bgnum] >> 2) << 10);// &0x7fff;
+	int baseTileAddr = ((bgTileMapBaseAddress[bgnum] >> 2) << 10)&0x7fff;
 	//int baseTileAddr = 0x5800;
 
 	int bgSize = bgTileMapBaseAddress[bgnum] & 0x3;
-	int xscroll = bgScrollX[bgnum];
-	int yscroll = bgScrollY[bgnum];
+	int xscroll = bgScrollX[bgnum]&0x3ff;
+	int yscroll = bgScrollY[bgnum]&0x3ff;
 
 	unsigned short int tilemapMap[64][64];
 	buildTilemapMap(tilemapMap, bgSize, baseTileAddr);
@@ -550,7 +556,7 @@ void ppu::renderBG(int bgnum,int bpp)
 		{
 			int realx = x + (xscroll / 8);
 
-			unsigned short int vramWord = tilemapMap[realy&0x3f][realx&0x3f];
+			unsigned short int vramWord = tilemapMap[realy%64][realx%64];
 
 			int tileNum = vramWord & 0x3ff;
 			int palId = (vramWord >> 10) & 0x7;
@@ -629,10 +635,10 @@ void ppu::renderSprites()
 		const unsigned int OAMBase = (obSel & 0x03) * 0x2000;
 
 		int ybase = 0; int yend = spriteDimY; int yinc = 1; 
-		if (y_flip)
+		/*if (y_flip)
 		{
 			ybase = spriteDimY-1; yend = -1; yinc = -1;
-		}
+		}*/
 
 		for (int y = ybase;y != yend;y+=yinc)
 		{
@@ -656,7 +662,7 @@ void ppu::renderSprites()
 					if (x_flip) realx = spriteDimX - x - 1;
 					if (y_flip) realy = spriteDimY - y - 1;
 					unsigned int pixaddr = ((x_pos + realx) + ((y_pos + realy) * ppuResolutionX)) * 4;
-					if (pixaddr < (ppuResolutionX * ppuResolutionY * 4))
+					if ((pixaddr>=0) && (pixaddr < (ppuResolutionX * ppuResolutionY * 4)))
 					{
 						unsigned char* pBuf = &screenFramebuffer[pixaddr];
 						
@@ -673,8 +679,6 @@ void ppu::renderSprites()
 						}
 					}
 				}
-
-
 			}
 		}
 	}

@@ -47,7 +47,12 @@ void mmu::DMAstart(unsigned char val)
 			unsigned char loAddr = snesRAM[0x4302 + (dmaChannel * 0x10)];
 
 			unsigned int targetAddr = (hiBank << 16) | (hiAddr << 8) | loAddr;
-			unsigned short int byteCount = (snesRAM[0x4306 + (dmaChannel * 0x10)] << 8) | snesRAM[0x4305 + (dmaChannel * 0x10)];
+			unsigned int byteCount = (snesRAM[0x4306 + (dmaChannel * 0x10)] << 8) | snesRAM[0x4305 + (dmaChannel * 0x10)];
+
+			if (byteCount == 0)
+			{
+				byteCount = 0x10000;
+			}
 
 			std::stringstream strstrdgb;
 			strstrdgb << std::hex << std::setw(4) << std::setfill('0') << (int)targetAddr;
@@ -60,11 +65,11 @@ void mmu::DMAstart(unsigned char val)
 
 			if (dma_dir == 0)
 			{
-				//glbTheLogger.logMsg("Data will be written to:" + sDMATargetAddr2 + " DMA bytes to move:" + std::to_string(byteCount));
+				glbTheLogger.logMsg("Data will be written to:" + sDMATargetAddr2 + " DMA bytes to move:" + std::to_string(byteCount));
 			}
 			else
 			{
-				//glbTheLogger.logMsg("DMA will be written to:" + sDMATargetAddr + " DMA bytes to move:" + std::to_string(byteCount));
+				glbTheLogger.logMsg("DMA will be written to:" + sDMATargetAddr + " DMA bytes to move:" + std::to_string(byteCount));
 			}
 
 			if (dma_mode == 0)
@@ -234,7 +239,14 @@ void mmu::write8(unsigned int address, unsigned char val)
 		}
 		else if (adr == 0x420C) // HDMA start reg
 		{
-			//DMAstart(val);
+			if (val != 0)
+			{
+				int dma = 1;
+			}
+			for (int i = 0; i < 8; i++) 
+			{
+				//HDMAS[i] = DMA((val >> i) & 1);
+			}
 			return;
 		}
 		else if (adr == 0x2105)
@@ -462,14 +474,7 @@ unsigned char mmu::read8(unsigned int address)
 			//	PPU Interrupts - H/V-Blank Flag and Joypad Busy Flag (R) - TODO
 			unsigned char res = 0;
 			if (pPPU->isVBlankActive()) res |= 0x80;
-
-			/*if (isKeySelectPressed || isKeyStartPressed)
-			{
-				res|=0x01;
-			}*/
-			
 			return res;
-			//return 0;
 		}
 		else if (adr == 0x4017)
 		{
