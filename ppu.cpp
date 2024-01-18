@@ -720,8 +720,8 @@ void ppu::renderScreen()
 	{
 		// 1      16-color    16-color    4-color     -         ;Normal
 		renderBackdrop();
-		if ((((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1)) > 0)) renderBG(1, 4);
-		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBG(0, 4);
+		//if ((((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1)) > 0)) renderBG(1, 4);
+		//if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBG(0, 4);
 		if (((mainScreenDesignation & 0x1f) & (1 << 2)) > 0) renderBG(2, 2);
 	}
 	else if (screenMode == 0x02)

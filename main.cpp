@@ -621,7 +621,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Lemmings (E).sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars + Super Mario World (USA).sfc"; // reads from 2134
     //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
-    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // corrupted bg
+    std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // corrupted bg
     //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc";
     //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // cb
     //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc"; 
@@ -629,7 +629,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Race Drivin' (U).smc"; 
     //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc";  
-    std::string romName = "d:\\prova\\snes\\Arkanoid - Doh it Again (E) [!].smc";
+    //std::string romName = "d:\\prova\\snes\\Arkanoid - Doh it Again (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc";
     //std::string romName = "d:\\prova\\snes\\Home Alone (E) [!].smc"; // 57
     //std::string romName = "d:\\prova\\snes\\Kick Off (E).smc";
