@@ -49,6 +49,7 @@ private:
 	void renderBackdrop();
 	void renderBG(int bgnum,int bpp);
 	void renderSprites();
+	void renderSpritesScanline(int scanlinenum);
 
 	void buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int baseTileAddr);
 
@@ -57,7 +58,9 @@ private:
 
 	const unsigned int vblankStartScanline = 0xf0;
 	const unsigned int cyclesPerScanline = 1364;
+	const unsigned int hdmaStartingPos = 256 * 4;
 	const unsigned int totScanlines = 262;
+	bool hdmaStartedForThisLine = false;
 
 public:
 
@@ -78,6 +81,11 @@ public:
 	int getCurrentBGMode();
 	void tileViewerRenderTiles();
 	void renderScreen();
+
+	void renderBGScanline(int bgnum, int bpp, int scanlinenum);
+	void renderTileScanline(int bpp, int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip, int scanlinenum);
+	void renderScanline(int scanlinenum);
+	void renderBackdropScanline(int scanlinenum);
 
 	int getVRAMViewerXsize() { return vramViewerXsize; }
 	int getVRAMViewerYsize() { return vramViewerYsize; }

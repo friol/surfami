@@ -1,7 +1,7 @@
 
 /* 
 
-	our Ricoh 5A22 CPU - includes a WDC 65C816 
+	our Ricoh 5A22 chip - includes a WDC 65C816 
 	a lot of code "inspired" by
 	https://github.com/LilaQ/q00.snes/
 	plug&play

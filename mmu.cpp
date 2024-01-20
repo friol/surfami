@@ -87,8 +87,8 @@ void mmu::DMAstart(unsigned char val)
 					}
 
 					byteCount--;
-					snesRAM[0x4306 + (dmaChannel * 0x10)] = byteCount >> 8;
-					snesRAM[0x4305 + (dmaChannel * 0x10)] = byteCount & 0xff;
+					snesRAM[0x4306 + (dmaChannel * 0x10)] = (unsigned char)(byteCount >> 8);
+					snesRAM[0x4305 + (dmaChannel * 0x10)] = (unsigned char)(byteCount & 0xff);
 					targetAddr += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
 				}
 
@@ -114,8 +114,8 @@ void mmu::DMAstart(unsigned char val)
 						write8(targetAddr + 1, read8(0x2100 + BBusAddr + 1));
 						if (!--byteCount) return;
 					}
-					snesRAM[0x4306 + (dmaChannel * 0x10)] = byteCount >> 8;
-					snesRAM[0x4305 + (dmaChannel * 0x10)] = byteCount & 0xff;
+					snesRAM[0x4306 + (dmaChannel * 0x10)] = (unsigned char)(byteCount >> 8);
+					snesRAM[0x4305 + (dmaChannel * 0x10)] = (unsigned char)(byteCount & 0xff);
 					targetAddr += (dma_step == 0) ? 2 : ((dma_step == 2) ? -2 : 0);
 				}
 
@@ -141,8 +141,8 @@ void mmu::DMAstart(unsigned char val)
 						write8(targetAddr, read8(0x2100 + BBusAddr + 1));
 						if (!--byteCount) return;
 					}
-					snesRAM[0x4306 + (dmaChannel * 0x10)] = byteCount >> 8;
-					snesRAM[0x4305 + (dmaChannel * 0x10)] = byteCount & 0xff;
+					snesRAM[0x4306 + (dmaChannel * 0x10)] = (unsigned char)(byteCount >> 8);
+					snesRAM[0x4305 + (dmaChannel * 0x10)] = (unsigned char)(byteCount & 0xff);
 					targetAddr += (dma_step == 0) ? 2 : ((dma_step == 2) ? -2 : 0);
 				}
 
@@ -157,6 +157,202 @@ void mmu::DMAstart(unsigned char val)
 	}
 
 	snesRAM[0x420b] = 0x00;
+}
+
+unsigned short int mmu::mmuDMATransfer(unsigned char dma_mode, unsigned char dma_dir, unsigned char dma_step, 
+	unsigned int& cpu_address, unsigned char io_address, unsigned short int bytes_left) 
+{
+	switch (dma_mode) 
+	{
+	case 0: 
+	{						//	transfer 1 byte (e.g. WRAM)
+		if (!dma_dir)
+			write8(0x2100 + io_address, snesRAM[cpu_address]);
+		else
+			write8(cpu_address, read8(0x2100 + io_address));
+		if (!--bytes_left) return 0;
+		cpu_address += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+		break;
+	}
+	case 1:							//	transfer 2 bytes (xx, xx + 1) (e.g. VRAM)
+		if (!dma_dir) 
+		{
+			write8(0x2100 + io_address, snesRAM[cpu_address]);
+			if (!--bytes_left) return 0;
+			write8(0x2100 + io_address + 1, snesRAM[cpu_address + 1]);
+			if (!--bytes_left) return 0;
+		}
+		else 
+		{
+			write8(cpu_address,read8(0x2100 + io_address));
+			if (!--bytes_left) return 0;
+			write8(cpu_address + 1, read8(0x2100 + io_address + 1));
+			if (!--bytes_left) return 0;
+		}
+		cpu_address += (dma_step == 0) ? 2 : ((dma_step == 2) ? -2 : 0);
+		break;
+	case 2:							//	transfer 2 bytes (xx, xx) (e.g. OAM / CGRAM)
+		if (!dma_dir) 
+		{
+			write8(0x2100 + io_address, snesRAM[cpu_address]);
+			if (!--bytes_left) return 0;
+			write8(0x2100 + io_address, snesRAM[cpu_address + 1]);
+			if (!--bytes_left) return 0;
+		}
+		else 
+		{
+			write8(cpu_address, read8(0x2100 + io_address));
+			if (!--bytes_left) return 0;
+			write8(cpu_address, read8(0x2100 + io_address + 1));
+			if (!--bytes_left) return 0;
+		}
+		cpu_address += (dma_step == 0) ? 2 : ((dma_step == 2) ? -2 : 0);
+		break;
+	case 3:							//	transfer 4 bytes (xx, xx, xx + 1, xx + 1) (e.g. BGnxOFX, M7x)
+		if (!dma_dir) 
+		{
+			write8(0x2100 + io_address, snesRAM[cpu_address]);
+			if (!--bytes_left) return 0;
+			write8(0x2100 + io_address, snesRAM[cpu_address + 1]);
+			if (!--bytes_left) return 0;
+			write8(0x2100 + io_address + 1, snesRAM[cpu_address + 2]);
+			if (!--bytes_left) return 0;
+			write8(0x2100 + io_address + 1, snesRAM[cpu_address + 3]);
+			if (!--bytes_left) return 0;
+		}
+		else 
+		{
+			write8(cpu_address, read8(0x2100 + io_address));
+			if (!--bytes_left) return 0;
+			write8(cpu_address, read8(0x2100 + io_address + 1));
+			if (!--bytes_left) return 0;
+			write8(cpu_address + 1, read8(0x2100 + io_address + 2));
+			if (!--bytes_left) return 0;
+			write8(cpu_address + 1, read8(0x2100 + io_address + 3));
+			if (!--bytes_left) return 0;
+		}
+		cpu_address += (dma_step == 0) ? 4 : ((dma_step == 2) ? -4 : 0);
+		break;
+	case 4:							//	transfer 4 bytes (xx, xx + 1, xx + 2, xx + 3) (e.g. BGnSC, Window, APU...)
+		if (!dma_dir) 
+		{
+			write8(0x2100 + io_address, snesRAM[cpu_address]);
+			if (!--bytes_left) return 0;
+			write8(0x2100 + io_address + 1, snesRAM[cpu_address + 1]);
+			if (!--bytes_left) return 0;
+			write8(0x2100 + io_address + 2, snesRAM[cpu_address + 2]);
+			if (!--bytes_left) return 0;
+			write8(0x2100 + io_address + 3, snesRAM[cpu_address + 3]);
+			if (!--bytes_left) return 0;
+		}
+		else 
+		{
+			write8(cpu_address, read8(0x2100 + io_address));
+			if (!--bytes_left) return 0;
+			write8(cpu_address + 1, read8(0x2100 + io_address + 1));
+			if (!--bytes_left) return 0;
+			write8(cpu_address + 2, read8(0x2100 + io_address + 2));
+			if (!--bytes_left) return 0;
+			write8(cpu_address + 2, read8(0x2100 + io_address + 3));
+			if (!--bytes_left) return 0;
+		}
+		cpu_address += (dma_step == 0) ? 4 : ((dma_step == 2) ? -4 : 0);
+		break;
+	case 5:					//	transfer 4 bytes (xx, xx + 1, xx, xx + 1) - RESERVED
+		break;
+	case 6:					//	same as mode 2 - RESERVED
+		break;
+	case 7:					//	same as mode 3 - RESERVED
+		break;
+	default:
+		break;
+	}
+
+	return bytes_left;
+}
+
+void mmu::resetHDMA() 
+{
+	for (unsigned char dma_id = 0; dma_id < 8; dma_id++) 
+	{
+		if (HDMAS[dma_id].enabled) 
+		{
+			HDMAS[dma_id].terminated = false;
+			HDMAS[dma_id].IO = snesRAM[0x4301 + (dma_id * 0x10)];
+			HDMAS[dma_id].addressing_mode = (snesRAM[0x4300 + (dma_id * 0x10)] >> 6) & 1;
+			HDMAS[dma_id].direction = snesRAM[0x4300 + (dma_id * 0x10)] >> 7;
+			HDMAS[dma_id].dma_mode = snesRAM[0x4300 + (dma_id * 0x10)] & 0b111;
+			HDMAS[dma_id].indirect_address = (snesRAM[0x4307 + (dma_id * 0x10)] << 16) | (snesRAM[0x4306 + (dma_id * 0x10)] << 8) | snesRAM[0x4305 + (dma_id * 0x10)];
+			HDMAS[dma_id].aaddress = (snesRAM[0x4304 + (dma_id * 0x10)] << 16) | (snesRAM[0x4303 + (dma_id * 0x10)] << 8) | snesRAM[0x4302 + (dma_id * 0x10)];
+			HDMAS[dma_id].address = HDMAS[dma_id].aaddress;
+			HDMAS[dma_id].repeat = snesRAM[HDMAS[dma_id].address] >> 7;
+			HDMAS[dma_id].line_counter = snesRAM[HDMAS[dma_id].address] & 0x7f;
+
+			//	initial transfer
+			HDMAS[dma_id].address++;
+
+			if (HDMAS[dma_id].addressing_mode) 
+			{
+				//	0 - Direct, 1 - Indirect
+				HDMAS[dma_id].indirect_address = (snesRAM[HDMAS[dma_id].address + 1] << 8) | snesRAM[HDMAS[dma_id].address];
+				HDMAS[dma_id].address += 2;
+				mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].indirect_address, HDMAS[dma_id].IO, 100);
+			}
+			else 
+			{
+				mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].address, HDMAS[dma_id].IO, 100);
+			}
+		}
+	}
+}
+
+void mmu::startHDMA() 
+{
+	for (unsigned char dma_id = 0; dma_id < 8; dma_id++) 
+	{
+		if (HDMAS[dma_id].enabled && !HDMAS[dma_id].terminated) 
+		{
+			if (HDMAS[dma_id].line_counter-- == 0) 
+			{
+				if (snesRAM[HDMAS[dma_id].address] == 0x00) 
+				{
+					HDMAS[dma_id].terminated = true;
+					return;
+				}
+				HDMAS[dma_id].repeat = snesRAM[HDMAS[dma_id].address] >> 7;
+				HDMAS[dma_id].line_counter = snesRAM[HDMAS[dma_id].address] & 0x7f;
+				HDMAS[dma_id].address++;
+				if (HDMAS[dma_id].addressing_mode) 
+				{		//	0 - Direct, 1 - Indirect
+					HDMAS[dma_id].indirect_address = (snesRAM[HDMAS[dma_id].address + 1] << 8) | snesRAM[HDMAS[dma_id].address];
+					HDMAS[dma_id].address += 2;
+				}
+				if (HDMAS[dma_id].addressing_mode) 
+				{		//	0 - Direct, 1 - Indirect
+					mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].indirect_address, HDMAS[dma_id].IO, 100);
+					return;
+				}
+				else 
+				{
+					mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].address, HDMAS[dma_id].IO, 100);
+					return;
+				}
+			}
+
+			if (HDMAS[dma_id].repeat) 
+			{
+				if (HDMAS[dma_id].addressing_mode) 
+				{		
+					//	0 - Direct, 1 - Indirect
+					mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].indirect_address, HDMAS[dma_id].IO, 100);
+				}
+				else 
+				{
+					mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].address, HDMAS[dma_id].IO, 100);
+				}
+			}
+		}
+	}
 }
 
 void mmu::write8(unsigned int address, unsigned char val)
@@ -232,20 +428,18 @@ void mmu::write8(unsigned int address, unsigned char val)
 			wram281x[byte] = val;
 			return;
 		}
-		else if (adr == 0x420B) // DMA start reg
+		else if (adr == 0x420B) 
 		{
+			// DMA start reg
 			DMAstart(val);
 			return;
 		}
-		else if (adr == 0x420C) // HDMA start reg
+		else if (adr == 0x420C)
 		{
-			if (val != 0)
-			{
-				int dma = 1;
-			}
+			// HDMA start reg
 			for (int i = 0; i < 8; i++) 
 			{
-				//HDMAS[i] = DMA((val >> i) & 1);
+				HDMAS[i].hdmaEnable((val >> i) & 1);
 			}
 			return;
 		}
@@ -436,8 +630,8 @@ unsigned char mmu::read8(unsigned int address)
 		else if (adr == 0x213f)
 		{
 			// TODO PAL/NTSC flag
-			return 0x03;
-			//return 0x13;
+			//return 0x03;
+			return 0x13;
 		}
 		else if ((adr == 0x2140) || (adr == 0x2141) || (adr == 0x2142) || (adr == 0x2143))
 		{

@@ -12,6 +12,28 @@
 #include "cpu5a22.h"
 #include "genericMMU.h"
 
+struct DMA 
+{
+public:
+	bool enabled = false;
+	bool repeat = false;
+	bool terminated = false;
+	unsigned char direction = 0;
+	unsigned char addressing_mode = 0;
+	unsigned char dma_mode = 0;
+	unsigned char IO = 0;
+	unsigned int indirect_address = 0;
+	unsigned char line_counter = 0;
+	unsigned int aaddress = 0;
+	unsigned int address = 0;
+
+	DMA() {};
+	void hdmaEnable(bool e) 
+	{
+		enabled = e;
+	}
+};
+
 class mmu: public genericMMU
 {
 private:
@@ -28,6 +50,9 @@ private:
 	std::string sramFileName = "";
 
 	void DMAstart(unsigned char val);
+	DMA HDMAS[8];
+	unsigned short int mmuDMATransfer(unsigned char dma_mode, unsigned char dma_dir, unsigned char dma_step,
+		unsigned int& cpu_address, unsigned char io_address, unsigned short int bytes_left);
 
 	unsigned char wram281x[3];
 
@@ -51,6 +76,9 @@ public:
 	unsigned char* getInternalRAMPtr() { return snesRAM; }
 	void hasSram(std::string& sramName) { hasSRAM = true; sramFileName = sramName; }
 	unsigned char get4200() { return nmiTimen; }
+
+	void resetHDMA();
+	void startHDMA();
 
 	bool isVblankNMIEnabled() { return ((nmiTimen & 0x80) == 0x80); }
 	void setNMIFlag() { nmiFlag = true; }
