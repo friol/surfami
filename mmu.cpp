@@ -159,8 +159,7 @@ void mmu::DMAstart(unsigned char val)
 	snesRAM[0x420b] = 0x00;
 }
 
-unsigned short int mmu::mmuDMATransfer(unsigned char dma_mode, unsigned char dma_dir, unsigned char dma_step, 
-	unsigned int& cpu_address, unsigned char io_address, unsigned short int bytes_left) 
+void mmu::mmuDMATransfer(unsigned char dma_mode, unsigned char dma_dir, unsigned char dma_step,unsigned int& cpu_address, unsigned char io_address) 
 {
 	switch (dma_mode) 
 	{
@@ -170,7 +169,6 @@ unsigned short int mmu::mmuDMATransfer(unsigned char dma_mode, unsigned char dma
 			write8(0x2100 + io_address, snesRAM[cpu_address]);
 		else
 			write8(cpu_address, read8(0x2100 + io_address));
-		if (!--bytes_left) return 0;
 		cpu_address += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
 		break;
 	}
@@ -178,16 +176,12 @@ unsigned short int mmu::mmuDMATransfer(unsigned char dma_mode, unsigned char dma
 		if (!dma_dir) 
 		{
 			write8(0x2100 + io_address, snesRAM[cpu_address]);
-			if (!--bytes_left) return 0;
 			write8(0x2100 + io_address + 1, snesRAM[cpu_address + 1]);
-			if (!--bytes_left) return 0;
 		}
 		else 
 		{
 			write8(cpu_address,read8(0x2100 + io_address));
-			if (!--bytes_left) return 0;
 			write8(cpu_address + 1, read8(0x2100 + io_address + 1));
-			if (!--bytes_left) return 0;
 		}
 		cpu_address += (dma_step == 0) ? 2 : ((dma_step == 2) ? -2 : 0);
 		break;
@@ -195,16 +189,12 @@ unsigned short int mmu::mmuDMATransfer(unsigned char dma_mode, unsigned char dma
 		if (!dma_dir) 
 		{
 			write8(0x2100 + io_address, snesRAM[cpu_address]);
-			if (!--bytes_left) return 0;
 			write8(0x2100 + io_address, snesRAM[cpu_address + 1]);
-			if (!--bytes_left) return 0;
 		}
 		else 
 		{
 			write8(cpu_address, read8(0x2100 + io_address));
-			if (!--bytes_left) return 0;
 			write8(cpu_address, read8(0x2100 + io_address + 1));
-			if (!--bytes_left) return 0;
 		}
 		cpu_address += (dma_step == 0) ? 2 : ((dma_step == 2) ? -2 : 0);
 		break;
@@ -212,24 +202,16 @@ unsigned short int mmu::mmuDMATransfer(unsigned char dma_mode, unsigned char dma
 		if (!dma_dir) 
 		{
 			write8(0x2100 + io_address, snesRAM[cpu_address]);
-			if (!--bytes_left) return 0;
 			write8(0x2100 + io_address, snesRAM[cpu_address + 1]);
-			if (!--bytes_left) return 0;
 			write8(0x2100 + io_address + 1, snesRAM[cpu_address + 2]);
-			if (!--bytes_left) return 0;
 			write8(0x2100 + io_address + 1, snesRAM[cpu_address + 3]);
-			if (!--bytes_left) return 0;
 		}
 		else 
 		{
 			write8(cpu_address, read8(0x2100 + io_address));
-			if (!--bytes_left) return 0;
 			write8(cpu_address, read8(0x2100 + io_address + 1));
-			if (!--bytes_left) return 0;
 			write8(cpu_address + 1, read8(0x2100 + io_address + 2));
-			if (!--bytes_left) return 0;
 			write8(cpu_address + 1, read8(0x2100 + io_address + 3));
-			if (!--bytes_left) return 0;
 		}
 		cpu_address += (dma_step == 0) ? 4 : ((dma_step == 2) ? -4 : 0);
 		break;
@@ -237,24 +219,16 @@ unsigned short int mmu::mmuDMATransfer(unsigned char dma_mode, unsigned char dma
 		if (!dma_dir) 
 		{
 			write8(0x2100 + io_address, snesRAM[cpu_address]);
-			if (!--bytes_left) return 0;
 			write8(0x2100 + io_address + 1, snesRAM[cpu_address + 1]);
-			if (!--bytes_left) return 0;
 			write8(0x2100 + io_address + 2, snesRAM[cpu_address + 2]);
-			if (!--bytes_left) return 0;
 			write8(0x2100 + io_address + 3, snesRAM[cpu_address + 3]);
-			if (!--bytes_left) return 0;
 		}
 		else 
 		{
 			write8(cpu_address, read8(0x2100 + io_address));
-			if (!--bytes_left) return 0;
 			write8(cpu_address + 1, read8(0x2100 + io_address + 1));
-			if (!--bytes_left) return 0;
 			write8(cpu_address + 2, read8(0x2100 + io_address + 2));
-			if (!--bytes_left) return 0;
 			write8(cpu_address + 2, read8(0x2100 + io_address + 3));
-			if (!--bytes_left) return 0;
 		}
 		cpu_address += (dma_step == 0) ? 4 : ((dma_step == 2) ? -4 : 0);
 		break;
@@ -267,8 +241,6 @@ unsigned short int mmu::mmuDMATransfer(unsigned char dma_mode, unsigned char dma
 	default:
 		break;
 	}
-
-	return bytes_left;
 }
 
 void mmu::resetHDMA() 
@@ -296,11 +268,11 @@ void mmu::resetHDMA()
 				//	0 - Direct, 1 - Indirect
 				HDMAS[dma_id].indirect_address = (snesRAM[HDMAS[dma_id].address + 1] << 8) | snesRAM[HDMAS[dma_id].address];
 				HDMAS[dma_id].address += 2;
-				mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].indirect_address, HDMAS[dma_id].IO, 100);
+				mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].indirect_address, HDMAS[dma_id].IO);
 			}
 			else 
 			{
-				mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].address, HDMAS[dma_id].IO, 100);
+				mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].address, HDMAS[dma_id].IO);
 			}
 		}
 	}
@@ -322,19 +294,21 @@ void mmu::startHDMA()
 				HDMAS[dma_id].repeat = snesRAM[HDMAS[dma_id].address] >> 7;
 				HDMAS[dma_id].line_counter = snesRAM[HDMAS[dma_id].address] & 0x7f;
 				HDMAS[dma_id].address++;
+
 				if (HDMAS[dma_id].addressing_mode) 
 				{		//	0 - Direct, 1 - Indirect
 					HDMAS[dma_id].indirect_address = (snesRAM[HDMAS[dma_id].address + 1] << 8) | snesRAM[HDMAS[dma_id].address];
 					HDMAS[dma_id].address += 2;
 				}
+
 				if (HDMAS[dma_id].addressing_mode) 
 				{		//	0 - Direct, 1 - Indirect
-					mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].indirect_address, HDMAS[dma_id].IO, 100);
+					mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].indirect_address, HDMAS[dma_id].IO);
 					return;
 				}
 				else 
 				{
-					mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].address, HDMAS[dma_id].IO, 100);
+					mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].address, HDMAS[dma_id].IO);
 					return;
 				}
 			}
@@ -344,11 +318,11 @@ void mmu::startHDMA()
 				if (HDMAS[dma_id].addressing_mode) 
 				{		
 					//	0 - Direct, 1 - Indirect
-					mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].indirect_address, HDMAS[dma_id].IO, 100);
+					mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].indirect_address, HDMAS[dma_id].IO);
 				}
 				else 
 				{
-					mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].address, HDMAS[dma_id].IO, 100);
+					mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].address, HDMAS[dma_id].IO);
 				}
 			}
 		}
@@ -629,9 +603,9 @@ unsigned char mmu::read8(unsigned int address)
 		}
 		else if (adr == 0x213f)
 		{
-			// TODO PAL/NTSC flag
-			//return 0x03;
-			return 0x13;
+			int retval = 0x03;
+			if (standard == 1) retval |= 0x10;
+			return retval;
 		}
 		else if ((adr == 0x2140) || (adr == 0x2141) || (adr == 0x2142) || (adr == 0x2143))
 		{
@@ -650,9 +624,8 @@ unsigned char mmu::read8(unsigned int address)
 		}
 		else if (adr == 0x4210)
 		{
-			//bool res = pCPU->getNMIFlag();
 			bool res = nmiFlag;
-			if (res)
+			//if (res)
 			{
 				nmiFlag = false;
 			}
@@ -668,6 +641,10 @@ unsigned char mmu::read8(unsigned int address)
 			//	PPU Interrupts - H/V-Blank Flag and Joypad Busy Flag (R) - TODO
 			unsigned char res = 0;
 			if (pPPU->isVBlankActive()) res |= 0x80;
+			int intcyc = pPPU->getInternalCyclesCounter();
+
+			if ((intcyc<1)||(intcyc>(1096/6))) res|=0x40;
+
 			return res;
 		}
 		else if (adr == 0x4017)

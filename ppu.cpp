@@ -921,6 +921,11 @@ void ppu::renderSpritesScanline(int scanlinenum)
 		const unsigned char byte4 = OAM[(i * 4) + 3];
 		const unsigned char attr = (OAM[512 + (i / 4)] >> ((i % 4) * 2)) & 0b11;
 
+		if (i == 0)
+		{
+			int spr = 1;
+		}
+
 		int x_pos = byte1;
 		int y_pos = byte2;
 		int tile_nr = ((byte4 & 1) << 8) | byte3;
@@ -969,6 +974,7 @@ void ppu::renderSpritesScanline(int scanlinenum)
 				{
 					const unsigned char shift_x = 7 - (x % 8);
 					const unsigned int tile_address = OAMBase + (tile_nr + x / 8) * 0x10 + (y % 8) + (y / 8 * 0x100);
+
 					const unsigned char b_1 = vram[tile_address] & 0xff;
 					const unsigned char b_2 = vram[tile_address] >> 8;
 					const unsigned char b_3 = vram[tile_address + 8] & 0xff;
@@ -1124,7 +1130,6 @@ void ppu::renderScanline(int scanlinenum)
 		{
 			if (((mainScreenDesignation & 0x1f) & (1 << bg)) > 0)
 			{
-				//renderBG(bg, 2);
 				renderBGScanline(bg, 2, scanlinenum);
 			}
 		}
@@ -1160,7 +1165,10 @@ void ppu::renderScanline(int scanlinenum)
 	}
 
 	// now OAM Sprites
-	renderSpritesScanline(scanlinenum);
+	if (mainScreenDesignation & 0x10)
+	{
+		renderSpritesScanline(scanlinenum);
+	}
 
 	// final pass, master brightness!
 	int brightness = iniDisp & 0x0f;

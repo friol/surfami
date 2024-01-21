@@ -28,7 +28,8 @@ public:
 
 	bool isDPLowNotZero() 
 	{
-		return D != 0x00;
+		//return (D & 0xff) != 0x00;
+		return D!=false;
 	}
 
 	void setEmulation(int val)

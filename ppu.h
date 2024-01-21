@@ -8,6 +8,7 @@ class ppu
 {
 private:
 
+	int standard = 0; // 0 NTSC, 1 PAL
 	int cgramIdx = 0;
 	unsigned char cgram[512];
 	unsigned short int vram[0x8000];
@@ -56,10 +57,10 @@ private:
 	unsigned int scanline=0;
 	unsigned int internalCyclesCounter = 0;
 
-	const unsigned int vblankStartScanline = 0xf0;
-	const unsigned int cyclesPerScanline = 1364;
-	const unsigned int hdmaStartingPos = 256 * 4;
-	const unsigned int totScanlines = 262;
+	unsigned int vblankStartScanline = 0xf0;
+	unsigned int cyclesPerScanline = 1364/6;
+	unsigned int hdmaStartingPos = (256 * 4)/6;
+	unsigned int totScanlines = 262;
 	bool hdmaStartedForThisLine = false;
 
 public:
@@ -97,8 +98,23 @@ public:
 
 	void step(int numCycles,mmu& theMMU,cpu5a22& theCPU);
 	bool isVBlankActive() { return scanline >= vblankStartScanline; }
+	int getInternalCyclesCounter() { return internalCyclesCounter; }
 
 	unsigned short int* getVRAMPtr() { return vram; }
+	void setStandard(int val) 
+	{ 
+		standard = val; 
+		if (standard == 0)
+		{
+			vblankStartScanline = 0xe0;
+			totScanlines = 262;
+		}
+		else
+		{
+			vblankStartScanline = 0xe0;
+			totScanlines = 312;
+		}
+	}
 
 	~ppu();
 };

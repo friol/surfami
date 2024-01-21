@@ -571,9 +571,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
 
     //
 
+    int snesStandard = 1;
     ppu thePPU;
     apu theAPU;
     mmu theMMU(thePPU,theAPU);
+    theMMU.setStandard(snesStandard);
+    thePPU.setStandard(snesStandard);
     std::vector<std::string> romLoadingLog;
 
     romLoader theRomLoader;
@@ -618,12 +621,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
 
     //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc"; // 56
     //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
-    //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
+    std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc";
     //std::string romName = "d:\\prova\\snes\\Lemmings (E).sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars + Super Mario World (USA).sfc"; // reads from 2134
     //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
-    std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // corrupted bg, mode4
+    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // mode4
     //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc";
     //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // cb
     //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc"; // 96
@@ -644,8 +647,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Yoshi's Cookie (E).smc"; // d2
     //std::string romName = "d:\\prova\\snes\\Sim City (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\James Pond's Crazy Sports (E).smc"; // 71
-    //std::string romName = "d:\\prova\\snes\\Spanky's Quest (E).smc";
-    //std::string romName = "d:\\prova\\snes\\Spectre (E) [!].smc"; // hblank?
+    //std::string romName = "d:\\prova\\snes\\Spanky's Quest (E).smc"; // double res?
+    //std::string romName = "d:\\prova\\snes\\Spectre (E) [!].smc"; // cb
     //std::string romName = "d:\\prova\\snes\\Tetris Attack (E).smc"; 
     //std::string romName = "d:\\prova\\snes\\Lawnmower Man, The (E).smc"; // SPC
     //std::string romName = "d:\\prova\\snes\\Williams Arcade's Greatest Hits (E) [!].smc"; // SPC
@@ -837,8 +840,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x88c6, 0xea);
         theMMU.write8(0x88c7, 0xea);
         
-        //theMMU.write8(0xf3b2, 0xea);
-        //theMMU.write8(0xf3b3, 0xea);
+        theMMU.write8(0xf3b2, 0xea);
+        theMMU.write8(0xf3b3, 0xea);
     }
     else if (romName == "d:\\prova\\snes\\Gun Force (E).smc")
     {
@@ -1228,7 +1231,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         if (emustatus == 1)
         {
             int inst = 0;
-            while ((inst < 100000)&&(emustatus==1))
+            while ((inst < 16666)&&(emustatus==1))
             {
                 if (theCPU.getPC() == 0xa325)
                 {

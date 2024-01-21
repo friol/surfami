@@ -48,11 +48,12 @@ private:
 	
 	bool hasSRAM = false;
 	std::string sramFileName = "";
+	int standard = 0; // 0 NTSC, 1 PAL
 
 	void DMAstart(unsigned char val);
 	DMA HDMAS[8];
-	unsigned short int mmuDMATransfer(unsigned char dma_mode, unsigned char dma_dir, unsigned char dma_step,
-		unsigned int& cpu_address, unsigned char io_address, unsigned short int bytes_left);
+	void mmuDMATransfer(unsigned char dma_mode, unsigned char dma_dir, unsigned char dma_step,unsigned int& cpu_address, unsigned char io_address);
+	//const int hdmaAmount = 128;
 
 	unsigned char wram281x[3];
 
@@ -83,6 +84,7 @@ public:
 	bool isVblankNMIEnabled() { return ((nmiTimen & 0x80) == 0x80); }
 	void setNMIFlag() { nmiFlag = true; }
 	void clearNMIFlag() { nmiFlag = false; }
+	void setStandard(int val) { standard = val; }
 
 	void pressSelectKey(bool val) { isKeySelectPressed = val; }
 	void pressStartKey(bool val) { isKeyStartPressed = val; }

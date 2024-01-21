@@ -5,14 +5,14 @@
 
 static const debugInfoRec debugInstrData[] =
 {
-	{0x00,1,"BRK",None,false,false,true}, // validatedF
-	{0x02,2,"COP param0",Immediate8,false,false,true}, // validatedF
-	{0x03,2,"ORA param0",Immediate8,false,false,true}, // validatedF
-	{0x06,2,"ASL param0",Immediate8,false,false,true}, // validatedF
-	{0x08,1,"PHP",None,false,false,true}, // validatedF
-	{0x04,2,"TSB param0",Immediate8,false,false,true}, // validatedF
-	{0x05,2,"ORA param0",Immediate8,false,false,true}, // validatedF
-	{0x07,2,"ORA param0",Immediate8,false,false,true}, // validatedF
+	{0x00,1,"BRK",None,false,false,true},						// validatedFC
+	{0x02,2,"COP param0",Immediate8,false,false,true},			// validatedFC
+	{0x03,2,"ORA param0",Immediate8,false,false,true},			// validatedFC
+	{0x04,2,"TSB param0",Immediate8,false,false,true},			// validatedF
+	{0x05,2,"ORA param0",Immediate8,false,false,false},			// validatedF
+	{0x06,2,"ASL param0",Immediate8,false,false,true},			// validatedF
+	{0x07,2,"ORA param0",Immediate8,false,false,true},			// validatedF
+	{0x08,1,"PHP",None,false,false,true},						// validatedFC
 	{0x09,2,"ORA param0",Immediate,false,true,true}, // validatedF
 	{0x0A,1,"ASL A",None,false,false,true}, // validatedF
 	{0x0B,1,"PHD",None,false,false,true}, // validatedF
@@ -28,7 +28,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x17,2,"ORA [param0],Y",Immediate8,false,false,true}, // validatedF
 	{0x18,1,"CLC",None,false,false,true}, // validatedF
 	{0x19,3,"ORA param0,Y",Absolute16,false,false,true}, // validatedF
-	{0x1A,1,"INC A",None,false,false,true}, // validatedF
+	{0x1A,1,"INC A",None,false,false,true}, // validatedFC
 	{0x1B,1,"TCS",None,false,false,true}, // validatedF
 	{0x1c,3,"TRB param0",Absolute16,false,false,true}, // validatedF
 	{0x1d,3,"ORA param0",Absolute16,false,false,true}, // validatedF

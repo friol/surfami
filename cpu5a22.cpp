@@ -5556,8 +5556,8 @@ int cpu5a22::stepOne()
 			unsigned char lo = pMMU->read8(0xFFE6);
 			unsigned char hi = pMMU->read8(0xFFE7);
 			regPC = (hi << 8) | lo;
-			cycles=7+regP.getEmulation();
-			break; // TODO check emulation mode
+			cycles=7+(regP.getEmulation()==0);
+			break; // TODO emulation mode not supported
 		}
 		case 0x11:
 		{
