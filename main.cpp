@@ -571,7 +571,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
 
     //
 
-    int snesStandard = 1;
+    int snesStandard = 0;
     ppu thePPU;
     apu theAPU;
     mmu theMMU(thePPU,theAPU);
@@ -630,7 +630,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc";
     //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // cb
     //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc"; // 96
-    //std::string romName = "d:\\prova\\snes\\Frogger (U).smc"; // corrupted sprites at the bottom, background is not scrolling
+    //std::string romName = "d:\\prova\\snes\\Frogger (U).smc"; // corrupted sprites at the bottom, cars are not scrolling
     //std::string romName = "d:\\prova\\snes\\Race Drivin' (U).smc"; 
     //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc";  

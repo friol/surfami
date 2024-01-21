@@ -28,8 +28,6 @@ private:
 	unsigned char obSel = 0;
 
 	int bgTileMapBaseAddress[4];
-	//bool bgScrollXFlipFlop[4];
-	//bool bgScrollYFlipFlop[4];
 	unsigned short int bgScrollX[4];
 	unsigned short int bgScrollY[4];
 	unsigned char BGSCROLL_L1;
@@ -42,8 +40,17 @@ private:
 
 	unsigned int ppuResolutionX = 256;
 	unsigned int ppuResolutionY = 224;
+
+	unsigned char bgColorAppo[4][256 * 4];
+	unsigned char bgPriorityAppo[4][256];
+	bool bgIsTransparentAppo[4][256];
+	unsigned char objColorAppo[256 * 4];
+	unsigned char objPriorityAppo[256];
+	bool objIsTransparentAppo[256];
+	void resetAppoBuffers();
+
 	unsigned char* screenFramebuffer;
-	
+
 	void renderTile(int bpp,int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip);
 	void renderSprite(int px, int py, int tileNum, int palId);
 
@@ -84,7 +91,7 @@ public:
 	void renderScreen();
 
 	void renderBGScanline(int bgnum, int bpp, int scanlinenum);
-	void renderTileScanline(int bpp, int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip, int scanlinenum);
+	void renderTileScanline(int bpp, int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip, int scanlinenum, int bgpri);
 	void renderScanline(int scanlinenum);
 	void renderBackdropScanline(int scanlinenum);
 

@@ -494,9 +494,11 @@ void ppu::renderTile(int bpp, int px, int py, int tileNum, int palId, int bgnum,
 	delete(palArr);
 }
 
-void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip,int scanlinenum)
+void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip,int scanlinenum,int bgpri)
 {
 	unsigned char* pBuf;
+
+	// palette setup
 
 	const int numCols = (bpp == 2) ? 4 : (bpp == 4) ? 16 : 256;
 	unsigned char* palArr = new unsigned char[3 * numCols];
@@ -552,93 +554,132 @@ void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, in
 		tileAddr += scanlineMod8;
 	}
 
-	//for (int y = ybase;y != yend;y += yinc)
+	unsigned int ppos = (px * 4) + (scanlinenum * ppuResolutionX * 4);
+	if ((ppos >= 0) && (ppos < (ppuResolutionX * ppuResolutionY * 4)))
 	{
-		//unsigned int ppos = (px * 4) + ((py + y) * ppuResolutionX * 4);
-		unsigned int ppos = (px * 4) + (scanlinenum * ppuResolutionX * 4);
-		if ((ppos >= 0) && (ppos < (ppuResolutionX * ppuResolutionY * 4)))
+		pBuf = &screenFramebuffer[ppos];
+
+		if ((px < 0) || (px >= 256))
 		{
-			pBuf = &screenFramebuffer[ppos];
+			int error = 1;
+			return;
+		}
 
-			const unsigned char b_1 = vram[tileAddr] & 0xff;
-			const unsigned char b_2 = vram[tileAddr] >> 8;
-			const unsigned char b_3 = vram[tileAddr + 8] & 0xff;
-			const unsigned char b_4 = vram[tileAddr + 8] >> 8;
-			const unsigned char b_5 = vram[tileAddr + 16] & 0xff;
-			const unsigned char b_6 = vram[tileAddr + 16] >> 8;
-			const unsigned char b_7 = vram[tileAddr + 24] & 0xff;
-			const unsigned char b_8 = vram[tileAddr + 24] >> 8;
+		unsigned char* pBgColorAppo = &bgColorAppo[bgnum][px * 4];
+		unsigned char* pBgPriAppo = &bgPriorityAppo[bgnum][px];
+		bool* pBgIsTranspAppo = &bgIsTransparentAppo[bgnum][px];
 
-			int theX = px;
-			int xbase = 7; int xend = -1; int xinc = -1;
-			if (xflip)
+		const unsigned char b_1 = vram[tileAddr] & 0xff;
+		const unsigned char b_2 = vram[tileAddr] >> 8;
+		const unsigned char b_3 = vram[tileAddr + 8] & 0xff;
+		const unsigned char b_4 = vram[tileAddr + 8] >> 8;
+		const unsigned char b_5 = vram[tileAddr + 16] & 0xff;
+		const unsigned char b_6 = vram[tileAddr + 16] >> 8;
+		const unsigned char b_7 = vram[tileAddr + 24] & 0xff;
+		const unsigned char b_8 = vram[tileAddr + 24] >> 8;
+
+		int theX = px;
+		int xbase = 7; int xend = -1; int xinc = -1;
+		if (xflip)
+		{
+			xbase = 0; xend = 8; xinc = 1;
+		}
+
+		for (int x = xbase;x != xend;x += xinc)
+		{
+			if ((ppos >= 0) && (ppos < (ppuResolutionX * ppuResolutionY * 4)))
 			{
-				xbase = 0; xend = 8; xinc = 1;
-			}
+				unsigned short int curCol;
 
-			for (int x = xbase;x != xend;x += xinc)
-			{
-				if ((ppos >= 0) && (ppos < (ppuResolutionX * ppuResolutionY * 4)))
+				if (bpp == 2)
 				{
-					unsigned short int curCol;
-
-					if (bpp == 2)
-					{
-						curCol = ((b_1 >> x) & 1) + (2 * ((b_2 >> x) & 1));
-					}
-					else if (bpp == 4)
-					{
-						curCol = ((b_1 >> x) & 1) + (2 * ((b_2 >> x) & 1)) + (4 * ((b_3 >> x) & 1)) + (8 * ((b_4 >> x) & 1));
-					}
-					else
-					{
-						curCol = ((b_1 >> x) & 1) +
-							(2 * ((b_2 >> x) & 1)) +
-							(4 * ((b_3 >> x) & 1)) +
-							(8 * ((b_4 >> x) & 1)) +
-							(16 * ((b_5 >> x) & 1)) +
-							(32 * ((b_6 >> x) & 1)) +
-							(64 * ((b_7 >> x) & 1)) +
-							(128 * ((b_8 >> x) & 1));
-					}
-
-					if (bpp == 2)
-					{
-						if ( (((curCol % 4) != 0) && ((theX >= 0) && (theX < (signed int)ppuResolutionX)))  )
-						{
-							*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
-							*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
-							*pBuf = palArr[(curCol * 3) + 2]; pBuf++;
-							*pBuf = 0xff; pBuf++;
-						}
-						else pBuf += 4;
-					}
-					else if (bpp == 4)
-					{
-						if ( (((curCol % 16) != 0) && ((theX >= 0) && (theX < (signed int)ppuResolutionX)))  )
-						{
-							*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
-							*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
-							*pBuf = palArr[(curCol * 3) + 2]; pBuf++;
-							*pBuf = 0xff; pBuf++;
-						}
-						else pBuf += 4;
-					}
-					else
-					{
-						*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
-						*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
-						*pBuf = palArr[(curCol * 3) + 2]; pBuf++;
-						*pBuf = 0xff; pBuf++;
-					}
+					curCol = ((b_1 >> x) & 1) + (2 * ((b_2 >> x) & 1));
+				}
+				else if (bpp == 4)
+				{
+					curCol = ((b_1 >> x) & 1) + (2 * ((b_2 >> x) & 1)) + (4 * ((b_3 >> x) & 1)) + (8 * ((b_4 >> x) & 1));
+				}
+				else
+				{
+					curCol = ((b_1 >> x) & 1) +
+						(2 * ((b_2 >> x) & 1)) +
+						(4 * ((b_3 >> x) & 1)) +
+						(8 * ((b_4 >> x) & 1)) +
+						(16 * ((b_5 >> x) & 1)) +
+						(32 * ((b_6 >> x) & 1)) +
+						(64 * ((b_7 >> x) & 1)) +
+						(128 * ((b_8 >> x) & 1));
 				}
 
-				ppos += 4;
-				theX += 1;
+				if (bpp == 2)
+				{
+					if ( (((curCol % 4) != 0) && ((theX >= 0) && (theX < (signed int)ppuResolutionX)))  )
+					{
+						//*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
+						//*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
+						//*pBuf = palArr[(curCol * 3) + 2]; pBuf++;
+						//*pBuf = 0xff; pBuf++;
+
+						*pBgColorAppo = palArr[(curCol * 3) + 0]; pBgColorAppo++;
+						*pBgColorAppo = palArr[(curCol * 3) + 1]; pBgColorAppo++;
+						*pBgColorAppo = palArr[(curCol * 3) + 2]; pBgColorAppo++;
+						*pBgColorAppo = 0xff; pBgColorAppo++;
+						*pBgPriAppo = bgpri; pBgPriAppo++;
+						*pBgIsTranspAppo = false; pBgIsTranspAppo++;
+					}
+					else
+					{
+						//pBuf += 4;
+						pBgColorAppo += 4;
+						*pBgPriAppo = bgpri; pBgPriAppo++;
+						*pBgIsTranspAppo = true; pBgIsTranspAppo++;
+					}
+				}
+				else if (bpp == 4)
+				{
+					if ( (((curCol % 16) != 0) && ((theX >= 0) && (theX < (signed int)ppuResolutionX)))  )
+					{
+						//*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
+						//*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
+						//*pBuf = palArr[(curCol * 3) + 2]; pBuf++;
+						//*pBuf = 0xff; pBuf++;
+
+						*pBgColorAppo = palArr[(curCol * 3) + 0]; pBgColorAppo++;
+						*pBgColorAppo = palArr[(curCol * 3) + 1]; pBgColorAppo++;
+						*pBgColorAppo = palArr[(curCol * 3) + 2]; pBgColorAppo++;
+						*pBgColorAppo = 0xff; pBgColorAppo++;
+						*pBgPriAppo = bgpri; pBgPriAppo++;
+						*pBgIsTranspAppo = false; pBgIsTranspAppo++;
+					}
+					else
+					{
+						//pBuf += 4;
+						pBgColorAppo += 4;
+						*pBgPriAppo = bgpri; pBgPriAppo++;
+						*pBgIsTranspAppo = true; pBgIsTranspAppo++;
+					}
+				}
+				else
+				{
+					//*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
+					//*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
+					//*pBuf = palArr[(curCol * 3) + 2]; pBuf++;
+					//*pBuf = 0xff; pBuf++;
+
+					*pBgColorAppo = palArr[(curCol * 3) + 0]; pBgColorAppo++;
+					*pBgColorAppo = palArr[(curCol * 3) + 1]; pBgColorAppo++;
+					*pBgColorAppo = palArr[(curCol * 3) + 2]; pBgColorAppo++;
+					*pBgColorAppo = 0xff; pBgColorAppo++;
+					*pBgPriAppo = bgpri; pBgPriAppo++;
+					*pBgIsTranspAppo = false; pBgIsTranspAppo++;
+				}
 			}
 
-			tileAddr += 1;
+			ppos += 4;
+			theX += 1;
 		}
+
+		tileAddr += 1;
 	}
 
 	delete(palArr);
@@ -765,11 +806,11 @@ void ppu::renderBGScanline(int bgnum, int bpp, int scanlinenum)
 
 				int tileNum = vramWord & 0x3ff;
 				int palId = (vramWord >> 10) & 0x7;
-				//int bgPri = (vramWord >> 13) & 0x01;
+				int bgPri = (vramWord >> 13) & 0x01;
 				int xflip = (vramWord >> 14) & 0x01;
 				int yflip = (vramWord >> 15) & 0x01;
 
-				renderTileScanline(bpp, (x * 8) + ((8 - xscroll) % 8), (y * 8) + ((8 - yscroll) % 8), tileNum, palId, bgnum, xflip, yflip, scanlinenum);
+				renderTileScanline(bpp, (x * 8) + ((8 - xscroll) % 8), (y * 8) + ((8 - yscroll) % 8), tileNum, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
 			}
 		}
 	}
@@ -921,10 +962,10 @@ void ppu::renderSpritesScanline(int scanlinenum)
 		const unsigned char byte4 = OAM[(i * 4) + 3];
 		const unsigned char attr = (OAM[512 + (i / 4)] >> ((i % 4) * 2)) & 0b11;
 
-		if (i == 0)
-		{
-			int spr = 1;
-		}
+		//if (i == 0)
+		//{
+		//	int spr = 1;
+		//}
 
 		int x_pos = byte1;
 		int y_pos = byte2;
@@ -932,7 +973,7 @@ void ppu::renderSpritesScanline(int scanlinenum)
 		int y_flip = byte4 >> 7;
 		int x_flip = (byte4 >> 6) & 1;
 		int paletteNum = (byte4 >> 1) & 0b111;
-		//priority = (byte4 >> 4) & 0b11;
+		int priority = (byte4 >> 4) & 0b11;
 		//int spriteSize = (attr >> 1) & 0x01;
 
 		if (attr & 0x01) x_pos -= 256;
@@ -984,31 +1025,65 @@ void ppu::renderSpritesScanline(int scanlinenum)
 						(4 * ((b_3 >> shift_x) & 1)) +
 						(8 * ((b_4 >> shift_x) & 1));
 
-					if (pixPalIdx != 0)
+					int realx = x;
+					if (x_flip) realx = spriteDimX - x - 1;
+					unsigned int pixaddr = ((x_pos + realx) + (scanlinenum * ppuResolutionX)) * 4;
+					if ((pixaddr >= 0) && (pixaddr < (ppuResolutionX * ppuResolutionY * 4)))
 					{
-						int realx = x;
-						if (x_flip) realx = spriteDimX - x - 1;
-						unsigned int pixaddr = ((x_pos + realx) + ((y_pos + realy) * ppuResolutionX)) * 4;
-						if ((pixaddr >= 0) && (pixaddr < (ppuResolutionX * ppuResolutionY * 4)))
+						unsigned char* pBuf = &screenFramebuffer[pixaddr];
+
+						if ( (((x_pos + realx) >= 0) && ((x_pos + realx) < 256)) && (pixPalIdx != 0) )
 						{
-							unsigned char* pBuf = &screenFramebuffer[pixaddr];
+							//*pBuf = palArr[(pixPalIdx * 3) + 0]; pBuf++;
+							//*pBuf = palArr[(pixPalIdx * 3) + 1]; pBuf++;
+							//*pBuf = palArr[(pixPalIdx * 3) + 2]; pBuf++;
+							//*pBuf = 0xff;
+
+							unsigned char* pObjColorAppo = &objColorAppo[(x_pos + realx) * 4];
+							unsigned char* pObjPriAppo = &objPriorityAppo[x_pos + realx];
+							bool* pObjTranspAppo = &objIsTransparentAppo[x_pos + realx];
+
+							*pObjColorAppo = palArr[(pixPalIdx * 3) + 0]; pObjColorAppo++;
+							*pObjColorAppo = palArr[(pixPalIdx * 3) + 1]; pObjColorAppo++;
+							*pObjColorAppo = palArr[(pixPalIdx * 3) + 2]; pObjColorAppo++;
+							*pObjColorAppo = 0xff; pObjColorAppo++;
+							*pObjPriAppo = priority; 
+							*pObjTranspAppo = false; 
+						}
+						else
+						{
+							//pBuf += 4;
 
 							if (((x_pos + realx) >= 0) && ((x_pos + realx) < 256))
 							{
-								*pBuf = palArr[(pixPalIdx * 3) + 0]; pBuf++;
-								*pBuf = palArr[(pixPalIdx * 3) + 1]; pBuf++;
-								*pBuf = palArr[(pixPalIdx * 3) + 2]; pBuf++;
-								*pBuf = 0xff;
-							}
-							else
-							{
-								pBuf += 4;
+								unsigned char* pObjPriAppo = &objPriorityAppo[x_pos + realx];
+								bool* pObjTranspAppo = &objIsTransparentAppo[x_pos + realx];
+								*pObjPriAppo = priority; 
+
+								//if ((*pObjTranspAppo)==false) *pObjTranspAppo = true; 
 							}
 						}
 					}
 				}
 			}
 		}
+	}
+}
+
+void ppu::resetAppoBuffers()
+{
+	for (int x = 0;x < 256;x++)
+	{
+		bgPriorityAppo[0][x] = 0; bgPriorityAppo[1][x] = 0; bgPriorityAppo[2][x] = 0; bgPriorityAppo[3][x] = 0;
+		bgIsTransparentAppo[0][x] = true; bgIsTransparentAppo[1][x] = true; bgIsTransparentAppo[2][x] = true; bgIsTransparentAppo[3][x] = true;
+		bgColorAppo[0][(x * 4) + 0] = 0; bgColorAppo[0][(x * 4) + 1] = 0; bgColorAppo[0][(x * 4) + 2] = 0; bgColorAppo[0][(x * 4) + 3] = 0;
+		bgColorAppo[1][(x * 4) + 0] = 0; bgColorAppo[1][(x * 4) + 1] = 0; bgColorAppo[1][(x * 4) + 2] = 0; bgColorAppo[1][(x * 4) + 3] = 0;
+		bgColorAppo[2][(x * 4) + 0] = 0; bgColorAppo[2][(x * 4) + 1] = 0; bgColorAppo[2][(x * 4) + 2] = 0; bgColorAppo[2][(x * 4) + 3] = 0;
+		bgColorAppo[3][(x * 4) + 0] = 0; bgColorAppo[3][(x * 4) + 1] = 0; bgColorAppo[3][(x * 4) + 2] = 0; bgColorAppo[3][(x * 4) + 3] = 0;
+
+		objColorAppo[(x * 4) + 0] = 0; objColorAppo[(x * 4) + 1] = 0; objColorAppo[(x * 4) + 2] = 0; objColorAppo[(x * 4) + 3] = 0;
+		objPriorityAppo[x] = 0; 
+		objIsTransparentAppo[x] = true; 
 	}
 }
 
@@ -1122,10 +1197,12 @@ void ppu::renderScanline(int scanlinenum)
 	bgTileSize[2] = (bgMode >> 6) & 0x01;
 	bgTileSize[3] = (bgMode >> 7) & 0x01;
 
+	resetAppoBuffers();
+
 	if (screenMode == 0)
 	{
 		// 0      4-color     4-color     4-color     4-color   ;Normal   
-		renderBackdropScanline(scanlinenum);
+		/*renderBackdropScanline(scanlinenum);*/
 		for (int bg = 3;bg >= 0;bg--)
 		{
 			if (((mainScreenDesignation & 0x1f) & (1 << bg)) > 0)
@@ -1133,41 +1210,230 @@ void ppu::renderScanline(int scanlinenum)
 				renderBGScanline(bg, 2, scanlinenum);
 			}
 		}
+
+		if (mainScreenDesignation & 0x10)
+		{
+			renderSpritesScanline(scanlinenum);
+		}
+
+		unsigned char* pfbuf = &screenFramebuffer[scanlinenum * ppuResolutionX * 4];
+		for (int x = 0;x < 256;x++)
+		{
+			int finalCol = -1;
+
+			if (objPriorityAppo[x] == 3 && (!objIsTransparentAppo[x])) finalCol = 4;
+			else if ((bgPriorityAppo[0][x] == 1) && (!bgIsTransparentAppo[0][x])) finalCol = 0;
+			else if ((bgPriorityAppo[1][x] == 1) && (!bgIsTransparentAppo[1][x])) finalCol = 1;
+			else if (objPriorityAppo[x] == 2 && (!objIsTransparentAppo[x])) finalCol = 4;
+			else if ((bgPriorityAppo[0][x] == 0) && (!bgIsTransparentAppo[0][x])) finalCol = 0;
+			else if ((bgPriorityAppo[1][x] == 0) && (!bgIsTransparentAppo[1][x])) finalCol = 1;
+			else if (objPriorityAppo[x] == 1 && (!objIsTransparentAppo[x])) finalCol = 4;
+			else if ((bgPriorityAppo[2][x] == 1) && (!bgIsTransparentAppo[2][x])) finalCol = 2;
+			else if ((bgPriorityAppo[3][x] == 1) && (!bgIsTransparentAppo[3][x])) finalCol = 3;
+			else if (objPriorityAppo[x] == 0 && (!objIsTransparentAppo[x])) finalCol = 4;
+			else if ((bgPriorityAppo[2][x] == 0) && (!bgIsTransparentAppo[2][x])) finalCol = 2;
+			else if ((bgPriorityAppo[3][x] == 0) && (!bgIsTransparentAppo[3][x])) finalCol = 3;
+
+			if (finalCol == -1)
+			{
+				unsigned int backdropColor = (((int)(cgram[1] & 0x7f)) << 8) | cgram[0];
+				unsigned char red = backdropColor & 0x1f; red <<= 3;
+				unsigned char green = (backdropColor >> 5) & 0x1f; green <<= 3;
+				unsigned char blue = (backdropColor >> 10) & 0x1f; blue <<= 3;
+				*pfbuf = red; pfbuf++;
+				*pfbuf = green; pfbuf++;
+				*pfbuf = blue; pfbuf++;
+				*pfbuf = 0xff; pfbuf++;
+			}
+			else if (finalCol < 4)
+			{
+				*pfbuf = bgColorAppo[finalCol][(x * 4) + 0]; pfbuf++;
+				*pfbuf = bgColorAppo[finalCol][(x * 4) + 1]; pfbuf++;
+				*pfbuf = bgColorAppo[finalCol][(x * 4) + 2]; pfbuf++;
+				*pfbuf = 0xff; pfbuf++;
+			}
+			else if (finalCol == 4)
+			{
+				*pfbuf = objColorAppo[(x * 4) + 0]; pfbuf++;
+				*pfbuf = objColorAppo[(x * 4) + 1]; pfbuf++;
+				*pfbuf = objColorAppo[(x * 4) + 2]; pfbuf++;
+				*pfbuf = 0xff; pfbuf++;
+			}
+		}
 	}
 	else if (screenMode == 0x01)
 	{
 		// 1      16-color    16-color    4-color     -         ;Normal
-		renderBackdropScanline(scanlinenum);
 		if ((((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1)) > 0)) renderBGScanline(1, 4,scanlinenum);
 		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBGScanline(0, 4, scanlinenum);
 		if (((mainScreenDesignation & 0x1f) & (1 << 2)) > 0) renderBGScanline(2, 2, scanlinenum);
+
+		if (mainScreenDesignation & 0x10)
+		{
+			renderSpritesScanline(scanlinenum);
+		}
+
+		bool bg3_priority = (bgMode & 0x08) != 0;
+		unsigned char* pfbuf = &screenFramebuffer[scanlinenum * ppuResolutionX * 4];
+		for (int x = 0;x < 256;x++)
+		{
+			int finalCol=-1;
+
+			if ((bgPriorityAppo[2][x] == 1) && bg3_priority && (!bgIsTransparentAppo[2][x])) finalCol = 2;
+			else if (objPriorityAppo[x] == 3 && (!objIsTransparentAppo[x])) finalCol =4;
+			else if ((bgPriorityAppo[0][x] == 1) && (!bgIsTransparentAppo[0][x])) finalCol=0;
+			else if ((bgPriorityAppo[1][x] == 1) && (!bgIsTransparentAppo[1][x])) finalCol=1;
+			else if (objPriorityAppo[x] == 2 && (!objIsTransparentAppo[x])) finalCol = 4;
+			else if ((bgPriorityAppo[0][x] == 0) && (!bgIsTransparentAppo[0][x])) finalCol = 0;
+			else if ((bgPriorityAppo[1][x] == 0) && (!bgIsTransparentAppo[1][x])) finalCol = 1;
+			else if (objPriorityAppo[x] == 1 && (!objIsTransparentAppo[x])) finalCol = 4;
+			else if ((bgPriorityAppo[2][x] == 1) && (!bg3_priority) && (!bgIsTransparentAppo[2][x])) finalCol = 2;
+			else if (objPriorityAppo[x] == 0 && (!objIsTransparentAppo[x])) finalCol = 4;
+			else if ((bgPriorityAppo[2][x] == 0) && (!bgIsTransparentAppo[2][x])) finalCol = 2;
+
+			if (finalCol == -1)
+			{
+				unsigned int backdropColor = (((int)(cgram[1] & 0x7f)) << 8) | cgram[0];
+				unsigned char red = backdropColor & 0x1f; red <<= 3;
+				unsigned char green = (backdropColor >> 5) & 0x1f; green <<= 3;
+				unsigned char blue = (backdropColor >> 10) & 0x1f; blue <<= 3;
+				*pfbuf = red; pfbuf++;
+				*pfbuf = green; pfbuf++;
+				*pfbuf = blue; pfbuf++;
+				*pfbuf = 0xff; pfbuf++;
+			}
+			else if (finalCol < 4)
+			{
+				*pfbuf = bgColorAppo[finalCol][(x * 4) + 0]; pfbuf++;
+				*pfbuf = bgColorAppo[finalCol][(x * 4) + 1]; pfbuf++;
+				*pfbuf = bgColorAppo[finalCol][(x * 4) + 2]; pfbuf++;
+				*pfbuf = 0xff; pfbuf++;
+			}
+			else if (finalCol == 4)
+			{
+				*pfbuf = objColorAppo[(x * 4) + 0]; pfbuf++;
+				*pfbuf = objColorAppo[(x * 4) + 1]; pfbuf++;
+				*pfbuf = objColorAppo[(x * 4) + 2]; pfbuf++;
+				*pfbuf = 0xff; pfbuf++;
+			}
+		}
 	}
 	else if (screenMode == 0x02)
 	{
 		// 1      16-color    16-color    opt     -         ;Normal
-		renderBackdropScanline(scanlinenum);
+		/*renderBackdropScanline(scanlinenum);*/
 		if ((((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1)) > 0)) renderBGScanline(1, 4, scanlinenum);
 		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBGScanline(0, 4, scanlinenum);
+
+
 	}
 	else if (screenMode == 0x03)
 	{
 		// 3      256-color   16-color    -           -         ;Normal   
-		renderBackdropScanline(scanlinenum);
+		/*renderBackdropScanline(scanlinenum);*/
 		if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBGScanline(1, 4, scanlinenum);
 		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBGScanline(0, 8, scanlinenum);
+
+		if (mainScreenDesignation & 0x10)
+		{
+			renderSpritesScanline(scanlinenum);
+		}
+
+		bool bg3_priority = (bgMode & 0x08) != 0;
+		unsigned char* pfbuf = &screenFramebuffer[scanlinenum * ppuResolutionX * 4];
+		for (int x = 0;x < 256;x++)
+		{
+			int finalCol = -1;
+
+			if (objPriorityAppo[x] == 3 && (!objIsTransparentAppo[x])) finalCol = 4;
+			else if ((bgPriorityAppo[0][x] == 1) && (!bgIsTransparentAppo[0][x])) finalCol = 0;
+			else if (objPriorityAppo[x] == 2 && (!objIsTransparentAppo[x])) finalCol = 4;
+			else if ((bgPriorityAppo[1][x] == 1) && (!bgIsTransparentAppo[1][x])) finalCol = 1;
+			else if (objPriorityAppo[x] == 1 && (!objIsTransparentAppo[x])) finalCol = 4;
+			else if ((bgPriorityAppo[0][x] == 0) && (!bgIsTransparentAppo[0][x])) finalCol = 0;
+			else if (objPriorityAppo[x] == 0 && (!objIsTransparentAppo[x])) finalCol = 4;
+			else if ((bgPriorityAppo[1][x] == 0) && (!bgIsTransparentAppo[1][x])) finalCol = 1;
+
+			if (finalCol == -1)
+			{
+				unsigned int backdropColor = (((int)(cgram[1] & 0x7f)) << 8) | cgram[0];
+				unsigned char red = backdropColor & 0x1f; red <<= 3;
+				unsigned char green = (backdropColor >> 5) & 0x1f; green <<= 3;
+				unsigned char blue = (backdropColor >> 10) & 0x1f; blue <<= 3;
+				*pfbuf = red; pfbuf++;
+				*pfbuf = green; pfbuf++;
+				*pfbuf = blue; pfbuf++;
+				*pfbuf = 0xff; pfbuf++;
+			}
+			else if (finalCol < 4)
+			{
+				*pfbuf = bgColorAppo[finalCol][(x * 4) + 0]; pfbuf++;
+				*pfbuf = bgColorAppo[finalCol][(x * 4) + 1]; pfbuf++;
+				*pfbuf = bgColorAppo[finalCol][(x * 4) + 2]; pfbuf++;
+				*pfbuf = 0xff; pfbuf++;
+			}
+			else if (finalCol == 4)
+			{
+				*pfbuf = objColorAppo[(x * 4) + 0]; pfbuf++;
+				*pfbuf = objColorAppo[(x * 4) + 1]; pfbuf++;
+				*pfbuf = objColorAppo[(x * 4) + 2]; pfbuf++;
+				*pfbuf = 0xff; pfbuf++;
+			}
+		}
 	}
 	else if (screenMode == 0x04)
 	{
-		// TODO
-		renderBackdropScanline(scanlinenum);
+		// TODO opt
+		/*renderBackdropScanline(scanlinenum);*/
 		if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBGScanline(1, 4, scanlinenum);
 		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBGScanline(0, 8, scanlinenum);
-	}
 
-	// now OAM Sprites
-	if (mainScreenDesignation & 0x10)
-	{
-		renderSpritesScanline(scanlinenum);
+		if (mainScreenDesignation & 0x10)
+		{
+			renderSpritesScanline(scanlinenum);
+		}
+
+		bool bg3_priority = (bgMode & 0x08) != 0;
+		unsigned char* pfbuf = &screenFramebuffer[scanlinenum * ppuResolutionX * 4];
+		for (int x = 0;x < 256;x++)
+		{
+			int finalCol = -1;
+
+			if (objPriorityAppo[x] == 3 && (!objIsTransparentAppo[x])) finalCol = 4;
+			else if ((bgPriorityAppo[0][x] == 1) && (!bgIsTransparentAppo[0][x])) finalCol = 0;
+			else if (objPriorityAppo[x] == 2 && (!objIsTransparentAppo[x])) finalCol = 4;
+			else if ((bgPriorityAppo[1][x] == 1) && (!bgIsTransparentAppo[1][x])) finalCol = 1;
+			else if (objPriorityAppo[x] == 1 && (!objIsTransparentAppo[x])) finalCol = 4;
+			else if ((bgPriorityAppo[0][x] == 0) && (!bgIsTransparentAppo[0][x])) finalCol = 0;
+			else if (objPriorityAppo[x] == 0 && (!objIsTransparentAppo[x])) finalCol = 4;
+			else if ((bgPriorityAppo[1][x] == 0) && (!bgIsTransparentAppo[1][x])) finalCol = 1;
+
+			if (finalCol == -1)
+			{
+				unsigned int backdropColor = (((int)(cgram[1] & 0x7f)) << 8) | cgram[0];
+				unsigned char red = backdropColor & 0x1f; red <<= 3;
+				unsigned char green = (backdropColor >> 5) & 0x1f; green <<= 3;
+				unsigned char blue = (backdropColor >> 10) & 0x1f; blue <<= 3;
+				*pfbuf = red; pfbuf++;
+				*pfbuf = green; pfbuf++;
+				*pfbuf = blue; pfbuf++;
+				*pfbuf = 0xff; pfbuf++;
+			}
+			else if (finalCol < 4)
+			{
+				*pfbuf = bgColorAppo[finalCol][(x * 4) + 0]; pfbuf++;
+				*pfbuf = bgColorAppo[finalCol][(x * 4) + 1]; pfbuf++;
+				*pfbuf = bgColorAppo[finalCol][(x * 4) + 2]; pfbuf++;
+				*pfbuf = 0xff; pfbuf++;
+			}
+			else if (finalCol == 4)
+			{
+				*pfbuf = objColorAppo[(x * 4) + 0]; pfbuf++;
+				*pfbuf = objColorAppo[(x * 4) + 1]; pfbuf++;
+				*pfbuf = objColorAppo[(x * 4) + 2]; pfbuf++;
+				*pfbuf = 0xff; pfbuf++;
+			}
+		}
 	}
 
 	// final pass, master brightness!

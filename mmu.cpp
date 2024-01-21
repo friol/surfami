@@ -625,7 +625,7 @@ unsigned char mmu::read8(unsigned int address)
 		else if (adr == 0x4210)
 		{
 			bool res = nmiFlag;
-			//if (res)
+			if (res)
 			{
 				nmiFlag = false;
 			}
