@@ -418,7 +418,7 @@ void displayVRAMViewerWindow(GLuint renderTexture,int image_width,int image_heig
     ImGui::End();
 }
 
-void displaySNESScreenWindow(GLuint renderTexture, int image_width, int image_height, unsigned char* parr, ppu& thePPU,bool& isWindowFocused)
+void displaySNESScreenWindow(GLuint renderTexture, int image_width, int image_height, unsigned char* parr,bool& isWindowFocused)
 {
     ImGui::Begin("SNES TV Output");
 
@@ -571,7 +571,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
 
     //
 
-    int snesStandard = 0;
+    int snesStandard = 1;
     ppu thePPU;
     apu theAPU;
     mmu theMMU(thePPU,theAPU);
@@ -620,8 +620,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\HDMA\\HiColor64PerTileRow\\HiColor64PerTileRow.sfc"; // cb
 
     //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc"; // 56
-    //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
-    std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
+    std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
+    //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc";
     //std::string romName = "d:\\prova\\snes\\Lemmings (E).sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars + Super Mario World (USA).sfc"; // reads from 2134
@@ -652,7 +652,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Tetris Attack (E).smc"; 
     //std::string romName = "d:\\prova\\snes\\Lawnmower Man, The (E).smc"; // SPC
     //std::string romName = "d:\\prova\\snes\\Williams Arcade's Greatest Hits (E) [!].smc"; // SPC
-    //std::string romName = "d:\\prova\\snes\\Unirally (E) [!].smc"; // crash
+    //std::string romName = "d:\\prova\\snes\\Unirally (E) [!].smc"; // crash, SRAM test
     //std::string romName = "d:\\prova\\snes\\International Superstar Soccer (U) [!].smc"; // 96
     //std::string romName = "D:\\prova\\snes\\SNES-master\\Games\\MonsterFarmJump\\MonsterFarmJump.sfc";
 
@@ -1225,7 +1225,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         displayPaletteWindow(thePPU);
         displayLogWindow();
         displayVRAMViewerWindow(vramRenderTexture, thePPU.getVRAMViewerXsize(), thePPU.getVRAMViewerYsize(), thePPU.getVRAMViewerBitmap(),thePPU);
-        displaySNESScreenWindow(screenRenderTexture, thePPU.getPPUResolutionX(), thePPU.getPPUResolutionY(), thePPU.getPPUFramebuffer(), thePPU,isTVWindowFocused);
+        displaySNESScreenWindow(screenRenderTexture, thePPU.getPPUResolutionX(), thePPU.getPPUResolutionY(), thePPU.getPPUFramebuffer(),isTVWindowFocused);
         displayMemoryWindow(theMMU,thePPU,baseMemoryAddress);
 
         if (emustatus == 1)

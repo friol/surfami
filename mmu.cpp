@@ -603,7 +603,7 @@ unsigned char mmu::read8(unsigned int address)
 		}
 		else if (adr == 0x213f)
 		{
-			int retval = 0x03;
+			unsigned char retval = 0x03;
 			if (standard == 1) retval |= 0x10;
 			return retval;
 		}

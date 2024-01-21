@@ -494,7 +494,7 @@ void ppu::renderTile(int bpp, int px, int py, int tileNum, int palId, int bgnum,
 	delete(palArr);
 }
 
-void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip,int scanlinenum,int bgpri)
+void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip,int scanlinenum,unsigned char bgpri)
 {
 	unsigned char* pBuf;
 
@@ -559,16 +559,6 @@ void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, in
 	{
 		pBuf = &screenFramebuffer[ppos];
 
-		if ((px < 0) || (px >= 256))
-		{
-			int error = 1;
-			return;
-		}
-
-		unsigned char* pBgColorAppo = &bgColorAppo[bgnum][px * 4];
-		unsigned char* pBgPriAppo = &bgPriorityAppo[bgnum][px];
-		bool* pBgIsTranspAppo = &bgIsTransparentAppo[bgnum][px];
-
 		const unsigned char b_1 = vram[tileAddr] & 0xff;
 		const unsigned char b_2 = vram[tileAddr] >> 8;
 		const unsigned char b_3 = vram[tileAddr + 8] & 0xff;
@@ -611,9 +601,61 @@ void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, in
 						(128 * ((b_8 >> x) & 1));
 				}
 
-				if (bpp == 2)
+				if ((theX >= 0) && (theX < 256))
 				{
-					if ( (((curCol % 4) != 0) && ((theX >= 0) && (theX < (signed int)ppuResolutionX)))  )
+					unsigned char* pBgColorAppo = &bgColorAppo[bgnum][theX * 4];
+					unsigned char* pBgPriAppo = &bgPriorityAppo[bgnum][theX];
+					bool* pBgIsTranspAppo = &bgIsTransparentAppo[bgnum][theX];
+
+					if (bpp == 2)
+					{
+						if ((((curCol % 4) != 0) && ((theX >= 0) && (theX < (signed int)ppuResolutionX))))
+						{
+							//*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
+							//*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
+							//*pBuf = palArr[(curCol * 3) + 2]; pBuf++;
+							//*pBuf = 0xff; pBuf++;
+
+							*pBgColorAppo = palArr[(curCol * 3) + 0]; pBgColorAppo++;
+							*pBgColorAppo = palArr[(curCol * 3) + 1]; pBgColorAppo++;
+							*pBgColorAppo = palArr[(curCol * 3) + 2]; pBgColorAppo++;
+							*pBgColorAppo = 0xff; pBgColorAppo++;
+							*pBgPriAppo = bgpri; pBgPriAppo++;
+							*pBgIsTranspAppo = false; pBgIsTranspAppo++;
+						}
+						else
+						{
+							//pBuf += 4;
+							pBgColorAppo += 4;
+							*pBgPriAppo = bgpri; pBgPriAppo++;
+							*pBgIsTranspAppo = true; pBgIsTranspAppo++;
+						}
+					}
+					else if (bpp == 4)
+					{
+						if ((((curCol % 16) != 0) && ((theX >= 0) && (theX < (signed int)ppuResolutionX))))
+						{
+							//*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
+							//*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
+							//*pBuf = palArr[(curCol * 3) + 2]; pBuf++;
+							//*pBuf = 0xff; pBuf++;
+
+							*pBgColorAppo = palArr[(curCol * 3) + 0]; pBgColorAppo++;
+							*pBgColorAppo = palArr[(curCol * 3) + 1]; pBgColorAppo++;
+							*pBgColorAppo = palArr[(curCol * 3) + 2]; pBgColorAppo++;
+							*pBgColorAppo = 0xff; pBgColorAppo++;
+							*pBgPriAppo = bgpri; pBgPriAppo++;
+							*pBgIsTranspAppo = false; pBgIsTranspAppo++;
+						}
+						else
+						{
+							//pBuf += 4;
+							pBgColorAppo += 4;
+							*pBgPriAppo = bgpri; pBgPriAppo++;
+							*pBgIsTranspAppo = true; pBgIsTranspAppo++;
+						}
+					}
+					else
 					{
 						//*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
 						//*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
@@ -627,51 +669,6 @@ void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, in
 						*pBgPriAppo = bgpri; pBgPriAppo++;
 						*pBgIsTranspAppo = false; pBgIsTranspAppo++;
 					}
-					else
-					{
-						//pBuf += 4;
-						pBgColorAppo += 4;
-						*pBgPriAppo = bgpri; pBgPriAppo++;
-						*pBgIsTranspAppo = true; pBgIsTranspAppo++;
-					}
-				}
-				else if (bpp == 4)
-				{
-					if ( (((curCol % 16) != 0) && ((theX >= 0) && (theX < (signed int)ppuResolutionX)))  )
-					{
-						//*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
-						//*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
-						//*pBuf = palArr[(curCol * 3) + 2]; pBuf++;
-						//*pBuf = 0xff; pBuf++;
-
-						*pBgColorAppo = palArr[(curCol * 3) + 0]; pBgColorAppo++;
-						*pBgColorAppo = palArr[(curCol * 3) + 1]; pBgColorAppo++;
-						*pBgColorAppo = palArr[(curCol * 3) + 2]; pBgColorAppo++;
-						*pBgColorAppo = 0xff; pBgColorAppo++;
-						*pBgPriAppo = bgpri; pBgPriAppo++;
-						*pBgIsTranspAppo = false; pBgIsTranspAppo++;
-					}
-					else
-					{
-						//pBuf += 4;
-						pBgColorAppo += 4;
-						*pBgPriAppo = bgpri; pBgPriAppo++;
-						*pBgIsTranspAppo = true; pBgIsTranspAppo++;
-					}
-				}
-				else
-				{
-					//*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
-					//*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
-					//*pBuf = palArr[(curCol * 3) + 2]; pBuf++;
-					//*pBuf = 0xff; pBuf++;
-
-					*pBgColorAppo = palArr[(curCol * 3) + 0]; pBgColorAppo++;
-					*pBgColorAppo = palArr[(curCol * 3) + 1]; pBgColorAppo++;
-					*pBgColorAppo = palArr[(curCol * 3) + 2]; pBgColorAppo++;
-					*pBgColorAppo = 0xff; pBgColorAppo++;
-					*pBgPriAppo = bgpri; pBgPriAppo++;
-					*pBgIsTranspAppo = false; pBgIsTranspAppo++;
 				}
 			}
 
@@ -806,7 +803,7 @@ void ppu::renderBGScanline(int bgnum, int bpp, int scanlinenum)
 
 				int tileNum = vramWord & 0x3ff;
 				int palId = (vramWord >> 10) & 0x7;
-				int bgPri = (vramWord >> 13) & 0x01;
+				unsigned char bgPri = (vramWord >> 13) & 0x01;
 				int xflip = (vramWord >> 14) & 0x01;
 				int yflip = (vramWord >> 15) & 0x01;
 
@@ -973,7 +970,7 @@ void ppu::renderSpritesScanline(int scanlinenum)
 		int y_flip = byte4 >> 7;
 		int x_flip = (byte4 >> 6) & 1;
 		int paletteNum = (byte4 >> 1) & 0b111;
-		int priority = (byte4 >> 4) & 0b11;
+		unsigned char priority = (byte4 >> 4) & 0b11;
 		//int spriteSize = (attr >> 1) & 0x01;
 
 		if (attr & 0x01) x_pos -= 256;
@@ -1030,7 +1027,7 @@ void ppu::renderSpritesScanline(int scanlinenum)
 					unsigned int pixaddr = ((x_pos + realx) + (scanlinenum * ppuResolutionX)) * 4;
 					if ((pixaddr >= 0) && (pixaddr < (ppuResolutionX * ppuResolutionY * 4)))
 					{
-						unsigned char* pBuf = &screenFramebuffer[pixaddr];
+						//unsigned char* pBuf = &screenFramebuffer[pixaddr];
 
 						if ( (((x_pos + realx) >= 0) && ((x_pos + realx) < 256)) && (pixPalIdx != 0) )
 						{
@@ -1057,7 +1054,7 @@ void ppu::renderSpritesScanline(int scanlinenum)
 							if (((x_pos + realx) >= 0) && ((x_pos + realx) < 256))
 							{
 								unsigned char* pObjPriAppo = &objPriorityAppo[x_pos + realx];
-								bool* pObjTranspAppo = &objIsTransparentAppo[x_pos + realx];
+								//bool* pObjTranspAppo = &objIsTransparentAppo[x_pos + realx];
 								*pObjPriAppo = priority; 
 
 								//if ((*pObjTranspAppo)==false) *pObjTranspAppo = true; 
@@ -1202,7 +1199,6 @@ void ppu::renderScanline(int scanlinenum)
 	if (screenMode == 0)
 	{
 		// 0      4-color     4-color     4-color     4-color   ;Normal   
-		/*renderBackdropScanline(scanlinenum);*/
 		for (int bg = 3;bg >= 0;bg--)
 		{
 			if (((mainScreenDesignation & 0x1f) & (1 << bg)) > 0)
@@ -1325,7 +1321,51 @@ void ppu::renderScanline(int scanlinenum)
 		if ((((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1)) > 0)) renderBGScanline(1, 4, scanlinenum);
 		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBGScanline(0, 4, scanlinenum);
 
+		if (mainScreenDesignation & 0x10)
+		{
+			renderSpritesScanline(scanlinenum);
+		}
 
+		unsigned char* pfbuf = &screenFramebuffer[scanlinenum * ppuResolutionX * 4];
+		for (int x = 0;x < 256;x++)
+		{
+			int finalCol = -1;
+
+			if (objPriorityAppo[x] == 3 && (!objIsTransparentAppo[x])) finalCol = 4;
+			else if ((bgPriorityAppo[0][x] == 1) && (!bgIsTransparentAppo[0][x])) finalCol = 0;
+			else if (objPriorityAppo[x] == 2 && (!objIsTransparentAppo[x])) finalCol = 4;
+			else if ((bgPriorityAppo[1][x] == 1) && (!bgIsTransparentAppo[1][x])) finalCol = 1;
+			else if (objPriorityAppo[x] == 1 && (!objIsTransparentAppo[x])) finalCol = 4;
+			else if ((bgPriorityAppo[0][x] == 0) && (!bgIsTransparentAppo[0][x])) finalCol = 0;
+			else if (objPriorityAppo[x] == 0 && (!objIsTransparentAppo[x])) finalCol = 4;
+			else if ((bgPriorityAppo[1][x] == 0) && (!bgIsTransparentAppo[1][x])) finalCol = 1;
+
+			if (finalCol == -1)
+			{
+				unsigned int backdropColor = (((int)(cgram[1] & 0x7f)) << 8) | cgram[0];
+				unsigned char red = backdropColor & 0x1f; red <<= 3;
+				unsigned char green = (backdropColor >> 5) & 0x1f; green <<= 3;
+				unsigned char blue = (backdropColor >> 10) & 0x1f; blue <<= 3;
+				*pfbuf = red; pfbuf++;
+				*pfbuf = green; pfbuf++;
+				*pfbuf = blue; pfbuf++;
+				*pfbuf = 0xff; pfbuf++;
+			}
+			else if (finalCol < 4)
+			{
+				*pfbuf = bgColorAppo[finalCol][(x * 4) + 0]; pfbuf++;
+				*pfbuf = bgColorAppo[finalCol][(x * 4) + 1]; pfbuf++;
+				*pfbuf = bgColorAppo[finalCol][(x * 4) + 2]; pfbuf++;
+				*pfbuf = 0xff; pfbuf++;
+			}
+			else if (finalCol == 4)
+			{
+				*pfbuf = objColorAppo[(x * 4) + 0]; pfbuf++;
+				*pfbuf = objColorAppo[(x * 4) + 1]; pfbuf++;
+				*pfbuf = objColorAppo[(x * 4) + 2]; pfbuf++;
+				*pfbuf = 0xff; pfbuf++;
+			}
+		}
 	}
 	else if (screenMode == 0x03)
 	{
@@ -1339,7 +1379,6 @@ void ppu::renderScanline(int scanlinenum)
 			renderSpritesScanline(scanlinenum);
 		}
 
-		bool bg3_priority = (bgMode & 0x08) != 0;
 		unsigned char* pfbuf = &screenFramebuffer[scanlinenum * ppuResolutionX * 4];
 		for (int x = 0;x < 256;x++)
 		{
@@ -1393,7 +1432,6 @@ void ppu::renderScanline(int scanlinenum)
 			renderSpritesScanline(scanlinenum);
 		}
 
-		bool bg3_priority = (bgMode & 0x08) != 0;
 		unsigned char* pfbuf = &screenFramebuffer[scanlinenum * ppuResolutionX * 4];
 		for (int x = 0;x < 256;x++)
 		{

@@ -139,6 +139,7 @@ int cpu65816tester::executeTest()
 		int referenceCycles = 0;
 		for (auto& cyc : testData[testId]["cycles"])
 		{
+			cyc = cyc;
 			referenceCycles += 1;
 		}
 

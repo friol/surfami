@@ -91,7 +91,7 @@ public:
 	void renderScreen();
 
 	void renderBGScanline(int bgnum, int bpp, int scanlinenum);
-	void renderTileScanline(int bpp, int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip, int scanlinenum, int bgpri);
+	void renderTileScanline(int bpp, int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip, int scanlinenum, unsigned char bgpri);
 	void renderScanline(int scanlinenum);
 	void renderBackdropScanline(int scanlinenum);
 
