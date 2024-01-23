@@ -541,7 +541,7 @@ void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, in
 	tileAddr += ((bgTileBaseAddress >> (4 * bgnum)) & 0x0f) * 1024 * 4;
 	tileAddr &= 0x7fff;
 
-	int scanlineMod8 = (scanlinenum) % 8;
+	int scanlineMod8 = (py+scanlinenum) % 8;
 
 	int ybase = 0; int yend = 8; int yinc = 1; 
 	if (yflip)
@@ -791,13 +791,17 @@ void ppu::renderBGScanline(int bgnum, int bpp, int scanlinenum)
 
 	for (int y = 0;y < 29;y++)
 	{
-		int realy = y + (yscroll / 8);
-
 		if (((y * 8) + ((scanlinenum) % 8)) == scanlinenum)
 		{
 			for (int x = 0;x < 33;x++)
 			{
 				int realx = x + (xscroll / 8);
+				int realy = y + (yscroll / 8);
+
+				if (((yscroll % 8) + (scanlinenum % 8)) > 7)
+				{
+					realy += 1;
+				}
 
 				unsigned short int vramWord = tilemapMap[realy % 64][realx % 64];
 
@@ -807,7 +811,12 @@ void ppu::renderBGScanline(int bgnum, int bpp, int scanlinenum)
 				int xflip = (vramWord >> 14) & 0x01;
 				int yflip = (vramWord >> 15) & 0x01;
 
-				renderTileScanline(bpp, (x * 8) + ((8 - xscroll) % 8), (y * 8) + ((8 - yscroll) % 8), tileNum, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
+				renderTileScanline(bpp, (x * 8) + ((8 - xscroll) % 8), 
+					//(y * 8) + ((8 - yscroll) % 8), 
+					yscroll,
+					tileNum, palId, bgnum, xflip, yflip, 
+					scanlinenum,
+					bgPri);
 			}
 		}
 	}

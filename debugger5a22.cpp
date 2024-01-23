@@ -9,7 +9,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x02,2,"COP param0",Immediate8,false,false,true},			// validatedFC
 	{0x03,2,"ORA param0",Immediate8,false,false,true},			// validatedFC
 	{0x04,2,"TSB param0",Immediate8,false,false,true},			// validatedF
-	{0x05,2,"ORA param0",Immediate8,false,false,false},			// validatedF
+	{0x05,2,"ORA param0",Immediate8,false,false,true},			// validatedF
 	{0x06,2,"ASL param0",Immediate8,false,false,true},			// validatedF
 	{0x07,2,"ORA param0",Immediate8,false,false,true},			// validatedF
 	{0x08,1,"PHP",None,false,false,true},						// validatedFC
@@ -78,6 +78,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x50,2,"BVC param0",Immediate8,false,false,true}, // validatedF
 	{0x54,3,"MVN param0",Absolute16,false,false,true},
 	{0x55,2,"EOR param0,X",Immediate8,false,false,true}, // validatedF
+	{0x57,2,"EOR [param0],Y",Immediate8,false,false,true}, // validatedF
 	{0x58,1,"CLI",None,false,false,true}, // validatedF
 	{0x59,3,"EOR param0,Y",Absolute16,false,false,true}, // fck
 	{0x5a,1,"PHY",None,false,false,true}, // validatedF
