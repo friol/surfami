@@ -643,7 +643,7 @@ unsigned char mmu::read8(unsigned int address)
 			if (pPPU->isVBlankActive()) res |= 0x80;
 			int intcyc = pPPU->getInternalCyclesCounter();
 
-			if ((intcyc<1)||(intcyc>(1096/6))) res|=0x40;
+			if (/*(intcyc<1) ||*/ (intcyc>(1096 / 6))) res |= 0x40;
 
 			return res;
 		}
@@ -652,7 +652,7 @@ unsigned char mmu::read8(unsigned int address)
 			// 4017h/Read - JOYB - Joypad Input Register B (R) TODO
 			return 0x1c;
 		}
-		else if ((adr == 0x4218)|| (adr == 0x421a))
+		else if ((adr == 0x4218)/* || (adr == 0x421a)*/)
 		{
 			unsigned char res = 0;
 			if (isKeyAPressed)
@@ -666,7 +666,7 @@ unsigned char mmu::read8(unsigned int address)
 
 			return res;
 		}
-		else if ((adr == 0x4219)|| (adr == 0x421b))
+		else if ((adr == 0x4219)/* || (adr == 0x421b)*/)
 		{
 			unsigned char res = 0;
 			if (isKeySelectPressed)

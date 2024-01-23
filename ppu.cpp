@@ -37,34 +37,13 @@ ppu::ppu()
 
 void ppu::writeBgScrollX(int bgId,unsigned char val)
 {
-	/*if (!bgScrollXFlipFlop[bgId])
-	{
-		bgScrollX[bgId] = (bgScrollX[bgId] & 0xff00) | val;
-		bgScrollXFlipFlop[bgId] = true;
-	}
-	else 
-	{
-		bgScrollX[bgId] = (bgScrollX[bgId] & 0xff) | (val << 8);
-		bgScrollXFlipFlop[bgId] = false;
-	}*/
-	
-	bgScrollX[bgId] = (val << 8) | (BGSCROLL_L1 & ~7) | (BGSCROLL_L2);
+	bgScrollX[bgId] = (val << 8) | (BGSCROLL_L1 & ~7) | ((bgScrollX[bgId] >> 8) & 7);
 	BGSCROLL_L1 = val;
-	BGSCROLL_L2 = val;
+	//BGSCROLL_L2 = val;
 }
 
 void ppu::writeBgScrollY(int bgId, unsigned char val)
 {
-	/*if (!bgScrollYFlipFlop[bgId])
-	{
-		bgScrollY[bgId] = (bgScrollY[bgId] & 0xff00) | val;
-		bgScrollYFlipFlop[bgId] = true;
-	}
-	else
-	{
-		bgScrollY[bgId] = (bgScrollY[bgId] & 0xff) | (val << 8);
-		bgScrollYFlipFlop[bgId] = false;
-	}*/
 	bgScrollY[bgId] = (val << 8) | BGSCROLL_L1;
 	BGSCROLL_L1 = val;
 }
@@ -803,7 +782,7 @@ void ppu::renderBGScanline(int bgnum, int bpp, int scanlinenum)
 					realy += 1;
 				}
 
-				unsigned short int vramWord = tilemapMap[realy % 64][realx % 64];
+				unsigned short int vramWord = tilemapMap[realy&0x3f][realx & 0x3f];
 
 				int tileNum = vramWord & 0x3ff;
 				int palId = (vramWord >> 10) & 0x7;
@@ -811,8 +790,8 @@ void ppu::renderBGScanline(int bgnum, int bpp, int scanlinenum)
 				int xflip = (vramWord >> 14) & 0x01;
 				int yflip = (vramWord >> 15) & 0x01;
 
-				renderTileScanline(bpp, (x * 8) + ((8 - xscroll) % 8), 
-					//(y * 8) + ((8 - yscroll) % 8), 
+				renderTileScanline(bpp, 
+					(x * 8) - (xscroll%8),
 					yscroll,
 					tileNum, palId, bgnum, xflip, yflip, 
 					scanlinenum,
