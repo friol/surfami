@@ -86,6 +86,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x5c,4,"JML param0",AbsoluteLong,false,false,true}, // validatedF
 	{0x5d,3,"EOR param0,X",Absolute16,false,false,true}, // validatedF
 	{0x5e,3,"LSR param0,X",Absolute16,false,false,true}, // validatedF
+	{0x5f,4,"EOR param0,X",AbsoluteLong,false,false,true}, // validatedF
 	{0x62,3,"PER param0,X",Absolute16,false,false,true}, // validatedF
 	{0x60,1,"RTS",None,false,false,true}, // validatedF
 	{0x63,2,"ADC param0,S",Immediate8,false,false,true}, // validatedF

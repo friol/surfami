@@ -283,7 +283,7 @@ void ppu::tileViewerRenderTile2bpp(int px, int py, int tileAddr)
 
 void ppu::tileViewerRenderTiles()
 {
-	int tileAddr = 0;
+	/*int tileAddr = 0;
 	for (int y = 0;y < 24;y++)
 	{
 		for (int x = 0;x < 16;x++)
@@ -291,7 +291,7 @@ void ppu::tileViewerRenderTiles()
 			tileViewerRenderTile2bpp(x * 8, y * 8, tileAddr);
 			tileAddr += 8;
 		}
-	}
+	}*/
 }
 
 void ppu::renderBackdrop()
@@ -1176,11 +1176,11 @@ void ppu::renderScanline(int scanlinenum)
 	// rendering depends on screen mode
 	int screenMode = (bgMode & 0x07);
 
-	int bgTileSize[4];
+	/*int bgTileSize[4];
 	bgTileSize[0] = (bgMode >> 4) & 0x01;
 	bgTileSize[1] = (bgMode >> 5) & 0x01;
 	bgTileSize[2] = (bgMode >> 6) & 0x01;
-	bgTileSize[3] = (bgMode >> 7) & 0x01;
+	bgTileSize[3] = (bgMode >> 7) & 0x01;*/
 
 	resetAppoBuffers();
 
@@ -1249,8 +1249,10 @@ void ppu::renderScanline(int scanlinenum)
 	{
 		// 1      16-color    16-color    4-color     -         ;Normal
 		if ((((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1)) > 0)) renderBGScanline(1, 4,scanlinenum);
-		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBGScanline(0, 4, scanlinenum);
-		if (((mainScreenDesignation & 0x1f) & (1 << 2)) > 0) renderBGScanline(2, 2, scanlinenum);
+		//if ( (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 0)>0))) renderBGScanline(0, 4, scanlinenum);
+		if ( (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) ) renderBGScanline(0, 4, scanlinenum);
+		//if ( (((mainScreenDesignation & 0x1f) & (1 << 2)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 2)>0))) renderBGScanline(2, 2, scanlinenum);
+		if ( (((mainScreenDesignation & 0x1f) & (1 << 2)) > 0) ) renderBGScanline(2, 2, scanlinenum);
 
 		if (mainScreenDesignation & 0x10)
 		{

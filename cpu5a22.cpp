@@ -2872,6 +2872,17 @@ int cpu5a22::stepOne()
 				regP.setIndexSize(regP.getIndexSize(), regX_hi, regY_hi);
 			}
 
+			/*if (regP.getEmulation())
+			{
+				regP.setAccuMemSize(1);
+				regP.setIndexSize(1, regX_hi, regY_hi);
+				regSP = (regSP & 0xff) | 0x100;
+			}
+			if (regP.getIndexSize()) {
+				regX_hi = 0;
+				regY_hi = 0;
+			}*/
+
 			regPC += 1;
 			cycles = 4;
 			break;
@@ -6077,6 +6088,36 @@ int cpu5a22::stepOne()
 			if (regP.isDPLowNotZero()) cycAdder += 1;
 
 			regPC += 2;
+			cycles = 5 + cycAdder;
+			break;
+		}
+		case 0x5f:
+		{
+			// EOR long,X
+			int cycAdder = 0;
+			unsigned int addr = getLongAddressIndexedX();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				unsigned char res = val ^ (regA_lo & 0xff);
+				regA_lo = res;
+				regP.setNegative(res >> 7);
+				regP.setZero(res == 0);
+			}
+			else
+			{
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned short int val = (hi << 8) | lo;
+				unsigned short int res = val ^ (regA_lo | (regA_hi << 8));
+				regA_lo = res & 0xff;
+				regA_hi = res >> 8;
+				regP.setNegative(res >> 15);
+				regP.setZero(res == 0);
+			}
+
+			regPC += 4;
 			cycles = 5 + cycAdder;
 			break;
 		}

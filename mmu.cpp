@@ -629,7 +629,7 @@ unsigned char mmu::read8(unsigned int address)
 			{
 				nmiFlag = false;
 			}
-			return (res << 7) | 0x02;
+			return (res << 7) | 0x62;
 		}
 		else if (adr == 0x4211)
 		{

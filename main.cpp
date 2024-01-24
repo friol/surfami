@@ -571,7 +571,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
 
     //
 
-    int snesStandard = 1;
+    int snesStandard = 0;
     ppu thePPU;
     apu theAPU;
     mmu theMMU(thePPU,theAPU);
@@ -598,7 +598,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\LSR\\CPULSR.sfc"; // 56
     //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\MSC\\CPUMSC.sfc"; // 42
     //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\ORA\\CPUORA.sfc"; // 12
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\PHL\\CPUPHL.sfc"; // PLP fail
+    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\PHL\\CPUPHL.sfc";
     //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\PSR\\CPUPSR.sfc";
     //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\RET\\CPURET.sfc";
     //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\ROL\\CPUROL.sfc"; // 36
@@ -625,7 +625,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc"; // 5f
     //std::string romName = "d:\\prova\\snes\\Lemmings (E).sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars + Super Mario World (USA).sfc"; // reads from 2134
-    //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
+    std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
     //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // mode4
     //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc"; // mode5
     //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // cb
@@ -642,7 +642,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc"; // 72
     //std::string romName = "d:\\prova\\snes\\Sensible Soccer - International Edition (E).smc"; // blank screen
     //std::string romName = "d:\\prova\\snes\\Gun Force (E).smc";
-    std::string romName = "d:\\prova\\snes\\The Legend Of Zelda -  A Link To The Past.smc";
+    //std::string romName = "d:\\prova\\snes\\The Legend Of Zelda -  A Link To The Past.smc";
     //std::string romName = "d:\\prova\\snes\\Prince of Persia (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Yoshi's Cookie (E).smc"; // d2
     //std::string romName = "d:\\prova\\snes\\Sim City (E) [!].smc";
@@ -650,7 +650,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Spanky's Quest (E).smc"; // double res?
     //std::string romName = "d:\\prova\\snes\\Spectre (E) [!].smc"; // cb
     //std::string romName = "d:\\prova\\snes\\Tetris Attack (E).smc"; 
-    //std::string romName = "d:\\prova\\snes\\Lawnmower Man, The (E).smc"; // 5f
+    //std::string romName = "d:\\prova\\snes\\Lawnmower Man, The (E).smc"; 
     //std::string romName = "d:\\prova\\snes\\Williams Arcade's Greatest Hits (E) [!].smc"; // SPC
     //std::string romName = "d:\\prova\\snes\\Unirally (E) [!].smc"; // crash, SRAM test
     //std::string romName = "d:\\prova\\snes\\International Superstar Soccer (U) [!].smc"; // 96
@@ -1239,11 +1239,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
             int inst = 0;
             while ((inst < 16666)&&(emustatus==1))
             {
-                if (theCPU.getPC() == 0xa325)
-                {
-                    //emustatus = 0;
-                }
-
                 int cycs= theCPU.stepOne();
                 if (cycs!=-1)
                 {
@@ -1255,6 +1250,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
                     emustatus = 0;
                 }
                 inst += 1;
+
+                /*if ((theCPU.getPC() & 0xffff) == 0x9ea4)
+                {
+                    emustatus = 0;
+                }*/
             }
         }
 
