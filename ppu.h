@@ -55,7 +55,7 @@ private:
 	void renderSprite(int px, int py, int tileNum, int palId);
 
 	void renderBackdrop();
-	void renderBG(int bgnum,int bpp);
+	/*void renderBG(int bgnum, int bpp);*/
 	void renderSprites();
 	void renderSpritesScanline(int scanlinenum);
 
@@ -88,10 +88,9 @@ public:
 	void getPalette(unsigned char* destArr);
 	int getCurrentBGMode();
 	void tileViewerRenderTiles();
-	void renderScreen();
 
 	void renderBGScanline(int bgnum, int bpp, int scanlinenum);
-	void renderTileScanline(int bpp, int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip, int scanlinenum, unsigned char bgpri);
+	void renderTileScanline(int bpp, int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip, int scanlinenum, unsigned char bgpri,int tileDim);
 	void renderScanline(int scanlinenum);
 	void renderBackdropScanline(int scanlinenum);
 

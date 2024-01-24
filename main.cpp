@@ -616,16 +616,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\BGMAP\\8x8\\8BPP\\32x32\\8x8BGMap8BPP32x32.sfc"; // bg scrolling
     //std::string romName = "d:\\prova\\snes\\Rings.sfc";
     //std::string romName = "d:\\prova\\snes\\MosaicMode3.sfc";
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\HDMA\\RedSpaceHDMA\\RedSpaceHDMA.sfc";
+    std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\HDMA\\RedSpaceHDMA\\RedSpaceHDMA.sfc";
     //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\HDMA\\HiColor64PerTileRow\\HiColor64PerTileRow.sfc"; // cb
+    //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\HDMA\\WaveHDMA\\WaveHDMA.sfc"; 
 
     //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc"; // 56
     //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc"; // 5f
-    //std::string romName = "d:\\prova\\snes\\Lemmings (E).sfc";
+    //std::string romName = "d:\\prova\\snes\\Lemmings (E).sfc"; // crashes
     //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars + Super Mario World (USA).sfc"; // reads from 2134
-    std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
+    //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
     //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // mode4
     //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc"; // mode5
     //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // cb
@@ -647,7 +648,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Yoshi's Cookie (E).smc"; // d2
     //std::string romName = "d:\\prova\\snes\\Sim City (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\James Pond's Crazy Sports (E).smc"; // 71
-    //std::string romName = "d:\\prova\\snes\\Spanky's Quest (E).smc"; // double res?
+    //std::string romName = "d:\\prova\\snes\\Spanky's Quest (E).smc";
     //std::string romName = "d:\\prova\\snes\\Spectre (E) [!].smc"; // cb
     //std::string romName = "d:\\prova\\snes\\Tetris Attack (E).smc"; 
     //std::string romName = "d:\\prova\\snes\\Lawnmower Man, The (E).smc"; 

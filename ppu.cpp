@@ -473,7 +473,7 @@ void ppu::renderTile(int bpp, int px, int py, int tileNum, int palId, int bgnum,
 	delete(palArr);
 }
 
-void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip,int scanlinenum,unsigned char bgpri)
+void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip,int scanlinenum,unsigned char bgpri, int tileDim)
 {
 	unsigned char* pBuf;
 
@@ -724,39 +724,6 @@ void ppu::buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int b
 
 }
 
-void ppu::renderBG(int bgnum,int bpp)
-{
-	int baseTileAddr = ((bgTileMapBaseAddress[bgnum] >> 2) << 10)&0x7fff;
-	//int baseTileAddr = 0x5800;
-
-	int bgSize = bgTileMapBaseAddress[bgnum] & 0x3;
-	int xscroll = bgScrollX[bgnum]&0x3ff;
-	int yscroll = bgScrollY[bgnum]&0x3ff;
-
-	unsigned short int tilemapMap[64][64];
-	buildTilemapMap(tilemapMap, bgSize, baseTileAddr);
-
-	for (int y = 0;y < 29;y++)
-	{
-		int realy = y + (yscroll / 8);
-
-		for (int x = 0;x < 33;x++)
-		{
-			int realx = x + (xscroll / 8);
-
-			unsigned short int vramWord = tilemapMap[realy%64][realx%64];
-
-			int tileNum = vramWord & 0x3ff;
-			int palId = (vramWord >> 10) & 0x7;
-			//int bgPri = (vramWord >> 13) & 0x01;
-			int xflip= (vramWord >> 14) & 0x01;
-			int yflip= (vramWord >> 15) & 0x01;
-
-			renderTile(bpp, (x * 8) + ((8 - xscroll) % 8), (y * 8) + ((8-yscroll)%8), tileNum, palId, bgnum, xflip, yflip);
-		}
-	}
-}
-
 void ppu::renderBGScanline(int bgnum, int bpp, int scanlinenum)
 {
 	int baseTileAddr = ((bgTileMapBaseAddress[bgnum] >> 2) << 10) & 0x7fff;
@@ -768,34 +735,63 @@ void ppu::renderBGScanline(int bgnum, int bpp, int scanlinenum)
 	unsigned short int tilemapMap[64][64];
 	buildTilemapMap(tilemapMap, bgSize, baseTileAddr);
 
-	for (int y = 0;y < 29;y++)
-	{
-		if (((y * 8) + ((scanlinenum) % 8)) == scanlinenum)
-		{
-			for (int x = 0;x < 33;x++)
-			{
-				int realx = x + (xscroll / 8);
-				int realy = y + (yscroll / 8);
+	/* 8x8 or 16x16 tiles for modes 0-4 */
+	int bgTileSize = (bgMode & (0x10 << bgnum));
 
-				if (((yscroll % 8) + (scanlinenum % 8)) > 7)
+	int tileDim = 8;
+	int tileDimX = 33;
+	int tileDimY = 29;
+
+	if (bgTileSize > 0)
+	{
+		tileDim = 16;
+		tileDimX = 17;
+		tileDimY = 15;
+	}
+
+	for (int y = 0;y < tileDimY;y+=1)
+	{
+		if (((y * tileDim) + ((scanlinenum) % tileDim)) == scanlinenum)
+		{
+			for (int x = 0;x < tileDimX;x+= 1)
+			{
+				int realx = x + (xscroll / tileDim);
+				int realy = y + (yscroll / tileDim);
+
+				if (((yscroll % tileDim) + (scanlinenum % tileDim)) > (tileDim-1))
 				{
 					realy += 1;
 				}
 
-				unsigned short int vramWord = tilemapMap[realy&0x3f][realx & 0x3f];
-
+				unsigned short int vramWord = tilemapMap[realy & 0x3f][realx & 0x3f];
 				int tileNum = vramWord & 0x3ff;
 				int palId = (vramWord >> 10) & 0x7;
 				unsigned char bgPri = (vramWord >> 13) & 0x01;
 				int xflip = (vramWord >> 14) & 0x01;
 				int yflip = (vramWord >> 15) & 0x01;
 
-				renderTileScanline(bpp, 
-					(x * 8) - (xscroll%8),
-					yscroll,
-					tileNum, palId, bgnum, xflip, yflip, 
-					scanlinenum,
-					bgPri);
+				if ((bgTileSize > 0) && (yflip))
+				{
+					int stopHere = 1;
+				}
+
+				if (tileDim == 8)
+				{
+					renderTileScanline(bpp, (x * 8) - (xscroll % tileDim), yscroll, tileNum, palId, bgnum, xflip, yflip, scanlinenum, bgPri,8);
+				}
+				else
+				{
+					if (((yscroll+scanlinenum) % tileDim) < 8)
+					{
+						renderTileScanline(bpp, (x * 16) - (xscroll % tileDim), yscroll, tileNum, palId, bgnum, xflip, yflip, scanlinenum, bgPri,16);
+						renderTileScanline(bpp, ((x * 16) + 8) - (xscroll % tileDim), yscroll, (tileNum + 1) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri,16);
+					}
+					else
+					{
+						renderTileScanline(bpp, (x * 16) - (xscroll % tileDim), yscroll, (tileNum+16) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri,16);
+						renderTileScanline(bpp, ((x * 16) + 8) - (xscroll % tileDim), yscroll, (tileNum + 17) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri,16);
+					}
+				}
 			}
 		}
 	}
@@ -1069,96 +1065,6 @@ void ppu::resetAppoBuffers()
 		objColorAppo[(x * 4) + 0] = 0; objColorAppo[(x * 4) + 1] = 0; objColorAppo[(x * 4) + 2] = 0; objColorAppo[(x * 4) + 3] = 0;
 		objPriorityAppo[x] = 0; 
 		objIsTransparentAppo[x] = true; 
-	}
-}
-
-void ppu::renderScreen()
-{
-	/*
-		7-2  SC Base Address in VRAM (in 1K-word steps, aka 2K-byte steps)
-		1-0  SC Size (0=One-Screen, 1=V-Mirror, 2=H-Mirror, 3=Four-Screen)
-						(0=32x32, 1=64x32, 2=32x64, 3=64x64 tiles)
-					(0: SC0 SC0    1: SC0 SC1  2: SC0 SC0  3: SC0 SC1   )
-					(   SC0 SC0       SC0 SC1     SC1 SC1     SC2 SC3   )
-		Specifies the BG Map addresses in VRAM. The "SCn" screens consists of 32x32 tiles each.
-	*/
-
-	// rendering depends on screen mode
-	int screenMode = (bgMode & 0x07);
-
-	int bgTileSize[4];
-	bgTileSize[0] = (bgMode >> 4)&0x01;
-	bgTileSize[1] = (bgMode >> 5)&0x01;
-	bgTileSize[2] = (bgMode >> 6)&0x01;
-	bgTileSize[3] = (bgMode >> 7)&0x01;
-
-	if (screenMode == 0)
-	{
-		// 0      4-color     4-color     4-color     4-color   ;Normal   
-		renderBackdrop();
-		for (int bg = 3;bg >= 0;bg--)
-		{
-			if (((mainScreenDesignation&0x1f) & (1 << bg)) > 0)
-			{
-				renderBG(bg,2);
-			}
-		}
-	}
-	else if (screenMode == 0x01)
-	{
-		// 1      16-color    16-color    4-color     -         ;Normal
-		renderBackdrop();
-		if ((((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1)) > 0)) renderBG(1, 4);
-		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBG(0, 4);
-		if (((mainScreenDesignation & 0x1f) & (1 << 2)) > 0) renderBG(2, 2);
-	}
-	else if (screenMode == 0x02)
-	{
-		// 1      16-color    16-color    opt     -         ;Normal
-		renderBackdrop();
-		if ((((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1)) > 0)) renderBG(1, 4);
-		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBG(0, 4);
-	}
-	else if (screenMode == 0x03)
-	{
-		// 3      256-color   16-color    -           -         ;Normal   
-		renderBackdrop();
-		if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBG(1, 4);
-		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBG(0, 8);
-	}
-	else if (screenMode == 0x04)
-	{
-		// TODO
-		renderBackdrop();
-	}
-
-	// now OAM Sprites
-	renderSprites();
-
-	// final pass, master brightness!
-	int brightness = iniDisp & 0x0f;
-	if ((iniDisp & 0x80) == 0x80) brightness = 0;
-
-	if (brightness != 15)
-	{
-		for (unsigned int pos = 0;pos < (ppuResolutionX * ppuResolutionY * 4);pos += 4)
-		{
-			int val;
-			val = screenFramebuffer[pos + 0];
-			val *= brightness;
-			val >>= 4;
-			screenFramebuffer[pos + 0] = (unsigned char)val;
-
-			val = screenFramebuffer[pos + 1];
-			val *= brightness;
-			val >>= 4;
-			screenFramebuffer[pos + 1] = (unsigned char)val;
-
-			val = screenFramebuffer[pos + 2];
-			val *= brightness;
-			val >>= 4;
-			screenFramebuffer[pos + 2] = (unsigned char)val;
-		}
 	}
 }
 
