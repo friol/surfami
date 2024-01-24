@@ -12,8 +12,6 @@ ppu::ppu()
 		bgTileMapBaseAddress[bg] = 0;
 		bgScrollX[bg] = 0;
 		bgScrollY[bg] = 0;
-		//bgScrollXFlipFlop[bg] = false;
-		//bgScrollYFlipFlop[bg] = false;
 	}
 
 	for (int addr = 0;addr < 0x8000;addr++)
@@ -50,12 +48,7 @@ void ppu::writeBgScrollY(int bgId, unsigned char val)
 
 void ppu::writeOAM(unsigned char val)
 {
-	if (OAMAddr >= 0x220)
-	{
-		OAMAddr = 0;
-	}
-
-	if (OAMAddr % 2 == 0) 
+	/*if (OAMAddr % 2 == 0)
 	{
 		OAM_Lsb = val;
 	}
@@ -69,7 +62,25 @@ void ppu::writeOAM(unsigned char val)
 		OAM[OAMAddr] = val;
 	}
 	
-	OAMAddr++;
+	OAMAddr++;*/
+
+	unsigned char latch_bit = OAMAddr & 1;
+	unsigned short int address = OAMAddr;
+	OAMAddr = (OAMAddr + 1) & 0x03ff;
+	
+	if (latch_bit == 0)
+	{
+		OAM_Lsb = val;
+	}
+	if (address & 0x0200)
+	{
+		OAM[address] = val;
+	}
+	else if (latch_bit == 1)
+	{
+		OAM[(address & ~1) + 1] = val;
+		OAM[(address & ~1)] = OAM_Lsb;
+	}
 }
 
 unsigned char ppu::vmDataRead(unsigned int port)
@@ -473,7 +484,7 @@ void ppu::renderTile(int bpp, int px, int py, int tileNum, int palId, int bgnum,
 	delete(palArr);
 }
 
-void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip,int scanlinenum,unsigned char bgpri, int tileDim)
+void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip,int scanlinenum,unsigned char bgpri)
 {
 	unsigned char* pBuf;
 
@@ -721,7 +732,6 @@ void ppu::buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int b
 			tilemapPos++;
 		}
 	}
-
 }
 
 void ppu::renderBGScanline(int bgnum, int bpp, int scanlinenum)
@@ -770,26 +780,26 @@ void ppu::renderBGScanline(int bgnum, int bpp, int scanlinenum)
 				int xflip = (vramWord >> 14) & 0x01;
 				int yflip = (vramWord >> 15) & 0x01;
 
-				if ((bgTileSize > 0) && (yflip))
-				{
-					int stopHere = 1;
-				}
+				//if ((bgTileSize > 0) && (yflip))
+				//{
+				//	int stopHere = 1;
+				//}
 
 				if (tileDim == 8)
 				{
-					renderTileScanline(bpp, (x * 8) - (xscroll % tileDim), yscroll, tileNum, palId, bgnum, xflip, yflip, scanlinenum, bgPri,8);
+					renderTileScanline(bpp, (x * 8) - (xscroll % tileDim), yscroll, tileNum, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
 				}
 				else
 				{
 					if (((yscroll+scanlinenum) % tileDim) < 8)
 					{
-						renderTileScanline(bpp, (x * 16) - (xscroll % tileDim), yscroll, tileNum, palId, bgnum, xflip, yflip, scanlinenum, bgPri,16);
-						renderTileScanline(bpp, ((x * 16) + 8) - (xscroll % tileDim), yscroll, (tileNum + 1) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri,16);
+						renderTileScanline(bpp, (x * 16) - (xscroll % tileDim), yscroll, tileNum, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
+						renderTileScanline(bpp, ((x * 16) + 8) - (xscroll % tileDim), yscroll, (tileNum + 1) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
 					}
 					else
 					{
-						renderTileScanline(bpp, (x * 16) - (xscroll % tileDim), yscroll, (tileNum+16) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri,16);
-						renderTileScanline(bpp, ((x * 16) + 8) - (xscroll % tileDim), yscroll, (tileNum + 17) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri,16);
+						renderTileScanline(bpp, (x * 16) - (xscroll % tileDim), yscroll, (tileNum+16) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
+						renderTileScanline(bpp, ((x * 16) + 8) - (xscroll % tileDim), yscroll, (tileNum + 17) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
 					}
 				}
 			}

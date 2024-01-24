@@ -445,6 +445,8 @@ void displayMemoryWindow(mmu& theMMU,ppu& thePPU,int& baseAddress)
     int bgmode = thePPU.getCurrentBGMode();
     bgmode++;
 
+    unsigned char* pOAM = thePPU.getOAMPtr();
+
     for (int r = 0;r < rows;r++)
     {
         std::string sRow;
@@ -454,7 +456,9 @@ void displayMemoryWindow(mmu& theMMU,ppu& thePPU,int& baseAddress)
 
         for (int x = 0;x < hSteps;x+=1)
         {
-            unsigned char byteSized0 = theMMU.read8(curAddr);
+            unsigned char byteSized0 = *pOAM;
+            pOAM++;
+            //unsigned char byteSized0 = theMMU.read8(curAddr);
             //unsigned char byteSized0 = thePPU.getVRAMPtr()[curAddr]&0xff;
             //unsigned char byteSized1 = thePPU.getVRAMPtr()[curAddr]>>8;
 
@@ -616,22 +620,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\BGMAP\\8x8\\8BPP\\32x32\\8x8BGMap8BPP32x32.sfc"; // bg scrolling
     //std::string romName = "d:\\prova\\snes\\Rings.sfc";
     //std::string romName = "d:\\prova\\snes\\MosaicMode3.sfc";
-    std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\HDMA\\RedSpaceHDMA\\RedSpaceHDMA.sfc";
+    //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\HDMA\\RedSpaceHDMA\\RedSpaceHDMA.sfc";
     //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\HDMA\\HiColor64PerTileRow\\HiColor64PerTileRow.sfc"; // cb
     //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\HDMA\\WaveHDMA\\WaveHDMA.sfc"; 
 
-    //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc"; // 56
+    //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc"; // 56 db
     //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc"; // 5f
     //std::string romName = "d:\\prova\\snes\\Lemmings (E).sfc"; // crashes
     //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars + Super Mario World (USA).sfc"; // reads from 2134
-    //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
+    std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
+    //std::string romName = "d:\\prova\\snes\\Parodius Da! - Shinwa kara Owarai e (Japan).sfc";
     //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // mode4
     //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc"; // mode5
     //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // cb
     //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc"; // 96
-    //std::string romName = "d:\\prova\\snes\\Frogger (U).smc"; // corrupted sprites at the bottom, cars are not scrolling
+    //std::string romName = "d:\\prova\\snes\\Frogger (U).smc"; // corrupted sprites at the bottom, cars are not moving
     //std::string romName = "d:\\prova\\snes\\Race Drivin' (U).smc"; 
     //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc";  

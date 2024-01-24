@@ -60,7 +60,8 @@ int cpu65816tester::executeTest()
 
 		pCPU->reset();
 		pCPU->setState(initialPC, initialA, initialX, initialY, initialSP, initialDBR, initialD, initialPBR, initialP, initialE);
-		int cycles=pCPU->stepOne();
+		pCPU->stepOne();
+		//int cycles=pCPU->stepOne();
 
 		unsigned int finalPC = testData[testId]["final"]["pc"];
 		unsigned int finalA = testData[testId]["final"]["a"];

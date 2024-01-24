@@ -80,17 +80,28 @@ public:
 	void writeBgScrollY(int bgId, unsigned char val);
 	unsigned char vmDataRead(unsigned int port);
 	
-	void writeOAMAddressLow(unsigned char val) { OAMAddr = (OAMAddr & 0xff00) | val; }
-	void writeOAMAddressHigh(unsigned char val) { OAMAddr = (OAMAddr & 0xff) | (val<<8); }
+	void writeOAMAddressLow(unsigned char val) 
+	{ 
+		OAMAddr = (OAMAddr & 0x0200) | (val << 1);
+		//OAMAddr = (OAMAddr & 0xff00) | val; 
+	}
+	
+	void writeOAMAddressHigh(unsigned char val) 
+	{ 
+		OAMAddr = ((val & 1) << 9) | (OAMAddr & 0x01fe);
+		//OAMAddr = (OAMAddr & 0xff) | (val<<8); 
+	}
+
 	void writeOAM(unsigned char val);
 	unsigned char readOAM() { return OAM[OAMAddr++ & 0x1ff]; }
+	unsigned char* getOAMPtr() { return OAM; }
 
 	void getPalette(unsigned char* destArr);
 	int getCurrentBGMode();
 	void tileViewerRenderTiles();
 
 	void renderBGScanline(int bgnum, int bpp, int scanlinenum);
-	void renderTileScanline(int bpp, int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip, int scanlinenum, unsigned char bgpri,int tileDim);
+	void renderTileScanline(int bpp, int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip, int scanlinenum, unsigned char bgpri);
 	void renderScanline(int scanlinenum);
 	void renderBackdropScanline(int scanlinenum);
 
