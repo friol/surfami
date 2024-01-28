@@ -93,29 +93,32 @@ unsigned char ppu::vmDataRead(unsigned int port)
 	unsigned char _v_trans = (vmainVRAMAddrIncrMode & 0b1100) >> 2;
 	unsigned char _v_step = vmainVRAMAddrIncrMode & 0b11;
 	unsigned short int _t_st, _t_off, _t_in;
+	
 	switch (_v_trans)
-	{ //	PPU - Apply address translation if necessary (leftshift thrice lower 8, 9 or 10 bits)
-	case 0b00:
-		break;
-	case 0b01:		//	8 bit, aaaaaaaYYYxxxxx becomes aaaaaaaxxxxxYYY
-		_t_st = (adr & 0b1111111100000000);
-		_t_off = (adr & 0b11100000) >> 5;
-		_t_in = (adr & 0b11111) << 3;
-		adr = _t_st | _t_off | _t_in;
-		break;
-	case 0b10:		//	9 bit, aaaaaaYYYxxxxxP becomes aaaaaaxxxxxPYYY
-		_t_st = (adr & 0b1111111000000000);
-		_t_off = (adr & 0b111000000) >> 6;
-		_t_in = (adr & 0b111111) << 3;
-		adr = _t_st | _t_off | _t_in;
-		break;
-	case 0b11:		//	10 bit, aaaaaYYYxxxxxPP becomes aaaaaxxxxxPPYYY
-		_t_st = (adr & 0b1111110000000000);
-		_t_off = (adr & 0b1110000000) >> 7;
-		_t_in = (adr & 0b1111111) << 3;
-		adr = _t_st | _t_off | _t_in;
-		break;
+	{ 
+		//	PPU - Apply address translation if necessary (leftshift thrice lower 8, 9 or 10 bits)
+		case 0b00:
+			break;
+		case 0b01:		//	8 bit, aaaaaaaYYYxxxxx becomes aaaaaaaxxxxxYYY
+			_t_st = (adr & 0b1111111100000000);
+			_t_off = (adr & 0b11100000) >> 5;
+			_t_in = (adr & 0b11111) << 3;
+			adr = _t_st | _t_off | _t_in;
+			break;
+		case 0b10:		//	9 bit, aaaaaaYYYxxxxxP becomes aaaaaaxxxxxPYYY
+			_t_st = (adr & 0b1111111000000000);
+			_t_off = (adr & 0b111000000) >> 6;
+			_t_in = (adr & 0b111111) << 3;
+			adr = _t_st | _t_off | _t_in;
+			break;
+		case 0b11:		//	10 bit, aaaaaYYYxxxxxPP becomes aaaaaxxxxxPPYYY
+			_t_st = (adr & 0b1111110000000000);
+			_t_off = (adr & 0b1110000000) >> 7;
+			_t_in = (adr & 0b1111111) << 3;
+			adr = _t_st | _t_off | _t_in;
+			break;
 	}
+
 	if (((port == 0x2139 && !_v_hi_lo) || (port == 0x213a && _v_hi_lo)) && _v_trans != 0)
 	{
 		unsigned short int _t = (vramAddressUpper << 8) | vramAddressLower;
@@ -130,6 +133,7 @@ unsigned char ppu::vmDataRead(unsigned int port)
 		vramAddressLower = _t & 0xff;
 		vramAddressUpper = _t >> 8;
 	}
+
 	return (port == 0x2139) ? vram[adr & 0x7fff] & 0xff : vram[adr & 0x7fff] >> 8;
 }
 
@@ -143,8 +147,11 @@ void ppu::writeRegister(int reg, unsigned char val)
 	else if (reg == 0x2122)
 	{
 		// Register $2122: Data write to CGRAM (1b/W)
+		cgramIdx &= 0x1ff;
+		if (cgramIdx & 0x01) val &= 0x7f;
 		cgram[cgramIdx] = val;
 		cgramIdx += 1;
+		cgramIdx &= 0x1ff;
 	}
 	else if (reg == 0x2105)
 	{
@@ -181,7 +188,8 @@ void ppu::writeRegister(int reg, unsigned char val)
 		// 2118h - VMDATAL - VRAM Data Write (lower 8bit) (W)
 		// 2119h - VMDATAH - VRAM Data Write (upper 8bit) (W)
 
-		int vramAddr = (vramAddressLower | (vramAddressUpper << 8));
+		unsigned short int vramAddr = (vramAddressLower | (vramAddressUpper << 8));
+		unsigned short int writeAddr = vramAddr;
 		unsigned char _v_hi_lo = vmainVRAMAddrIncrMode >> 7;
 		unsigned char _v_trans = (vmainVRAMAddrIncrMode & 0b1100) >> 2;
 
@@ -191,36 +199,64 @@ void ppu::writeRegister(int reg, unsigned char val)
 			err = 2;
 		}
 
-		int adrIncrStep = 1;
-		int addrIncrementStep = vmainVRAMAddrIncrMode & 0x03;
+		switch (_v_trans) 
+		{		
+			//	PPU - Apply address translation if necessary (leftshift thrice lower 8, 9 or 10 bits)
+			case 0b00:
+				break;
+			case 0b01: {		//	8 bit, aaaaaaaYYYxxxxx becomes aaaaaaaxxxxxYYY
+				unsigned short int _t_st = (vramAddr & 0b1111111100000000);
+				unsigned short int _t_off = (vramAddr & 0b11100000) >> 5;
+				unsigned short int _t_in = (vramAddr & 0b11111) << 3;
+				writeAddr = _t_st | _t_off | _t_in;
+				break;
+			}
+			case 0b10: {		//	9 bit, aaaaaaYYYxxxxxP becomes aaaaaaxxxxxPYYY
+				unsigned short int _t_st = (vramAddr & 0b1111111000000000);
+				unsigned short int _t_off = (vramAddr & 0b111000000) >> 6;
+				unsigned short int _t_in = (vramAddr & 0b111111) << 3;
+				writeAddr = _t_st | _t_off | _t_in;
+				break;
+			}
+			case 0b11: {		//	10 bit, aaaaaYYYxxxxxPP becomes aaaaaxxxxxPPYYY
+				unsigned short int _t_st = (vramAddr & 0b1111110000000000);
+				unsigned short int _t_off = (vramAddr & 0b1110000000) >> 7;
+				unsigned short int _t_in = (vramAddr & 0b1111111) << 3;
+				writeAddr = _t_st | _t_off | _t_in;
+				break;
+			}
+		}
+
+		unsigned short int adrIncrStep = 1;
+		unsigned int addrIncrementStep = vmainVRAMAddrIncrMode & 0x03;
 		if (addrIncrementStep != 0)
 		{
 			// 1 - 0   Address Increment Step(0..3 = Increment Word - Address by 1, 32, 128, 128)
-			const int increments[] = {1, 32, 128, 128};
+			const unsigned short int increments[] = {1, 32, 128, 128};
 			adrIncrStep = increments[addrIncrementStep];
-		}
-
-		if (reg == 0x2118)
-		{
-			//if (vramAddr == 0x2000)
-			//{
-			//	int w = 1;
-			//	w = 2;
-			//}
-			vram[vramAddr & 0x7fff] = (vram[vramAddr & 0x7fff] & 0xff00) | val;
-		}
-		else 
-		{
-			vram[vramAddr & 0x7fff] = (vram[vramAddr & 0x7fff] & 0xff) | (val << 8);
 		}
 
 		if ((reg == 0x2118 && !_v_hi_lo) || (reg == 0x2119 && _v_hi_lo))
 		{
-			unsigned int nextAddr = vramAddr;
-			nextAddr+=adrIncrStep;
-			nextAddr &= 0x7fff;
+			unsigned short int nextAddr = vramAddr;
+			nextAddr += adrIncrStep;
+			//nextAddr &= 0xffff;
 			vramAddressLower = nextAddr & 0xff;
-			vramAddressUpper = (nextAddr >> 8)&0xff;
+			vramAddressUpper = (nextAddr >> 8) & 0xff;
+		}
+
+		if (vramAddr == 0x1500)
+		{
+			writeBreakpoint = true;
+		}
+
+		if (reg == 0x2118)
+		{
+			vram[writeAddr & 0x7fff] = (vram[writeAddr & 0x7fff] & 0xff00) | val;
+		}
+		else 
+		{
+			vram[writeAddr & 0x7fff] = (vram[writeAddr & 0x7fff] & 0xff) | (val << 8);
 		}
 	}
 	else if (reg == 0x210b)
@@ -294,7 +330,7 @@ void ppu::tileViewerRenderTile2bpp(int px, int py, int tileAddr)
 
 void ppu::tileViewerRenderTiles()
 {
-	/*int tileAddr = 0;
+	int tileAddr = 0;//0x1400;
 	for (int y = 0;y < 24;y++)
 	{
 		for (int x = 0;x < 16;x++)
@@ -302,7 +338,7 @@ void ppu::tileViewerRenderTiles()
 			tileViewerRenderTile2bpp(x * 8, y * 8, tileAddr);
 			tileAddr += 8;
 		}
-	}*/
+	}
 }
 
 void ppu::renderBackdrop()
@@ -734,6 +770,67 @@ void ppu::buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int b
 	}
 }
 
+void ppu::calcOffsetPerTileScroll(unsigned short int bg3word, unsigned short int bg3word2, int bgnum, int& xscroll, int& yscroll)
+{
+	/*
+	15  bit  8   7  bit  0
+		---- ----   ---- ----
+		V21. ..SS   SSSS Ssss
+		|||    ||   |||| ||||
+		|||    ++---++++-++++- New scroll value for this tile. For horizontal values, the bottom three bits are ignored
+		||+------------------- Override scroll value for layer 1
+		|+-------------------- Override scroll value for layer 2
+		+--------------------- Mode 4 only: Scroll direction (0 = horizontal, 1 = vertical)
+	*/
+
+	int screenMode = (bgMode & 0x07);
+
+	if (screenMode == 2)
+	{
+		if ((bg3word & 0x4000) && (bgnum == 1))
+		{
+			xscroll = (xscroll & 0x07) | (bg3word & 0x3f8);
+			yscroll = bg3word2 & 0x3ff;
+		}
+		else if ((bg3word & 0x2000) && (bgnum == 0))
+		{
+			xscroll = (xscroll & 0x07) | (bg3word & 0x3f8);
+			yscroll = bg3word2 & 0x3ff;
+		}
+	}
+	else if (screenMode == 4)
+	{
+		if ((bg3word & 0x4000) && (bgnum == 1))
+		{
+			int scrollDir = bg3word & 0x8000;
+			if (scrollDir == 0)
+			{
+				// horz
+				xscroll = (xscroll & 0x07) | (bg3word & 0x3f8);
+			}
+			else
+			{
+				// vert
+				yscroll = bg3word & 0x3ff;
+			}
+		}
+		else if ((bg3word & 0x2000) && (bgnum == 0))
+		{
+			int scrollDir = bg3word & 0x8000;
+			if (scrollDir == 0)
+			{
+				// horz
+				xscroll = (xscroll & 0x07) | (bg3word & 0x3f8);
+			}
+			else
+			{
+				// vert
+				yscroll = bg3word & 0x3ff;
+			}
+		}
+	}
+}
+
 void ppu::renderBGScanline(int bgnum, int bpp, int scanlinenum)
 {
 	int baseTileAddr = ((bgTileMapBaseAddress[bgnum] >> 2) << 10) & 0x7fff;
@@ -765,6 +862,29 @@ void ppu::renderBGScanline(int bgnum, int bpp, int scanlinenum)
 		{
 			for (int x = 0;x < tileDimX;x+= 1)
 			{
+				if (x != 0)
+				{
+					// opt
+					int bg3baseTileAddr = ((bgTileMapBaseAddress[2] >> 2) << 10) & 0x7fff;
+
+					int bg3xscroll = bgScrollX[2] & 0x3ff;
+					int bg3realx = x-1 + (bg3xscroll / 8);
+					//int bg3yscroll = bgScrollY[2] & 0x3ff;
+
+					unsigned short int bg3word=0, bg3word2=0;
+					if ((bgMode & 0x07) == 2)
+					{
+						bg3word =  vram[bg3baseTileAddr + (bg3realx&0x3f) ];
+						bg3word2 = vram[bg3baseTileAddr + (bg3realx&0x3f) + 32 ];
+					}
+					else if ((bgMode & 0x07) == 4)
+					{
+						bg3word = vram[bg3baseTileAddr + (bg3realx & 0x3f) ];
+					}
+
+					calcOffsetPerTileScroll(bg3word, bg3word2, bgnum, xscroll, yscroll);
+				}
+
 				int realx = x + (xscroll / tileDim);
 				int realy = y + (yscroll / tileDim);
 
@@ -779,11 +899,6 @@ void ppu::renderBGScanline(int bgnum, int bpp, int scanlinenum)
 				unsigned char bgPri = (vramWord >> 13) & 0x01;
 				int xflip = (vramWord >> 14) & 0x01;
 				int yflip = (vramWord >> 15) & 0x01;
-
-				//if ((bgTileSize > 0) && (yflip))
-				//{
-				//	int stopHere = 1;
-				//}
 
 				if (tileDim == 8)
 				{
@@ -953,11 +1068,6 @@ void ppu::renderSpritesScanline(int scanlinenum)
 		const unsigned char byte4 = OAM[(i * 4) + 3];
 		const unsigned char attr = (OAM[512 + (i / 4)] >> ((i % 4) * 2)) & 0b11;
 
-		//if (i == 0)
-		//{
-		//	int spr = 1;
-		//}
-
 		int x_pos = byte1;
 		int y_pos = byte2;
 		int tile_nr = ((byte4 & 1) << 8) | byte3;
@@ -1011,6 +1121,7 @@ void ppu::renderSpritesScanline(int scanlinenum)
 					const unsigned char b_2 = vram[tile_address] >> 8;
 					const unsigned char b_3 = vram[tile_address + 8] & 0xff;
 					const unsigned char b_4 = vram[tile_address + 8] >> 8;
+
 					const unsigned short int pixPalIdx = ((b_1 >> shift_x) & 1) +
 						(2 * ((b_2 >> shift_x) & 1)) +
 						(4 * ((b_3 >> shift_x) & 1)) +
@@ -1021,15 +1132,8 @@ void ppu::renderSpritesScanline(int scanlinenum)
 					unsigned int pixaddr = ((x_pos + realx) + (scanlinenum * ppuResolutionX)) * 4;
 					if ((pixaddr >= 0) && (pixaddr < (ppuResolutionX * ppuResolutionY * 4)))
 					{
-						//unsigned char* pBuf = &screenFramebuffer[pixaddr];
-
 						if ( (((x_pos + realx) >= 0) && ((x_pos + realx) < 256)) && (pixPalIdx != 0) )
 						{
-							//*pBuf = palArr[(pixPalIdx * 3) + 0]; pBuf++;
-							//*pBuf = palArr[(pixPalIdx * 3) + 1]; pBuf++;
-							//*pBuf = palArr[(pixPalIdx * 3) + 2]; pBuf++;
-							//*pBuf = 0xff;
-
 							unsigned char* pObjColorAppo = &objColorAppo[(x_pos + realx) * 4];
 							unsigned char* pObjPriAppo = &objPriorityAppo[x_pos + realx];
 							bool* pObjTranspAppo = &objIsTransparentAppo[x_pos + realx];
@@ -1037,21 +1141,19 @@ void ppu::renderSpritesScanline(int scanlinenum)
 							*pObjColorAppo = palArr[(pixPalIdx * 3) + 0]; pObjColorAppo++;
 							*pObjColorAppo = palArr[(pixPalIdx * 3) + 1]; pObjColorAppo++;
 							*pObjColorAppo = palArr[(pixPalIdx * 3) + 2]; pObjColorAppo++;
+							//*pObjColorAppo = 0xff; pObjColorAppo++;
+							//*pObjColorAppo = 0xff; pObjColorAppo++;
+							//*pObjColorAppo = 0xff; pObjColorAppo++;
 							*pObjColorAppo = 0xff; pObjColorAppo++;
 							*pObjPriAppo = priority; 
 							*pObjTranspAppo = false; 
 						}
 						else
 						{
-							//pBuf += 4;
-
 							if (((x_pos + realx) >= 0) && ((x_pos + realx) < 256))
 							{
 								unsigned char* pObjPriAppo = &objPriorityAppo[x_pos + realx];
-								//bool* pObjTranspAppo = &objIsTransparentAppo[x_pos + realx];
 								*pObjPriAppo = priority; 
-
-								//if ((*pObjTranspAppo)==false) *pObjTranspAppo = true; 
 							}
 						}
 					}
@@ -1080,6 +1182,8 @@ void ppu::resetAppoBuffers()
 
 void ppu::renderScanline(int scanlinenum)
 {
+	if ((scanlinenum < 0) || (scanlinenum >= 224)) return;
+
 	/*
 		7-2  SC Base Address in VRAM (in 1K-word steps, aka 2K-byte steps)
 		1-0  SC Size (0=One-Screen, 1=V-Mirror, 2=H-Mirror, 3=Four-Screen)
@@ -1088,6 +1192,11 @@ void ppu::renderScanline(int scanlinenum)
 					(   SC0 SC0       SC0 SC1     SC1 SC1     SC2 SC3   )
 		Specifies the BG Map addresses in VRAM. The "SCn" screens consists of 32x32 tiles each.
 	*/
+
+	if (screenDisabled)
+	{
+		// TODO
+	}
 
 	// rendering depends on screen mode
 	int screenMode = (bgMode & 0x07);
@@ -1223,7 +1332,6 @@ void ppu::renderScanline(int scanlinenum)
 	else if (screenMode == 0x02)
 	{
 		// 1      16-color    16-color    opt     -         ;Normal
-		/*renderBackdropScanline(scanlinenum);*/
 		if ((((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1)) > 0)) renderBGScanline(1, 4, scanlinenum);
 		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBGScanline(0, 4, scanlinenum);
 
@@ -1276,7 +1384,6 @@ void ppu::renderScanline(int scanlinenum)
 	else if (screenMode == 0x03)
 	{
 		// 3      256-color   16-color    -           -         ;Normal   
-		/*renderBackdropScanline(scanlinenum);*/
 		if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBGScanline(1, 4, scanlinenum);
 		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBGScanline(0, 8, scanlinenum);
 
@@ -1329,7 +1436,6 @@ void ppu::renderScanline(int scanlinenum)
 	else if (screenMode == 0x04)
 	{
 		// TODO opt
-		/*renderBackdropScanline(scanlinenum);*/
 		if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBGScanline(1, 4, scanlinenum);
 		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBGScanline(0, 8, scanlinenum);
 
@@ -1430,6 +1536,7 @@ void ppu::step(int numCycles, mmu& theMMU, cpu5a22& theCPU)
 		// NMI
 		if (scanline == vblankStartScanline)
 		{
+			theMMU.resetHDMA();
 			theMMU.setNMIFlag();
 			// trigger nmi if not blocked
 			if (theMMU.isVblankNMIEnabled())

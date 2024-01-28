@@ -219,7 +219,7 @@ public:
 	void reset();
 	int stepOne();
 	
-	unsigned short int getPC();
+	unsigned int getPC();
 	unsigned char getPB() { return regPB;  }
 	unsigned short int getSP() { return regSP;  }
 	unsigned char getDBR() { return regDBR;  }

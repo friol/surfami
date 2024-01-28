@@ -73,9 +73,9 @@ int cpu65816tester::executeTest()
 		unsigned char finalPBR = testData[testId]["final"]["pbr"];
 		unsigned char finalP = testData[testId]["final"]["p"];
 
-		if (pCPU->getPC() != finalPC)
+		if ((pCPU->getPC()&0xffff) != finalPC)
 		{
-			glbTheLogger.logMsg("PC [" + std::to_string(pCPU->getPC()) + "] and reference [" + std::to_string(finalPC) + "] PC don't match.");
+			glbTheLogger.logMsg("PC [" + std::to_string((pCPU->getPC()&0xffff)) + "] and reference [" + std::to_string(finalPC) + "] PC don't match.");
 			breakkk = true;
 		}
 		if (pCPU->getA() != finalA)

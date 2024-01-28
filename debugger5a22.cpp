@@ -74,6 +74,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x4c,3,"JMP param0",Absolute16,false,false,true}, // validatedF
 	{0x4d,3,"EOR param0",Absolute16,false,false,true}, // validatedF
 	{0x4e,3,"LSR param0",Absolute16,false,false,true}, // validatedF
+	{0x4f,4,"EOR param0",AbsoluteLong,false,false,true}, // validatedF
 	{0x4B,1,"PHK",None,false,false,true}, // validatedF
 	{0x50,2,"BVC param0",Immediate8,false,false,true}, // validatedF
 	{0x54,3,"MVN param0",Absolute16,false,false,true},
@@ -103,6 +104,8 @@ static const debugInfoRec debugInstrData[] =
 	{0x6e,3,"ROR param0",Absolute16,false,false,true}, // validatedF
 	{0x6f,4,"ADC param0",AbsoluteLong,false,false,true}, // validatedF
 	{0x70,2,"BVS param0",Immediate8,false,false,true}, // validatedF
+	{0x71,2,"ADC (param0),Y",Immediate8,false,false,true}, // validatedF
+	{0x72,2,"ADC (param0)",Immediate8,false,false,true}, // validatedF
 	{0x73,2,"ADC (param0,S),Y",Immediate8,false,false,true}, // validatedF
 	{0x74,2,"STZ param0,X",Immediate8,false,false,true}, // validatedF
 	{0x75,2,"ADC param0,X",Immediate8,false,false,true}, // validatedF
@@ -137,6 +140,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x93,2,"STA (param0,S),Y",Immediate8,false,false,true}, // validatedF
 	{0x94,2,"STY param0,X",Immediate8,false,false,true}, // validatedF
 	{0x95,2,"STA _dp_ param0,X",Immediate8,false,false,true}, // validatedF
+	{0x96,2,"STX param0,Y",Immediate8,false,false,true}, // validatedF
 	{0x97,2,"STA [param0],Y",Immediate8,false,false,true}, // validatedF
 	{0x98,1,"TYA",None,false,false,true}, // validatedF
 	{0x99,3,"STA param0,Y",Absolute16,false,false,true}, // validatedF
@@ -194,6 +198,7 @@ static const debugInfoRec debugInstrData[] =
 	{0xD4,2,"PEI (param0)",Immediate8,false,false,true}, // validatedF
 	{0xD0,2,"BNE param0",Immediate8,false,false,true}, // validatedF
 	{0xD1,2,"CMP (param0),Y",Immediate8,false,false,true}, // validatedF
+	{0xd3,2,"CMP (param0,S),Y",Immediate8,false,false,true}, // validatedF
 	{0xD5,2,"CMP param0,X",Immediate8,false,false,true}, // validatedF
 	{0xD6,2,"DEC param0,X",Immediate8,false,false,true}, // validatedF
 	{0xD7,2,"CMP [param0],Y",Immediate8,false,false,true}, // fck

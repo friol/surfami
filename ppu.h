@@ -26,6 +26,7 @@ private:
 	int subScreenDesignation = 0;
 	unsigned char iniDisp = 0;
 	unsigned char obSel = 0;
+	unsigned char screenDisabled = 0;
 
 	int bgTileMapBaseAddress[4];
 	unsigned short int bgScrollX[4];
@@ -61,6 +62,8 @@ private:
 
 	void buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int baseTileAddr);
 
+	void calcOffsetPerTileScroll(unsigned short int bg3word, unsigned short int bg3word2, int bgnum, int& xscroll, int& yscroll);
+
 	unsigned int scanline=0;
 	unsigned int internalCyclesCounter = 0;
 
@@ -70,11 +73,24 @@ private:
 	unsigned int totScanlines = 262;
 	bool hdmaStartedForThisLine = false;
 
+	bool writeBreakpoint = false;
+
 public:
+
+	bool getWriteBreakpoint() { return writeBreakpoint; }
 
 	ppu();
 	void writeRegister(int reg, unsigned char val);
-	void setINIDISP(unsigned char val) { iniDisp = val; }
+	void setINIDISP(unsigned char val) 
+	{ 
+		iniDisp = val; 
+		/*if ((screenDisabled & 0x80) && (!(val & 0x80)))
+		{
+			resetOAMAddress();
+		}*/
+		screenDisabled = val & 0x80;
+	}
+	
 	void setOBSEL(unsigned char val) { obSel = val; }
 	void writeBgScrollX(int bgId, unsigned char val);
 	void writeBgScrollY(int bgId, unsigned char val);
