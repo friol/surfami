@@ -22,6 +22,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x0f,4,"ORA param0",AbsoluteLong,false,false,true}, // validatedF
 	{0x10,2,"BPL param0",Immediate8,false,false,true}, // validatedF
 	{0x11,2,"ORA (param0),Y",Immediate8,false,false,true}, // validatedF
+	{0x12,2,"ORA (param0)",Immediate8,false,false,true}, // validatedF
 	{0x14,2,"TRB param0",Immediate8,false,false,true}, // validatedF
 	{0x15,2,"ORA param0,X",Immediate8,false,false,true}, // validatedF
 	{0x16,2,"ASL param0,X",Immediate8,false,false,true}, // validatedF
@@ -182,15 +183,16 @@ static const debugInfoRec debugInstrData[] =
 	{0xBf,4,"LDA param0,X",AbsoluteLong,false,false,true}, // validatedF
 	{0xBD,3,"LDA param0,X",Absolute16,false,false,true}, // validatedF
 	{0xC0,2,"CPY param0",Immediate,true,false,true}, // Fck
-	{0xC3,2,"CMP param0,S",Immediate8,false,false,true}, // validatedF
+	{0xC2,2,"REP param0",Immediate8,false,false,true }, // validatedF
+	{0xC3,2,"CMP param0,S",Immediate8,false,false,true }, // validatedF
+	{0xC4,2,"CPY param0",Immediate8,false,false,true }, // validatedF fck
 	{0xC5,2,"CMP param0",Immediate8,false,false,true}, // validatedF
 	{0xC6,2,"DEC param0",Immediate8,false,false,true}, // validatedF
 	{0xC7,2,"CMP [param0]",Immediate8,false,false,true}, // validatedF
 	{0xC8,1,"INY",None,false,false,true}, // validatedF
 	{0xC9,2,"CMP param0",Immediate,false,true,true}, // validatedF
-	{0xC2,2,"REP param0",Immediate8,false,false,true}, // validatedF
-	{0xC4,2,"CPY param0",Immediate8,false,false,true}, // validatedF fck
 	{0xCA,1,"DEX",None,false,false,true }, // validatedF
+	{0xCB,1,"WAI",None,false,false,true},
 	{0xCC,3,"CPY param0",Absolute16,false,false,true}, // validatedF
 	{0xCD,3,"CMP param0",Absolute16,false,false,true}, // validatedF
 	{0xCE,3,"DEC param0",Absolute16,false,false,true}, // validatedF

@@ -34,6 +34,17 @@ private:
 	unsigned char BGSCROLL_L1;
 	unsigned char BGSCROLL_L2;
 
+	// mode se7en
+	int m7matrix[8];
+	int m7prev = 0;
+	bool m7largeField;
+	bool m7charFill;
+	bool m7xFlip;
+	bool m7yFlip;
+	bool m7extBg;
+	int m7startX;
+	int m7startY;
+
 	const int vramViewerXsize = 256;
 	const int vramViewerYsize = 256;
 	unsigned char* vramViewerBitmap;
@@ -60,8 +71,11 @@ private:
 	void renderSprites();
 	void renderSpritesScanline(int scanlinenum);
 
-	void buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int baseTileAddr);
+	void calculateMode7Starts(int y);
+	int getPixelForMode7(int x,int layer,bool priority);
+	void renderMode7Scanline(int scanlinenum);
 
+	void buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int baseTileAddr);
 	void calcOffsetPerTileScroll(unsigned short int bg3word, unsigned short int bg3word2, int bgnum, int& xscroll, int& yscroll);
 
 	unsigned int scanline=0;
@@ -95,6 +109,11 @@ public:
 	void writeBgScrollX(int bgId, unsigned char val);
 	void writeBgScrollY(int bgId, unsigned char val);
 	unsigned char vmDataRead(unsigned int port);
+
+	void writeM7HOFS(unsigned char val);
+	void writeM7VOFS(unsigned char val);
+	void writeM7Matrix(int mtxparm,unsigned char val);
+	void writeM7SEL(unsigned char val);
 	
 	void writeOAMAddressLow(unsigned char val) 
 	{ 

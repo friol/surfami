@@ -33,11 +33,58 @@ ppu::ppu()
 	}
 }
 
+void ppu::writeM7HOFS(unsigned char val)
+{
+	m7matrix[6] = ((val << 8) | m7prev) & 0x1fff;
+	m7prev = val;
+}
+
+void ppu::writeM7VOFS(unsigned char val)
+{
+	m7matrix[7] = ((val << 8) | m7prev) & 0x1fff;
+	m7prev = val;
+}
+
+void ppu::writeM7Matrix(int mtxparm, unsigned char val)
+{
+	if (mtxparm < 4)
+	{
+		m7matrix[mtxparm] = (val << 8) | m7prev;
+		m7prev = val;
+	}
+	else
+	{
+		m7matrix[mtxparm] = ((val << 8) | m7prev) & 0x1fff;
+		m7prev = val;
+	}
+}
+
+void ppu::writeM7SEL(unsigned char val)
+{
+	/*
+		211Ah - M7SEL - Rotation/Scaling Mode Settings (W)
+		7-6   Screen Over (see below)
+		5-2   Not used
+		1     Screen V-Flip (0=Normal, 1=Flipped)     ;\flip 256x256 "screen"
+		0     Screen H-Flip (0=Normal, 1=Flipped)     ;/
+
+		Screen Over (when exceeding the 128x128 tile BG Map size):
+		0=Wrap within 128x128 tile area
+		1=Wrap within 128x128 tile area (same as 0)
+		2=Outside 128x128 tile area is Transparent
+		3=Outside 128x128 tile area is filled by Tile 00h
+	*/
+
+	m7largeField = val & 0x80;
+	m7charFill = val & 0x40;
+	m7yFlip = val & 0x2;
+	m7xFlip = val & 0x1;
+}
+
 void ppu::writeBgScrollX(int bgId,unsigned char val)
 {
 	bgScrollX[bgId] = (val << 8) | (BGSCROLL_L1 & ~7) | ((bgScrollX[bgId] >> 8) & 7);
 	BGSCROLL_L1 = val;
-	//BGSCROLL_L2 = val;
 }
 
 void ppu::writeBgScrollY(int bgId, unsigned char val)
@@ -330,7 +377,7 @@ void ppu::tileViewerRenderTile2bpp(int px, int py, int tileAddr)
 
 void ppu::tileViewerRenderTiles()
 {
-	int tileAddr = 0;//0x1400;
+	int tileAddr = 0x1400;
 	for (int y = 0;y < 24;y++)
 	{
 		for (int x = 0;x < 16;x++)
@@ -879,7 +926,7 @@ void ppu::renderBGScanline(int bgnum, int bpp, int scanlinenum)
 					}
 					else if ((bgMode & 0x07) == 4)
 					{
-						bg3word = vram[bg3baseTileAddr + (bg3realx & 0x3f) ];
+						bg3word = vram[bg3baseTileAddr + (bg3realx & 0x3f)];
 					}
 
 					calcOffsetPerTileScroll(bg3word, bg3word2, bgnum, xscroll, yscroll);
@@ -1180,6 +1227,111 @@ void ppu::resetAppoBuffers()
 	}
 }
 
+void ppu::calculateMode7Starts(int y)
+{
+	// expand 13-bit values to signed values
+	int hScroll = ((signed short int)(m7matrix[6] << 3)) >> 3;
+	int vScroll = ((signed short int)(m7matrix[7] << 3)) >> 3;
+	int xCenter = ((signed short int)(m7matrix[4] << 3)) >> 3;
+	int yCenter = ((signed short int)(m7matrix[5] << 3)) >> 3;
+
+	// do calculation
+	int clippedH = hScroll - xCenter;
+	int clippedV = vScroll - yCenter;
+	clippedH = (clippedH & 0x2000) ? (clippedH | ~1023) : (clippedH & 1023);
+	clippedV = (clippedV & 0x2000) ? (clippedV | ~1023) : (clippedV & 1023);
+
+	int ry = m7yFlip ? 255 - y : y;
+	m7startX = (
+		((m7matrix[0] * clippedH) & ~63) +
+		((m7matrix[1] * ry) & ~63) +
+		((m7matrix[1] * clippedV) & ~63) +
+		(xCenter << 8)
+		);
+	m7startY = (
+		((m7matrix[2] * clippedH) & ~63) +
+		((m7matrix[3] * ry) & ~63) +
+		((m7matrix[3] * clippedV) & ~63) +
+		(yCenter << 8)
+		);
+}
+
+int ppu::getPixelForMode7(int x, int layer, bool priority) 
+{
+	unsigned char rx = m7xFlip ? 255 - x : x;
+	int xPos = (m7startX + m7matrix[0] * rx) >> 8;
+	int yPos = (m7startY + m7matrix[2] * rx) >> 8;
+	bool outsideMap = xPos < 0 || xPos >= 1024 || yPos < 0 || yPos >= 1024;
+	xPos &= 0x3ff;
+	yPos &= 0x3ff;
+	if (!m7largeField) outsideMap = false;
+	unsigned char tile = outsideMap ? 0 : vram[(yPos >> 3) * 128 + (xPos >> 3)] & 0xff;
+	unsigned char pixel = outsideMap && !m7charFill ? 0 : vram[tile * 64 + (yPos & 7) * 8 + (xPos & 7)] >> 8;
+	/*if (layer == 1) {
+		if (((bool)(pixel & 0x80)) != priority) return 0;
+		return pixel & 0x7f;
+	}*/
+	return pixel;
+}
+
+void ppu::renderMode7Scanline(int scanlinenum)
+{
+	unsigned char* palArr = new unsigned char[3 * 256];
+	unsigned int colidx = 0;
+
+	for (int col = 0;col < 256;col++)
+	{
+		unsigned int palcol = (((int)(cgram[colidx + 1] & 0x7f)) << 8) | cgram[colidx];
+		int red = palcol & 0x1f; red <<= 3;
+		int green = (palcol >> 5) & 0x1f; green <<= 3;
+		int blue = (palcol >> 10) & 0x1f; blue <<= 3;
+
+		palArr[(col * 3) + 0] = (unsigned char)red;
+		palArr[(col * 3) + 1] = (unsigned char)green;
+		palArr[(col * 3) + 2] = (unsigned char)blue;
+
+		colidx += 2;
+	}
+
+	//
+
+	calculateMode7Starts(scanlinenum);
+
+	unsigned char* pBuf = &screenFramebuffer[(scanlinenum * ppuResolutionX * 4)];
+	for (int x = 0;x < 256;x++)
+	{
+		unsigned char colNum = getPixelForMode7(x, 0, false);
+		*pBuf = palArr[(colNum * 3) + 0]; pBuf++;
+		*pBuf = palArr[(colNum * 3) + 1]; pBuf++;
+		*pBuf = palArr[(colNum * 3) + 2]; pBuf++;
+		*pBuf = 0xff; pBuf++;
+	}
+
+	/*int tiley = scanlinenum / 8;
+
+	for (int x = 0;x < 32;x++)
+	{
+		unsigned int tileaddr = x + (tiley * 128);
+		unsigned int tileNum = vram[tileaddr] & 0xff;
+
+		unsigned int tiledataAddr = tileNum * 64;
+		tiledataAddr += 8 * (scanlinenum % 8);
+
+		unsigned char* pBuf = &screenFramebuffer[(scanlinenum * ppuResolutionX * 4)+(x*8*4)];
+		for (int bit = 0;bit < 8;bit++)
+		{
+			unsigned char colNum = vram[tiledataAddr + bit] >> 8;
+
+			*pBuf = palArr[(colNum * 3) + 0]; pBuf++;
+			*pBuf = palArr[(colNum * 3) + 1]; pBuf++;
+			*pBuf = palArr[(colNum * 3) + 2]; pBuf++;
+			*pBuf = 0xff; pBuf++;
+		}
+	}*/
+
+	delete(palArr);
+}
+
 void ppu::renderScanline(int scanlinenum)
 {
 	if ((scanlinenum < 0) || (scanlinenum >= 224)) return;
@@ -1200,12 +1352,6 @@ void ppu::renderScanline(int scanlinenum)
 
 	// rendering depends on screen mode
 	int screenMode = (bgMode & 0x07);
-
-	/*int bgTileSize[4];
-	bgTileSize[0] = (bgMode >> 4) & 0x01;
-	bgTileSize[1] = (bgMode >> 5) & 0x01;
-	bgTileSize[2] = (bgMode >> 6) & 0x01;
-	bgTileSize[3] = (bgMode >> 7) & 0x01;*/
 
 	resetAppoBuffers();
 
@@ -1273,11 +1419,9 @@ void ppu::renderScanline(int scanlinenum)
 	else if (screenMode == 0x01)
 	{
 		// 1      16-color    16-color    4-color     -         ;Normal
-		if ((((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1)) > 0)) renderBGScanline(1, 4,scanlinenum);
-		//if ( (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 0)>0))) renderBGScanline(0, 4, scanlinenum);
-		if ( (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) ) renderBGScanline(0, 4, scanlinenum);
-		//if ( (((mainScreenDesignation & 0x1f) & (1 << 2)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 2)>0))) renderBGScanline(2, 2, scanlinenum);
-		if ( (((mainScreenDesignation & 0x1f) & (1 << 2)) > 0) ) renderBGScanline(2, 2, scanlinenum);
+		if ((((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 0)))) renderBGScanline(0, 4, scanlinenum);
+		if ( (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1))) ) renderBGScanline(1, 4, scanlinenum);
+		if ((((mainScreenDesignation & 0x1f) & (1 << 2)) > 0)) renderBGScanline(2, 2, scanlinenum);
 
 		if (mainScreenDesignation & 0x10)
 		{
@@ -1435,8 +1579,7 @@ void ppu::renderScanline(int scanlinenum)
 	}
 	else if (screenMode == 0x04)
 	{
-		// TODO opt
-		if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBGScanline(1, 4, scanlinenum);
+		if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBGScanline(1, 2, scanlinenum);
 		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBGScanline(0, 8, scanlinenum);
 
 		if (mainScreenDesignation & 0x10)
@@ -1483,6 +1626,28 @@ void ppu::renderScanline(int scanlinenum)
 				*pfbuf = objColorAppo[(x * 4) + 2]; pfbuf++;
 				*pfbuf = 0xff; pfbuf++;
 			}
+		}
+	}
+	else if (screenMode == 0x07)
+	{
+		renderMode7Scanline(scanlinenum);
+
+		if (mainScreenDesignation & 0x10)
+		{
+			renderSpritesScanline(scanlinenum);
+		}
+
+		unsigned char* pfbuf = &screenFramebuffer[scanlinenum * ppuResolutionX * 4];
+		for (int x = 0;x < 256;x++)
+		{
+			if (!objIsTransparentAppo[x])
+			{
+				*pfbuf = objColorAppo[(x * 4) + 0]; pfbuf++;
+				*pfbuf = objColorAppo[(x * 4) + 1]; pfbuf++;
+				*pfbuf = objColorAppo[(x * 4) + 2]; pfbuf++;
+				*pfbuf = 0xff; pfbuf++;
+			}
+			else pfbuf += 4;
 		}
 	}
 

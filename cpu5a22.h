@@ -181,6 +181,7 @@ private:
 	bool irqRequested = false;
 	bool nmiRequested = false;
 	//bool nmiFlag = false;
+	bool waitingForIrq = false;
 
 	void pushToStack8(unsigned char val);
 	void pushToStack16(unsigned short int val);

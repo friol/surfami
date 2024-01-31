@@ -496,6 +496,17 @@ void mmu::write8(unsigned int address, unsigned char val)
 			pPPU->writeRegister(0x2119, val);
 			return;
 		}
+		else if (adr == 0x211a)
+		{
+			// 211Ah - M7SEL   - Rotation/Scaling Mode Settings
+			pPPU->writeM7SEL(val);
+			return;
+		}
+		else if ((adr == 0x211b) || (adr == 0x211c) || (adr == 0x211d) || (adr == 0x211e)||(adr==0x211f)||(adr==0x2120))
+		{
+			pPPU->writeM7Matrix(adr - 0x211b, val);
+			return;
+		}
 		else if (adr == 0x210B)
 		{
 			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x210B (BG tile base address lower)");
@@ -519,6 +530,10 @@ void mmu::write8(unsigned int address, unsigned char val)
 			int bgid = (adr - 0x210D)>>1;
 			//if (bgid==0) glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to BG "+std::to_string(bgid) + " scroll X");
 			pPPU->writeBgScrollX(bgid, val);
+			if (adr == 0x210d)
+			{
+				pPPU->writeM7HOFS(val);
+			}
 			return;
 		}
 		else if ((adr == 0x210E) || (adr == 0x2110) || (adr == 0x2112) || (adr == 0x2114))
@@ -526,6 +541,10 @@ void mmu::write8(unsigned int address, unsigned char val)
 			int bgid = (adr - 0x210E)>>1;
 			//if (bgid == 0) glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to BG " + std::to_string(bgid) + " scroll Y");
 			pPPU->writeBgScrollY(bgid, val);
+			if (adr == 0x210e)
+			{
+				pPPU->writeM7VOFS(val);
+			}
 			return;
 		}
 		else if ((adr == 0x2140) || (adr == 0x2141) || (adr == 0x2142) || (adr == 0x2143))
@@ -670,7 +689,7 @@ unsigned char mmu::read8(unsigned int address)
 			// 4017h/Read - JOYB - Joypad Input Register B (R) TODO
 			return 0x1c;
 		}
-		else if ((adr == 0x4218)/* || (adr == 0x421a)*/)
+		else if (adr == 0x4218)
 		{
 			unsigned char res = 0;
 			if (isKeyAPressed)
@@ -684,7 +703,7 @@ unsigned char mmu::read8(unsigned int address)
 
 			return res;
 		}
-		else if ((adr == 0x4219)/* || (adr == 0x421b)*/)
+		else if (adr == 0x4219)
 		{
 			unsigned char res = 0;
 			if (isKeySelectPressed)

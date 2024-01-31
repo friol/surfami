@@ -519,6 +519,12 @@ int cpu5a22::stepOne()
 {
 	if (nmiRequested)
 	{
+		if (waitingForIrq)
+		{
+			regPC += 1;
+			waitingForIrq = false;
+		}
+
 		pushToStack8(regPB);
 		pushToStack8((unsigned char)(regPC >> 8));
 		pushToStack8((unsigned char)(regPC & 0xff));
@@ -535,6 +541,12 @@ int cpu5a22::stepOne()
 	{
 		if (regP.getIRQDisable() == 0)
 		{
+			if (waitingForIrq)
+			{
+				regPC += 1;
+				waitingForIrq = false;
+			}
+
 			pushToStack8(regPB);
 			pushToStack8((unsigned char)(regPC >> 8));
 			pushToStack8((unsigned char)(regPC & 0xff));
@@ -6224,6 +6236,48 @@ int cpu5a22::stepOne()
 
 			regPC += 2;
 			cycles = 7 + cycAdder;
+			break;
+		}
+		case 0xcb:
+		{
+			// WAI
+			waitingForIrq = true;
+			cycles = 2;
+			break;
+		}
+		case 0x12:
+		{
+			// ORA (dp)
+			int cycAdder = 0;
+			unsigned int addr = getDirectPageIndirectAddress();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				unsigned char res = val | regA_lo;
+				regA_lo = res;
+				regP.setNegative(res >> 7);
+				regP.setZero(res == 0);
+			}
+			else
+			{
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned short int val = (hi << 8) | lo;
+				unsigned short int res = val | (regA_lo | (regA_hi << 8));
+
+				regA_lo = res & 0xff;
+				regA_hi = res >> 8;
+
+				regP.setNegative(res >> 15);
+				regP.setZero(res == 0);
+				cycAdder = 1;
+			}
+
+			if (regP.isDPLowNotZero()) cycAdder += 1;
+
+			regPC += 2;
+			cycles = 5 + cycAdder;
 			break;
 		}
 		default:
