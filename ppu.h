@@ -1,6 +1,9 @@
 #ifndef PPU_H
 #define PPU_H
 
+#include <vector>
+#include <string>
+
 class mmu;
 class cpu5a22;
 
@@ -35,7 +38,7 @@ private:
 	unsigned char BGSCROLL_L2;
 
 	// mode se7en
-	int m7matrix[8];
+	signed short int m7matrix[8] = { 0,0,0,0,0,0,0,0 };
 	int m7prev = 0;
 	bool m7largeField;
 	bool m7charFill;
@@ -151,6 +154,9 @@ public:
 	void step(int numCycles,mmu& theMMU,cpu5a22& theCPU);
 	bool isVBlankActive() { return scanline >= vblankStartScanline; }
 	int getInternalCyclesCounter() { return internalCyclesCounter; }
+
+	std::vector<std::string> getM7Matrix();
+	int getMPY(unsigned int addr);
 
 	unsigned short int* getVRAMPtr() { return vram; }
 	void setStandard(int val) 

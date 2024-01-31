@@ -408,10 +408,11 @@ void mmu::write8(unsigned int address, unsigned char val)
 			// WMDATA - WRAM Data Read/Write (R/W)
 			unsigned int waddr = (wram281x[0] | (wram281x[1] << 8) | (wram281x[2] << 16)) & 0x1ffff;
 			snesRAM[0x7e0000 + waddr] = val;
+			//snesRAM[waddr] = val;
 			waddr += 1; waddr &= 0x1ffff;
 			wram281x[0] = waddr & 0xff;
 			wram281x[1] = (waddr>>8) & 0xff;
-			wram281x[2] = (waddr>>16) & 0x01;
+			wram281x[2] = (waddr>>16) & 0xff;
 			return;
 		}
 		else if ((adr == 0x2181) || (adr == 0x2182) || (adr == 0x2183))
@@ -502,7 +503,7 @@ void mmu::write8(unsigned int address, unsigned char val)
 			pPPU->writeM7SEL(val);
 			return;
 		}
-		else if ((adr == 0x211b) || (adr == 0x211c) || (adr == 0x211d) || (adr == 0x211e)||(adr==0x211f)||(adr==0x2120))
+		else if ((adr == 0x211b) || (adr == 0x211c) || (adr == 0x211d) || (adr == 0x211e)|| (adr==0x211f)|| (adr==0x2120))
 		{
 			pPPU->writeM7Matrix(adr - 0x211b, val);
 			return;
@@ -621,6 +622,10 @@ unsigned char mmu::read8(unsigned int address)
 			return snesRAM[0x7e0000 + waddr];
 			// TODO: increment address on read?
 		}
+		else if ((adr == 0x2134) || (adr == 0x2135) || (adr == 0x2136))
+		{
+			return pPPU->getMPY(adr);
+		}
 		else if (adr == 0x2138)
 		{
 			//	PPU - RDOAM - Read OAM Data (R)
@@ -699,6 +704,14 @@ unsigned char mmu::read8(unsigned int address)
 			if (isKeyXPressed)
 			{
 				res |= 0x40;
+			}
+			if (isKeyLPressed)
+			{
+				res |= 0x20;
+			}
+			if (isKeyRPressed)
+			{
+				res |= 0x10;
 			}
 
 			return res;

@@ -25,6 +25,10 @@ ppu::ppu()
 	}
 
 	screenFramebuffer = new unsigned char[ppuResolutionX * ppuResolutionY * 4];
+	for (int pos = 0;pos < (ppuResolutionX * ppuResolutionY * 4);pos++)
+	{
+		screenFramebuffer[pos] = 0;
+	}
 
 	vramViewerBitmap = new unsigned char[vramViewerXsize * vramViewerYsize * 4];
 	for (int pos = 0;pos < (vramViewerXsize * vramViewerYsize * 4);pos++)
@@ -50,13 +54,13 @@ void ppu::writeM7Matrix(int mtxparm, unsigned char val)
 	if (mtxparm < 4)
 	{
 		m7matrix[mtxparm] = (val << 8) | m7prev;
-		m7prev = val;
 	}
 	else
 	{
 		m7matrix[mtxparm] = ((val << 8) | m7prev) & 0x1fff;
-		m7prev = val;
 	}
+
+	m7prev = val;
 }
 
 void ppu::writeM7SEL(unsigned char val)
@@ -349,6 +353,25 @@ void ppu::getPalette(unsigned char* destArr)
 	{
 		destArr[b] = cgram[b];
 	}
+}
+
+int ppu::getMPY(unsigned int addr)
+{
+	int result = m7matrix[0] * (m7matrix[1] >> 8);
+	unsigned char openbus = (result >> (8 * (addr - 0x2134))) & 0xff;
+	return openbus;
+}
+
+std::vector<std::string> ppu::getM7Matrix()
+{
+	std::vector<std::string> m7vec;
+
+	for (int i = 0;i < 4;i++)
+	{
+		m7vec.push_back("m7matrix["+std::to_string(i)+"] "+std::to_string(m7matrix[i]));
+	}
+
+	return m7vec;
 }
 
 void ppu::tileViewerRenderTile2bpp(int px, int py, int tileAddr)
@@ -1227,6 +1250,8 @@ void ppu::resetAppoBuffers()
 	}
 }
 
+/* this fantastic code comes from https://github.com/angelo-wf/LakeSnes. Probably would have taken ages to write it by myself */
+
 void ppu::calculateMode7Starts(int y)
 {
 	// expand 13-bit values to signed values
@@ -1235,13 +1260,12 @@ void ppu::calculateMode7Starts(int y)
 	int xCenter = ((signed short int)(m7matrix[4] << 3)) >> 3;
 	int yCenter = ((signed short int)(m7matrix[5] << 3)) >> 3;
 
-	// do calculation
 	int clippedH = hScroll - xCenter;
 	int clippedV = vScroll - yCenter;
 	clippedH = (clippedH & 0x2000) ? (clippedH | ~1023) : (clippedH & 1023);
 	clippedV = (clippedV & 0x2000) ? (clippedV | ~1023) : (clippedV & 1023);
 
-	int ry = m7yFlip ? 255 - y : y;
+	unsigned char ry = m7yFlip ? 255 - y : y;
 	m7startX = (
 		((m7matrix[0] * clippedH) & ~63) +
 		((m7matrix[1] * ry) & ~63) +

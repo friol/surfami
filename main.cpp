@@ -161,10 +161,11 @@ void displayRomLoadingLogWindow(std::vector<std::string>& romLoadingLog)
     ImGui::End();
 }
 
-void displayRegistersWindow(cpu5a22& theCPU,unsigned long int totCPUCycles)
+void displayRegistersWindow(cpu5a22& theCPU,ppu& thePPU,unsigned long int totCPUCycles)
 {
     ImGui::Begin("Registers window");
     std::vector<std::string> regInfo = theCPU.getRegistersInfo();
+    std::vector<std::string> m7regInfo = thePPU.getM7Matrix();
 
     for (auto& line : regInfo)
     {
@@ -173,6 +174,11 @@ void displayRegistersWindow(cpu5a22& theCPU,unsigned long int totCPUCycles)
 
     std::string cycles = "Tot cycles:" + std::to_string(totCPUCycles);
     ImGui::Text(cycles.c_str());
+
+    for (auto& line : m7regInfo)
+    {
+        ImGui::Text(line.c_str());
+    }
 
     ImGui::End();
 }
@@ -441,7 +447,7 @@ void displayMemoryWindow(mmu& theMMU,ppu& thePPU,int& baseAddress)
     int hSteps = 16;
     int rows = 20;
     //int curAddr = 0x1400;//baseAddress;
-    int curAddr = 0x1400;//baseAddress;
+    int curAddr = 0;//baseAddress;
     //int curAddr = 0x1be6;
     int bgmode = thePPU.getCurrentBGMode();
     bgmode++;
@@ -455,21 +461,21 @@ void displayMemoryWindow(mmu& theMMU,ppu& thePPU,int& baseAddress)
         strr << std::hex << std::setw(6) << std::setfill('0') << curAddr;
         sRow += strr.str() + "  ";
 
-        for (int x = 0;x < hSteps;x+=2)
+        for (int x = 0;x < hSteps;x+=1)
         {
             //unsigned char byteSized0 = *pOAM;
             //pOAM++;
-            //unsigned char byteSized0 = theMMU.read8(curAddr);
-            unsigned char byteSized0 = thePPU.getVRAMPtr()[curAddr]&0xff;
-            unsigned char byteSized1 = thePPU.getVRAMPtr()[curAddr]>>8;
+            unsigned char byteSized0 = theMMU.read8(curAddr);
+            //unsigned char byteSized0 = thePPU.getVRAMPtr()[curAddr]&0xff;
+            //unsigned char byteSized1 = thePPU.getVRAMPtr()[curAddr]>>8;
 
             std::stringstream strrloc;
             strrloc << std::hex << std::setw(2) << std::setfill('0') << (int)byteSized0;
             sRow += strrloc.str()+" ";
 
-            std::stringstream strr2;
+            /*std::stringstream strr2;
             strr2 << std::hex << std::setw(2) << std::setfill('0') << (int)byteSized1;
-            sRow += strr2.str() + " ";
+            sRow += strr2.str() + " ";*/
 
             curAddr += 1;
         }
@@ -625,7 +631,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\HDMA\\HiColor64PerTileRow\\HiColor64PerTileRow.sfc"; 
     //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\HDMA\\WaveHDMA\\WaveHDMA.sfc"; 
     //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\HDMA\\RedSpaceIndirectHDMA\\RedSpaceIndirectHDMA.sfc";
-    std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\Mode7\\RotZoom\\RotZoom.sfc";
+    //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\Mode7\\RotZoom\\RotZoom.sfc";
+    //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\Mode7\\StarWars\\StarWars.sfc";
+    //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\Mode7\\Perspective\\Perspective.sfc";
 
     //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc"; // 56 db
     //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
@@ -641,8 +649,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Parodius Da! - Shinwa kara Owarai e (Japan).sfc";
     //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // mode4
     //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc";
-    //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // f3
-    //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc"; // 96
+    std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // f3
+    //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc";
     //std::string romName = "d:\\prova\\snes\\Frogger (U).smc"; // corrupted frog, cars are not moving
     //std::string romName = "d:\\prova\\snes\\Race Drivin' (U).smc"; 
     //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc";
@@ -669,7 +677,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\International Superstar Soccer (U) [!].smc"; // 56 96
     //std::string romName = "D:\\prova\\snes\\SNES-master\\Games\\MonsterFarmJump\\MonsterFarmJump.sfc";
 
-    //std::string romName = "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc"; // crash
+    //std::string romName = "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc"; // crash on wai
     //std::string romName = "d:\\prova\\snes\\elix-smashit-pal.sfc"; 
     //std::string romName = "D:\\prova\\snes\\demos\\elix-nu-pal.sfc"; // SPC
     //std::string romName = "D:\\prova\\snes\\demos\\2.68 MHz Demo (PD).smc"; // doesn't work
@@ -1297,6 +1305,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
             {
                 theMMU.pressYKey(false);
             }
+
+            if (ImGui::IsKeyPressed(ImGuiKey_A))
+            {
+                theMMU.pressLKey(true);
+            }
+            else if (ImGui::IsKeyReleased(ImGuiKey_A))
+            {
+                theMMU.pressLKey(false);
+            }
+
+            if (ImGui::IsKeyPressed(ImGuiKey_S))
+            {
+                theMMU.pressRKey(true);
+            }
+            else if (ImGui::IsKeyReleased(ImGuiKey_S))
+            {
+                theMMU.pressRKey(false);
+            }
         }
 
         ImGui_ImplOpenGL3_NewFrame();
@@ -1309,7 +1335,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         bool rush = false;
         int rushToAddress = 0;
         displayDebugWindow(theCPU, theDebugger5a22,theMMU,isDebugWindowFocused,rush,rushToAddress,jumpToAppoBuf,totCPUCycles,emustatus,thePPU);
-        displayRegistersWindow(theCPU,totCPUCycles);
+        displayRegistersWindow(theCPU,thePPU,totCPUCycles);
         displayPaletteWindow(thePPU);
         displayLogWindow();
         displayVRAMViewerWindow(vramRenderTexture, thePPU.getVRAMViewerXsize(), thePPU.getVRAMViewerYsize(), thePPU.getVRAMViewerBitmap(),thePPU);
@@ -1334,7 +1360,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
                 inst += 1;
 
                 //if ( ((theCPU.getPC()) == 0x808a5a) && thePPU.getWriteBreakpoint() )
-                if ( ((theCPU.getPC()) == 0x808a4d) && (theCPU.getX()==0x14fb))
+                //if ( ((theCPU.getPC()) == 0x808a4d) && (theCPU.getX()==0x14fb))
+                if ( ((theCPU.getPC()&0xffff) == 0x8278))
                 {
                     //emustatus = 0;
                 }

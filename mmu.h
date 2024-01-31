@@ -67,6 +67,8 @@ private:
 	bool isKeyBPressed = false;
 	bool isKeyXPressed = false;
 	bool isKeyYPressed = false;
+	bool isKeyLPressed = false;
+	bool isKeyRPressed = false;
 
 public:
 
@@ -96,6 +98,8 @@ public:
 	void pressBKey(bool val) { isKeyBPressed = val; }
 	void pressXKey(bool val) { isKeyXPressed = val; }
 	void pressYKey(bool val) { isKeyYPressed = val; }
+	void pressLKey(bool val) { isKeyLPressed = val; }
+	void pressRKey(bool val) { isKeyRPressed = val; }
 	~mmu();
 };
 
