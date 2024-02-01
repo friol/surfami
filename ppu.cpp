@@ -25,7 +25,7 @@ ppu::ppu()
 	}
 
 	screenFramebuffer = new unsigned char[ppuResolutionX * ppuResolutionY * 4];
-	for (int pos = 0;pos < (ppuResolutionX * ppuResolutionY * 4);pos++)
+	for (unsigned int pos = 0;pos < (ppuResolutionX * ppuResolutionY * 4);pos++)
 	{
 		screenFramebuffer[pos] = 0;
 	}
@@ -51,9 +51,14 @@ void ppu::writeM7VOFS(unsigned char val)
 
 void ppu::writeM7Matrix(int mtxparm, unsigned char val)
 {
+	if (mtxparm >= 8)
+	{
+		int err = 1;
+	}
+
 	if (mtxparm < 4)
 	{
-		m7matrix[mtxparm] = (val << 8) | m7prev;
+		m7matrix[mtxparm] = (signed short int)((val << 8) | m7prev);
 	}
 	else
 	{
@@ -87,34 +92,28 @@ void ppu::writeM7SEL(unsigned char val)
 
 void ppu::writeBgScrollX(int bgId,unsigned char val)
 {
+	if (bgId >= 4)
+	{
+		int err = 1;
+	}
+
 	bgScrollX[bgId] = (val << 8) | (BGSCROLL_L1 & ~7) | ((bgScrollX[bgId] >> 8) & 7);
 	BGSCROLL_L1 = val;
 }
 
 void ppu::writeBgScrollY(int bgId, unsigned char val)
 {
+	if (bgId >= 4)
+	{
+		int err = 1;
+	}
+
 	bgScrollY[bgId] = (val << 8) | BGSCROLL_L1;
 	BGSCROLL_L1 = val;
 }
 
 void ppu::writeOAM(unsigned char val)
 {
-	/*if (OAMAddr % 2 == 0)
-	{
-		OAM_Lsb = val;
-	}
-	else if (OAMAddr % 2 == 1 && OAMAddr < 0x200) 
-	{
-		OAM[OAMAddr - 1] = OAM_Lsb;
-		OAM[OAMAddr] = val;
-	}
-	if (OAMAddr > 0x1ff) 
-	{
-		OAM[OAMAddr] = val;
-	}
-	
-	OAMAddr++;*/
-
 	unsigned char latch_bit = OAMAddr & 1;
 	unsigned short int address = OAMAddr;
 	OAMAddr = (OAMAddr + 1) & 0x03ff;
@@ -125,10 +124,22 @@ void ppu::writeOAM(unsigned char val)
 	}
 	if (address & 0x0200)
 	{
+		if (address >= 0x220)
+		{
+			// TODO: why does this happen?
+			int err = 1;
+			return;
+		}
+
 		OAM[address] = val;
 	}
 	else if (latch_bit == 1)
 	{
+		if ((address & ~1) >= 0x220)
+		{
+			int err = 1;
+		}
+
 		OAM[(address & ~1) + 1] = val;
 		OAM[(address & ~1)] = OAM_Lsb;
 	}
@@ -355,7 +366,7 @@ void ppu::getPalette(unsigned char* destArr)
 	}
 }
 
-int ppu::getMPY(unsigned int addr)
+unsigned char ppu::getMPY(unsigned int addr)
 {
 	int result = m7matrix[0] * (m7matrix[1] >> 8);
 	unsigned char openbus = (result >> (8 * (addr - 0x2134))) & 0xff;
@@ -400,7 +411,7 @@ void ppu::tileViewerRenderTile2bpp(int px, int py, int tileAddr)
 
 void ppu::tileViewerRenderTiles()
 {
-	int tileAddr = 0x1400;
+	/*int tileAddr = 0x1400;
 	for (int y = 0;y < 24;y++)
 	{
 		for (int x = 0;x < 16;x++)
@@ -408,7 +419,7 @@ void ppu::tileViewerRenderTiles()
 			tileViewerRenderTile2bpp(x * 8, y * 8, tileAddr);
 			tileAddr += 8;
 		}
-	}
+	}*/
 }
 
 void ppu::renderBackdrop()
@@ -1265,7 +1276,7 @@ void ppu::calculateMode7Starts(int y)
 	clippedH = (clippedH & 0x2000) ? (clippedH | ~1023) : (clippedH & 1023);
 	clippedV = (clippedV & 0x2000) ? (clippedV | ~1023) : (clippedV & 1023);
 
-	unsigned char ry = m7yFlip ? 255 - y : y;
+	unsigned char ry = (unsigned char)(m7yFlip ? 255 - y : y);
 	m7startX = (
 		((m7matrix[0] * clippedH) & ~63) +
 		((m7matrix[1] * ry) & ~63) +
@@ -1280,9 +1291,12 @@ void ppu::calculateMode7Starts(int y)
 		);
 }
 
-int ppu::getPixelForMode7(int x, int layer, bool priority) 
+unsigned char ppu::getPixelForMode7(int x, int layer, bool priority) 
 {
-	unsigned char rx = m7xFlip ? 255 - x : x;
+	priority++;
+	layer++;
+
+	unsigned char rx = (unsigned char)(m7xFlip ? 255 - x : x);
 	int xPos = (m7startX + m7matrix[0] * rx) >> 8;
 	int yPos = (m7startY + m7matrix[2] * rx) >> 8;
 	bool outsideMap = xPos < 0 || xPos >= 1024 || yPos < 0 || yPos >= 1024;

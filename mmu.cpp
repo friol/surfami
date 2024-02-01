@@ -599,6 +599,11 @@ void mmu::write8(unsigned int address, unsigned char val)
 	}
 	else
 	{
+		if (address >= 0x1000000)
+		{
+			int err = 11;
+		}
+
 		snesRAM[address] = val;
 	}
 }
@@ -780,7 +785,17 @@ unsigned char mmu::read8(unsigned int address)
 			else return snesRAM[address];
 		}
 
+		if (address >= 0x1000000)
+		{
+			int err = 11;
+		}
+
 		return snesRAM[address];
+	}
+
+	if (address >= 0x1000000)
+	{
+		int err = 11;
 	}
 
 	return snesRAM[address];

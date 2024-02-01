@@ -11,6 +11,9 @@ class ppu
 {
 private:
 
+	unsigned int ppuResolutionX = 256;
+	unsigned int ppuResolutionY = 224;
+
 	int standard = 0; // 0 NTSC, 1 PAL
 	int cgramIdx = 0;
 	unsigned char cgram[512];
@@ -53,9 +56,6 @@ private:
 	unsigned char* vramViewerBitmap;
 	void tileViewerRenderTile2bpp(int px, int py, int tileAddr);
 
-	unsigned int ppuResolutionX = 256;
-	unsigned int ppuResolutionY = 224;
-
 	unsigned char bgColorAppo[4][256 * 4];
 	unsigned char bgPriorityAppo[4][256];
 	bool bgIsTransparentAppo[4][256];
@@ -75,7 +75,7 @@ private:
 	void renderSpritesScanline(int scanlinenum);
 
 	void calculateMode7Starts(int y);
-	int getPixelForMode7(int x,int layer,bool priority);
+	unsigned char getPixelForMode7(int x,int layer,bool priority);
 	void renderMode7Scanline(int scanlinenum);
 
 	void buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int baseTileAddr);
@@ -156,7 +156,7 @@ public:
 	int getInternalCyclesCounter() { return internalCyclesCounter; }
 
 	std::vector<std::string> getM7Matrix();
-	int getMPY(unsigned int addr);
+	unsigned char getMPY(unsigned int addr);
 
 	unsigned short int* getVRAMPtr() { return vram; }
 	void setStandard(int val) 

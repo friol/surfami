@@ -434,7 +434,6 @@ void displaySNESScreenWindow(GLuint renderTexture, int image_width, int image_he
     }
     else isWindowFocused = false;
 
-    //thePPU.renderScreen();
     renderToTexture(renderTexture, image_width, image_height, parr);
 
     ImGui::End();
@@ -447,12 +446,12 @@ void displayMemoryWindow(mmu& theMMU,ppu& thePPU,int& baseAddress)
     int hSteps = 16;
     int rows = 20;
     //int curAddr = 0x1400;//baseAddress;
-    int curAddr = 0;//baseAddress;
+    int curAddr = baseAddress;
     //int curAddr = 0x1be6;
     int bgmode = thePPU.getCurrentBGMode();
     bgmode++;
 
-    unsigned char* pOAM = thePPU.getOAMPtr();
+    //unsigned char* pOAM = thePPU.getOAMPtr();
 
     for (int r = 0;r < rows;r++)
     {
@@ -593,7 +592,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     romLoader theRomLoader;
     //std::string romName = "d:\\prova\\snes\\HelloWorld.sfc";
     //std::string romName = "d:\\prova\\snes\\BANKWRAM.sfc";
-
     //std::string romName = "d:\\prova\\snes\\CPUMOV.sfc";
     //std::string romName = "d:\\prova\\snes\\CPUDEC.sfc";
     //std::string romName = "d:\\prova\\snes\\CPUAND.sfc"; // 31 unk
@@ -635,13 +633,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\Mode7\\StarWars\\StarWars.sfc";
     //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\Mode7\\Perspective\\Perspective.sfc";
 
-    //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc"; // 56 db
+    //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc"; // 56
     //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
     //std::string romName = "d:\\prova\\snes\\Final Fight (U).smc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc"; // 5f
     //std::string romName = "d:\\prova\\snes\\Lemmings (E).sfc"; // no sprites, crashes
     //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars + Super Mario World (USA).sfc"; 
+    //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars (U) [!].smc"; 
     //std::string romName = "d:\\prova\\snes\\Mario Paint (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Mickey Mania (E).smc"; // crash
     //std::string romName = "d:\\prova\\snes\\Pinball Dreams (E).smc";
@@ -649,7 +648,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Parodius Da! - Shinwa kara Owarai e (Japan).sfc";
     //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // mode4
     //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc";
-    std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // f3
+    //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // f3
+    //std::string romName = "d:\\prova\\snes\\Final Fantasy IV (J).smc"; // crashes
     //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc";
     //std::string romName = "d:\\prova\\snes\\Frogger (U).smc"; // corrupted frog, cars are not moving
     //std::string romName = "d:\\prova\\snes\\Race Drivin' (U).smc"; 
@@ -663,11 +663,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc";
     //std::string romName = "d:\\prova\\snes\\Sensible Soccer - International Edition (E).smc"; // blank screen
     //std::string romName = "d:\\prova\\snes\\Gun Force (E).smc";
-    //std::string romName = "d:\\prova\\snes\\The Legend Of Zelda -  A Link To The Past.smc";
+    std::string romName = "d:\\prova\\snes\\The Legend Of Zelda -  A Link To The Past.smc";
     //std::string romName = "d:\\prova\\snes\\Prince of Persia (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Yoshi's Cookie (E).smc"; // d2
     //std::string romName = "d:\\prova\\snes\\Sim City (E) [!].smc";
-    //std::string romName = "d:\\prova\\snes\\James Pond's Crazy Sports (E).smc"; // waits for 0x4212
+    //std::string romName = "d:\\prova\\snes\\James Pond's Crazy Sports (E).smc";
     //std::string romName = "d:\\prova\\snes\\Spanky's Quest (E).smc";
     //std::string romName = "d:\\prova\\snes\\Spectre (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Tetris Attack (E).smc"; 
@@ -1052,7 +1052,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x81f44b, 0xea);
         theMMU.write8(0x81f46b, 0xea);
         theMMU.write8(0x81f46c, 0xea);
+        theMMU.write8(0x81f55c, 0xea);
+        theMMU.write8(0x81f55d, 0xea);
 
+        //theMMU.write8(0x82f0b0, 0xea);
+        //theMMU.write8(0x82f0b1, 0xea);
     }
     else if (romName == "d:\\prova\\snes\\Lemmings (E).sfc")
     {
