@@ -75,7 +75,8 @@ void mmu::DMAstart(unsigned char val)
 			if (dma_mode == 0)
 			{
 				// 000 -> transfer 1 byte
-				while (((snesRAM[0x4306 + (dmaChannel * 0x10)] << 8) | snesRAM[0x4305 + (dmaChannel * 0x10)]) > 0)
+				//while (((snesRAM[0x4306 + (dmaChannel * 0x10)] << 8) | snesRAM[0x4305 + (dmaChannel * 0x10)]) > 0)
+				while (byteCount > 0)
 				{
 					if (!dma_dir)
 					{
@@ -99,14 +100,13 @@ void mmu::DMAstart(unsigned char val)
 			else if (dma_mode == 1)
 			{
 				//  001 -> transfer 2 bytes (xx, xx + 1) (e.g. VRAM)
-				while (((snesRAM[0x4306 + (dmaChannel * 0x10)] << 8) | snesRAM[0x4305 + (dmaChannel * 0x10)]) > 0)
+				//while (((snesRAM[0x4306 + (dmaChannel * 0x10)] << 8) | snesRAM[0x4305 + (dmaChannel * 0x10)]) > 0)
+				while (byteCount>0)
 				{
 					if (!dma_dir) 
 					{
-						//write8(0x2100 + BBusAddr, snesRAM[targetAddr]);
 						write8(0x2100 + BBusAddr, read8(targetAddr));
 						if (!--byteCount) return;
-						//write8(0x2100 + BBusAddr + 1, snesRAM[targetAddr + 1]);
 						write8(0x2100 + BBusAddr+1, read8(targetAddr+1));
 						if (!--byteCount) return;
 					}
@@ -128,7 +128,8 @@ void mmu::DMAstart(unsigned char val)
 			else if (dma_mode == 2)
 			{
 				//	002 -> transfer 2 bytes (xx, xx) (e.g. OAM / CGRAM)
-				while (((snesRAM[0x4306 + (dmaChannel * 0x10)] << 8) | snesRAM[0x4305 + (dmaChannel * 0x10)]) > 0)
+				//while (((snesRAM[0x4306 + (dmaChannel * 0x10)] << 8) | snesRAM[0x4305 + (dmaChannel * 0x10)]) > 0)
+				while (byteCount > 0)
 				{
 					if (!dma_dir)
 					{
@@ -171,7 +172,6 @@ void mmu::mmuDMATransfer(unsigned char dma_mode, unsigned char dma_dir, unsigned
 	case 0: 
 	{						//	transfer 1 byte (e.g. WRAM)
 		if (!dma_dir)
-			//write8(0x2100 + io_address, snesRAM[cpu_address]);
 			write8(0x2100 + io_address, read8(cpu_address));
 		else
 			write8(cpu_address, read8(0x2100 + io_address));
@@ -181,9 +181,7 @@ void mmu::mmuDMATransfer(unsigned char dma_mode, unsigned char dma_dir, unsigned
 	case 1:							//	transfer 2 bytes (xx, xx + 1) (e.g. VRAM)
 		if (!dma_dir) 
 		{
-			//write8(0x2100 + io_address, snesRAM[cpu_address]);
 			write8(0x2100 + io_address, read8(cpu_address));
-			//write8(0x2100 + io_address + 1, snesRAM[cpu_address + 1]);
 			write8(0x2100 + io_address + 1, read8(cpu_address + 1));
 		}
 		else 
@@ -196,9 +194,7 @@ void mmu::mmuDMATransfer(unsigned char dma_mode, unsigned char dma_dir, unsigned
 	case 2:							//	transfer 2 bytes (xx, xx) (e.g. OAM / CGRAM)
 		if (!dma_dir) 
 		{
-			//write8(0x2100 + io_address, snesRAM[cpu_address]);
 			write8(0x2100 + io_address, read8(cpu_address));
-			//write8(0x2100 + io_address, snesRAM[cpu_address + 1]);
 			write8(0x2100 + io_address, read8(cpu_address + 1));
 		}
 		else 
@@ -211,13 +207,9 @@ void mmu::mmuDMATransfer(unsigned char dma_mode, unsigned char dma_dir, unsigned
 	case 3:							//	transfer 4 bytes (xx, xx, xx + 1, xx + 1) (e.g. BGnxOFX, M7x)
 		if (!dma_dir) 
 		{
-			//write8(0x2100 + io_address, snesRAM[cpu_address]);
 			write8(0x2100 + io_address, read8(cpu_address));
-			//write8(0x2100 + io_address, snesRAM[cpu_address + 1]);
 			write8(0x2100 + io_address, read8(cpu_address + 1));
-			//write8(0x2100 + io_address + 1, snesRAM[cpu_address + 2]);
 			write8(0x2100 + io_address + 1, read8(cpu_address + 2));
-			//write8(0x2100 + io_address + 1, snesRAM[cpu_address + 3]);
 			write8(0x2100 + io_address + 1, read8(cpu_address + 3));
 		}
 		else 
@@ -232,13 +224,9 @@ void mmu::mmuDMATransfer(unsigned char dma_mode, unsigned char dma_dir, unsigned
 	case 4:							//	transfer 4 bytes (xx, xx + 1, xx + 2, xx + 3) (e.g. BGnSC, Window, APU...)
 		if (!dma_dir) 
 		{
-			//write8(0x2100 + io_address, snesRAM[cpu_address]);
 			write8(0x2100 + io_address, read8(cpu_address));
-			//write8(0x2100 + io_address + 1, snesRAM[cpu_address + 1]);
 			write8(0x2100 + io_address + 1, read8(cpu_address + 1));
-			//write8(0x2100 + io_address + 2, snesRAM[cpu_address + 2]);
 			write8(0x2100 + io_address + 2, read8(cpu_address + 2));
-			//write8(0x2100 + io_address + 3, snesRAM[cpu_address + 3]);
 			write8(0x2100 + io_address + 3, read8(cpu_address + 3));
 		}
 		else 
@@ -778,7 +766,7 @@ unsigned char mmu::read8(unsigned int address)
 		// and refuse to run, thinking you are using a copier 
 		if (!hasSRAM)
 		{
-			if ((bank_nr >= 0x70) && (bank_nr <= 0x73))
+			if ((bank_nr >= 0x70) && (bank_nr <= 0x77))
 			{
 				return 0;
 			}

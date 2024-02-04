@@ -80,6 +80,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x50,2,"BVC param0",Immediate8,false,false,true}, // validatedF
 	{0x54,3,"MVN param0",Absolute16,false,false,true},
 	{0x55,2,"EOR param0,X",Immediate8,false,false,true}, // validatedF
+	{0x56,2,"LSR param0,X",Immediate8,false,false,true}, // validatedF
 	{0x57,2,"EOR [param0],Y",Immediate8,false,false,true}, // validatedF
 	{0x58,1,"CLI",None,false,false,true}, // validatedF
 	{0x59,3,"EOR param0,Y",Absolute16,false,false,true}, // fck
@@ -229,6 +230,7 @@ static const debugInfoRec debugInstrData[] =
 	{0xea,1,"NOP",None,false,false,true}, // validatedF
 	{0xf0,2,"BEQ param0",Immediate8,false,false,true}, // validatedF
 	{0xf1,2,"SBC (param0),Y",Immediate8,false,false,true}, // validatedF
+	{0xf3,2,"SBC (param0,S),Y",Immediate8,false,false,true}, // validatedF
 	{0xF4,3,"PEA param0",Absolute16,false,false,true}, // validatedF
 	{0xf5,2,"SBC param0,X",Immediate8,false,false,true}, // validatedF
 	{0xf6,2,"INC param0,X",Immediate8,false,false,true}, // validatedF

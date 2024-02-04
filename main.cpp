@@ -445,42 +445,90 @@ void displayMemoryWindow(mmu& theMMU,ppu& thePPU,int& baseAddress)
 
     int hSteps = 16;
     int rows = 20;
-    //int curAddr = 0x1400;//baseAddress;
-    int curAddr = baseAddress;
-    //int curAddr = 0x1be6;
     int bgmode = thePPU.getCurrentBGMode();
     bgmode++;
 
-    //unsigned char* pOAM = thePPU.getOAMPtr();
+    const char* items[] = {"VRAM","Memory"};
+    static const char* current_item = "VRAM";
 
-    for (int r = 0;r < rows;r++)
+    if (ImGui::BeginCombo("##combo", current_item))
     {
-        std::string sRow;
-        std::stringstream strr;
-        strr << std::hex << std::setw(6) << std::setfill('0') << curAddr;
-        sRow += strr.str() + "  ";
-
-        for (int x = 0;x < hSteps;x+=1)
+        for (int n = 0; n < IM_ARRAYSIZE(items); n++)
         {
-            //unsigned char byteSized0 = *pOAM;
-            //pOAM++;
-            unsigned char byteSized0 = theMMU.read8(curAddr);
-            //unsigned char byteSized0 = thePPU.getVRAMPtr()[curAddr]&0xff;
-            //unsigned char byteSized1 = thePPU.getVRAMPtr()[curAddr]>>8;
-
-            std::stringstream strrloc;
-            strrloc << std::hex << std::setw(2) << std::setfill('0') << (int)byteSized0;
-            sRow += strrloc.str()+" ";
-
-            /*std::stringstream strr2;
-            strr2 << std::hex << std::setw(2) << std::setfill('0') << (int)byteSized1;
-            sRow += strr2.str() + " ";*/
-
-            curAddr += 1;
+            bool is_selected = (current_item == items[n]);
+            if (ImGui::Selectable(items[n], is_selected))
+            {
+                current_item = items[n];
+            }
+            if (is_selected) ImGui::SetItemDefaultFocus();
         }
-
-        ImGui::Text(sRow.c_str());
+        ImGui::EndCombo();
     }
+
+    if (strcmp(current_item,"VRAM")==0)
+    {
+        int curAddr = 0x3000;
+
+        for (int r = 0;r < rows;r++)
+        {
+            std::string sRow;
+            std::stringstream strr;
+            strr << std::hex << std::setw(6) << std::setfill('0') << curAddr;
+            sRow += strr.str() + "  ";
+
+            for (int x = 0;x < hSteps;x += 2)
+            {
+                unsigned char byteSized0 = thePPU.getVRAMPtr()[curAddr]&0xff;
+                unsigned char byteSized1 = thePPU.getVRAMPtr()[curAddr]>>8;
+
+                std::stringstream strrloc;
+                strrloc << std::hex << std::setw(2) << std::setfill('0') << (int)byteSized0;
+                sRow += strrloc.str() + " ";
+
+                std::stringstream strr2;
+                strr2 << std::hex << std::setw(2) << std::setfill('0') << (int)byteSized1;
+                sRow += strr2.str() + " ";
+
+                curAddr += 1;
+            }
+
+            ImGui::Text(sRow.c_str());
+        }
+    }
+    else
+    {
+        int curAddr = baseAddress;
+
+        for (int r = 0;r < rows;r++)
+        {
+            std::string sRow;
+            std::stringstream strr;
+            strr << std::hex << std::setw(6) << std::setfill('0') << curAddr;
+            sRow += strr.str() + "  ";
+
+            for (int x = 0;x < hSteps;x += 1)
+            {
+                //unsigned char byteSized0 = *pOAM;
+                //pOAM++;
+                unsigned char byteSized0 = theMMU.read8(curAddr);
+                //unsigned char byteSized0 = thePPU.getVRAMPtr()[curAddr]&0xff;
+                //unsigned char byteSized1 = thePPU.getVRAMPtr()[curAddr]>>8;
+
+                std::stringstream strrloc;
+                strrloc << std::hex << std::setw(2) << std::setfill('0') << (int)byteSized0;
+                sRow += strrloc.str() + " ";
+
+                /*std::stringstream strr2;
+                strr2 << std::hex << std::setw(2) << std::setfill('0') << (int)byteSized1;
+                sRow += strr2.str() + " ";*/
+
+                curAddr += 1;
+            }
+
+            ImGui::Text(sRow.c_str());
+        }
+    }
+
 
     ImGui::End();
 }
@@ -633,7 +681,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\Mode7\\StarWars\\StarWars.sfc";
     //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\Mode7\\Perspective\\Perspective.sfc";
 
-    //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc"; // 56
+    //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc";
     //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
     //std::string romName = "d:\\prova\\snes\\Final Fight (U).smc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
@@ -642,19 +690,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars + Super Mario World (USA).sfc"; 
     //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars (U) [!].smc"; 
     //std::string romName = "d:\\prova\\snes\\Mario Paint (E) [!].smc";
-    //std::string romName = "d:\\prova\\snes\\Mickey Mania (E).smc"; // crash
+    //std::string romName = "d:\\prova\\snes\\Mickey Mania (E).smc";
     //std::string romName = "d:\\prova\\snes\\Pinball Dreams (E).smc";
+    //std::string romName = "d:\\prova\\snes\\Monopoly (V1.1) (U).smc";
+    //std::string romName = "d:\\prova\\snes\\R-Type 3 (U).smc"; // SPC
+    //std::string romName = "d:\\prova\\snes\\Street Fighter II - The World Warrior (U).smc"; // SPC
+    std::string romName = "d:\\prova\\snes\\Super Double Dragon (U).smc"; // boh
+    //std::string romName = "d:\\prova\\snes\\Robocop 3 (U).smc"; // SPC
+    //std::string romName = "d:\\prova\\snes\\Micro Machines (U).smc"; // SPC
+    //std::string romName = "d:\\prova\\snes\\Gradius III (U) [!].smc"; // 36
     //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
     //std::string romName = "d:\\prova\\snes\\Parodius Da! - Shinwa kara Owarai e (Japan).sfc";
     //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // mode4
     //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc";
-    //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // f3
-    //std::string romName = "d:\\prova\\snes\\Final Fantasy IV (J).smc"; // crashes
+    //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // dma mode 4?
+    //std::string romName = "d:\\prova\\snes\\Final Fantasy IV (J).smc"; // stuck
     //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc";
     //std::string romName = "d:\\prova\\snes\\Frogger (U).smc"; // corrupted frog, cars are not moving
     //std::string romName = "d:\\prova\\snes\\Race Drivin' (U).smc"; 
     //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc";
-    //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc";  
+    //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc"; // stuck 
     //std::string romName = "d:\\prova\\snes\\Arkanoid - Doh it Again (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc";
     //std::string romName = "d:\\prova\\snes\\Home Alone (E) [!].smc"; // resets
@@ -663,26 +718,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc";
     //std::string romName = "d:\\prova\\snes\\Sensible Soccer - International Edition (E).smc"; // blank screen
     //std::string romName = "d:\\prova\\snes\\Gun Force (E).smc";
-    std::string romName = "d:\\prova\\snes\\The Legend Of Zelda -  A Link To The Past.smc";
+    //std::string romName = "d:\\prova\\snes\\The Legend Of Zelda -  A Link To The Past.smc";
     //std::string romName = "d:\\prova\\snes\\Prince of Persia (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Yoshi's Cookie (E).smc"; // d2
     //std::string romName = "d:\\prova\\snes\\Sim City (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\James Pond's Crazy Sports (E).smc";
-    //std::string romName = "d:\\prova\\snes\\Spanky's Quest (E).smc";
+    //std::string romName = "d:\\prova\\snes\\Spanky's Quest (E).smc"; // stuck
     //std::string romName = "d:\\prova\\snes\\Spectre (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Tetris Attack (E).smc"; 
     //std::string romName = "d:\\prova\\snes\\Lawnmower Man, The (E).smc"; 
     //std::string romName = "d:\\prova\\snes\\Williams Arcade's Greatest Hits (E) [!].smc"; // a1
     //std::string romName = "d:\\prova\\snes\\Unirally (E) [!].smc"; // crash, SRAM test
-    //std::string romName = "d:\\prova\\snes\\International Superstar Soccer (U) [!].smc"; // 56 96
+    //std::string romName = "d:\\prova\\snes\\International Superstar Soccer (U) [!].smc";
     //std::string romName = "D:\\prova\\snes\\SNES-master\\Games\\MonsterFarmJump\\MonsterFarmJump.sfc";
 
-    //std::string romName = "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc"; // crash on wai
+    //std::string romName = "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc"; // SPC
     //std::string romName = "d:\\prova\\snes\\elix-smashit-pal.sfc"; 
     //std::string romName = "D:\\prova\\snes\\demos\\elix-nu-pal.sfc"; // SPC
     //std::string romName = "D:\\prova\\snes\\demos\\2.68 MHz Demo (PD).smc"; // doesn't work
     //std::string romName = "D:\\prova\\snes\\demos\\DSR_STNICCC_NOFX_SNES_PAL.sfc"; // no mode7
     //std::string romName = "D:\\prova\\snes\\demos\\rse-intro.sfc"; // 42
+    
     //std::string romName = "d:\\prova\\snes\\demo_mode3.smc"; // hirom
 
     if (theRomLoader.loadRom(romName,theMMU,romLoadingLog) != 0)
@@ -1161,6 +1217,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x80bd2e, 0xea);
         
     }
+    else if (romName == "d:\\prova\\snes\\Monopoly (V1.1) (U).smc")
+    {
+        theMMU.write8(0xfdb6, 0xea);
+        theMMU.write8(0xfdb7, 0xea);
+
+    }
     
     //
 
@@ -1186,6 +1248,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     int baseMemoryAddress = 0x0;
     unsigned long int totCPUCycles = 0;
     int emustatus = 0; // 0 debugging, 1 running
+    //unsigned char* selectedMemoryPortion = (unsigned char*)"VRAM";
 
     while (!done)
     {

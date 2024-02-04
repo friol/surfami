@@ -411,7 +411,7 @@ void ppu::tileViewerRenderTile2bpp(int px, int py, int tileAddr)
 
 void ppu::tileViewerRenderTiles()
 {
-	/*int tileAddr = 0x1400;
+	int tileAddr = 0x1400;
 	for (int y = 0;y < 24;y++)
 	{
 		for (int x = 0;x < 16;x++)
@@ -419,7 +419,7 @@ void ppu::tileViewerRenderTiles()
 			tileViewerRenderTile2bpp(x * 8, y * 8, tileAddr);
 			tileAddr += 8;
 		}
-	}*/
+	}
 }
 
 void ppu::renderBackdrop()
@@ -1119,7 +1119,6 @@ void ppu::renderSprites()
 }
 
 void ppu::renderSpritesScanline(int scanlinenum)
-
 {
 	int spriteDimensions[8][2][2] = {
 		{{8,8},{16,16}},
@@ -1181,7 +1180,6 @@ void ppu::renderSpritesScanline(int scanlinenum)
 			colidx += 2;
 		}
 
-		//const unsigned int OAMBase = 0xc000 / 2;
 		const unsigned int OAMBase = (obSel & 0x03) * 0x2000;
 
 		int ybase = 0; int yend = spriteDimY; int yinc = 1;
