@@ -946,24 +946,29 @@ void ppu::renderBGScanline(int bgnum, int bpp, int scanlinenum)
 				if (x != 0)
 				{
 					// opt
-					int bg3baseTileAddr = ((bgTileMapBaseAddress[2] >> 2) << 10) & 0x7fff;
+					int screenMode = bgMode & 0x07;
 
-					int bg3xscroll = bgScrollX[2] & 0x3ff;
-					int bg3realx = x-1 + (bg3xscroll / 8);
-					//int bg3yscroll = bgScrollY[2] & 0x3ff;
-
-					unsigned short int bg3word=0, bg3word2=0;
-					if ((bgMode & 0x07) == 2)
+					if ((screenMode == 2) || (screenMode == 4))
 					{
-						bg3word =  vram[bg3baseTileAddr + (bg3realx&0x3f) ];
-						bg3word2 = vram[bg3baseTileAddr + (bg3realx&0x3f) + 32 ];
-					}
-					else if ((bgMode & 0x07) == 4)
-					{
-						bg3word = vram[bg3baseTileAddr + (bg3realx & 0x3f)];
-					}
+						int bg3baseTileAddr = ((bgTileMapBaseAddress[2] >> 2) << 10) & 0x7fff;
 
-					calcOffsetPerTileScroll(bg3word, bg3word2, bgnum, xscroll, yscroll);
+						int bg3xscroll = bgScrollX[2] & 0x3ff;
+						int bg3realx = x - 1 + (bg3xscroll / 8);
+						//int bg3yscroll = bgScrollY[2] & 0x3ff;
+
+						unsigned short int bg3word = 0, bg3word2 = 0;
+						if ((bgMode & 0x07) == 2)
+						{
+							bg3word = vram[bg3baseTileAddr + (bg3realx & 0x3f)];
+							bg3word2 = vram[bg3baseTileAddr + (bg3realx & 0x3f) + 32];
+						}
+						else if ((bgMode & 0x07) == 4)
+						{
+							bg3word = vram[bg3baseTileAddr + (bg3realx & 0x3f)];
+						}
+
+						calcOffsetPerTileScroll(bg3word, bg3word2, bgnum, xscroll, yscroll);
+					}
 				}
 
 				int realx = x + (xscroll / tileDim);
@@ -974,7 +979,11 @@ void ppu::renderBGScanline(int bgnum, int bpp, int scanlinenum)
 					realy += 1;
 				}
 
-				unsigned short int vramWord = tilemapMap[realy & 0x3f][realx & 0x3f];
+				int anderx = 0x3f; int andery = 0x3f;
+				if ((bgSize == 0) || (bgSize == 1)) andery = 0x1f;
+				if ((bgSize == 0) || (bgSize == 2)) anderx = 0x1f;
+
+				unsigned short int vramWord = tilemapMap[realy & andery][realx & anderx];
 				int tileNum = vramWord & 0x3ff;
 				int palId = (vramWord >> 10) & 0x7;
 				unsigned char bgPri = (vramWord >> 13) & 0x01;
@@ -1189,7 +1198,7 @@ void ppu::renderSpritesScanline(int scanlinenum)
 			int realy = y;
 			if (y_flip) realy = spriteDimY - y - 1;
 
-			if ((y_pos + realy) == scanlinenum)
+			if (((y_pos + realy)&0xff) == scanlinenum)
 			{
 				for (int x = 0;x != spriteDimX; x += 1)
 				{

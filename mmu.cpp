@@ -346,7 +346,7 @@ void mmu::startHDMA()
 		}
 
 		nextHDMA:
-		int nxt = 1;
+		int nxt = 1; nxt = 2;
 	}
 }
 
@@ -608,11 +608,6 @@ void mmu::write8(unsigned int address, unsigned char val)
 	}
 	else
 	{
-		if (address >= 0x1000000)
-		{
-			int err = 11;
-		}
-
 		snesRAM[address] = val;
 	}
 }
@@ -632,9 +627,13 @@ unsigned char mmu::read8(unsigned int address)
 		else if (adr == 0x2180)
 		{
 			// WMDATA - WRAM Data Read/Write (R/W)
-			unsigned int waddr = wram281x[0] | (wram281x[1] << 8) | (wram281x[2] << 16) & 0x1ffff;
-			return snesRAM[0x7e0000 + waddr];
-			// TODO: increment address on read?
+			unsigned int waddrRet = wram281x[0] | (wram281x[1] << 8) | (wram281x[2] << 16) & 0x1ffff;
+			unsigned int waddr = waddrRet;
+			waddr += 1; waddr &= 0x1ffff;
+			wram281x[0] = waddr & 0xff;
+			wram281x[1] = (waddr >> 8) & 0xff;
+			wram281x[2] = (waddr >> 16) & 0xff;
+			return snesRAM[0x7e0000 + waddrRet];
 		}
 		else if ((adr == 0x2134) || (adr == 0x2135) || (adr == 0x2136))
 		{
@@ -802,10 +801,6 @@ unsigned char mmu::read8(unsigned int address)
 				return 0;
 			}
 			else return snesRAM[address];
-		}
-		else if ((!isHiRom) && (hasSRAM))
-		{
-			return snesRAM[address];
 		}
 
 		return snesRAM[address];
