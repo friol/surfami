@@ -39,7 +39,7 @@ std::vector<unsigned char> romLoader::readFile(std::string& filename,int& error)
 	return vec;
 }
 
-int romLoader::loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>& loadLog)
+int romLoader::loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>& loadLog,bool isHirom)
 {
 	std::vector<unsigned char> romContents;
 
@@ -53,31 +53,66 @@ int romLoader::loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>
 		return 1;
 	}
 
-	loadLog.push_back("ROM was read correctly. Size is " + std::to_string(romContents.size()/1024) + "kb.");
+	loadLog.push_back("ROM was read correctly. Size is " + std::to_string(romContents.size()/1024) + "kb. HiRom: "+std::to_string(isHirom));
 
 	unsigned char* pSnesRAM = theMMU.getInternalRAMPtr();
 	unsigned short int filesizeInKb = (unsigned short int)(romContents.size() / 1024);
 
-	//	map rom to memory
-	unsigned char bank = 0x80;
-	unsigned char shadow_bank = 0x00;
-	unsigned char chunks = (unsigned char)(filesizeInKb / 32);
-	for (unsigned long int i = 0; i < romContents.size(); i++) 
+	if (!isHirom)
 	{
-		//	write to all locations that mirror our ROM
-		for (unsigned char mirror = 0; mirror < (0x80 / chunks); mirror++) 
+		unsigned char bank = 0x80;
+		unsigned char shadow_bank = 0x00;
+		unsigned char chunks = (unsigned char)(filesizeInKb / 32);
+		for (unsigned long int i = 0; i < romContents.size(); i++)
 		{
-			//	(Q3-Q4) 32k (0x8000) consecutive chunks to banks 0x80-0xff, upper halfs (0x8000-0xffff)
-			if ((bank + (i / 0x8000) + (mirror * chunks)) < 0xff) 
+			//	write to all locations that mirror our ROM
+			for (unsigned char mirror = 0; mirror < (0x80 / chunks); mirror++)
 			{
-				pSnesRAM[((bank + (i / 0x8000) + (mirror * chunks)) << 16) | 0x8000 + (i % 0x8000)]=romContents[i];
+				//	(Q3-Q4) 32k (0x8000) consecutive chunks to banks 0x80-0xff, upper halfs (0x8000-0xffff)
+				if ((bank + (i / 0x8000) + (mirror * chunks)) < 0xff)
+				{
+					pSnesRAM[((bank + (i / 0x8000) + (mirror * chunks)) << 16) | 0x8000 + (i % 0x8000)] = romContents[i];
+				}
+
+				//	(Q1-Q2) shadowing to banks 0x00-0x7d, except WRAM (bank 0x7e/0x7f)
+				if ((shadow_bank + (i / 0x8000) + (mirror * chunks)) < 0x7e)
+				{
+					pSnesRAM[((shadow_bank + (i / 0x8000) + (mirror * chunks)) << 16) | 0x8000 + (i % 0x8000)] = romContents[i];
+				}
+			}
+		}
+	}
+	else
+	{
+		for (unsigned long int i = 0; i < romContents.size(); i++)
+		{
+			pSnesRAM[0xc00000|i]= romContents[i];
+			/*The unused region in banks $40 - 7D will normally be a mirror of $C0 - FD, though there are minor variations.*/
+			pSnesRAM[0x400000|i] = romContents[i];
+		}
+
+		unsigned int pos = 0;
+		for (unsigned int addr = 0;addr < 0x400000;addr++)
+		{
+			if (pos >= 0x8000)
+			{
+				pSnesRAM[addr] = pSnesRAM[addr|0xc00000];
 			}
 
-			//	(Q1-Q2) shadowing to banks 0x00-0x7d, except WRAM (bank 0x7e/0x7f)
-			if ((shadow_bank + (i / 0x8000) + (mirror * chunks)) < 0x7e) 
+			pos++;
+			pos %= 0x10000;
+		}
+
+		pos = 0;
+		for (unsigned int addr = 0x800000;addr < 0xc00000;addr++)
+		{
+			if (pos >= 0x8000)
 			{
-				pSnesRAM[((shadow_bank + (i / 0x8000) + (mirror * chunks)) << 16) | 0x8000 + (i % 0x8000)]=romContents[i];
+				pSnesRAM[addr] = pSnesRAM[addr | 0xc00000];
 			}
+
+			pos++;
+			pos %= 0x10000;
 		}
 	}
 

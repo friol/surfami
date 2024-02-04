@@ -17,6 +17,11 @@ mmu::mmu(ppu& thePPU,apu& theAPU)
 	{
 		snesRAM[pos] = 0;
 	}
+
+	for (int i = 0; i < 8; i++)
+	{
+		HDMAS[i].hdmaEnable(0);
+	}
 }
 
 void mmu::DMAstart(unsigned char val)
@@ -249,34 +254,38 @@ void mmu::mmuDMATransfer(unsigned char dma_mode, unsigned char dma_dir, unsigned
 	}
 }
 
-void mmu::resetHDMA() 
+void mmu::resetHDMA()
 {
-	for (unsigned char dma_id = 0; dma_id < 8; dma_id++) 
+	for (unsigned char dma_id = 0; dma_id < 8; dma_id++)
 	{
-		if (HDMAS[dma_id].enabled) 
+		if (HDMAS[dma_id].enabled)
 		{
 			HDMAS[dma_id].terminated = false;
 			HDMAS[dma_id].IO = snesRAM[0x4301 + (dma_id * 0x10)];
 			HDMAS[dma_id].addressing_mode = (snesRAM[0x4300 + (dma_id * 0x10)] >> 6) & 1;
 			HDMAS[dma_id].direction = snesRAM[0x4300 + (dma_id * 0x10)] >> 7;
 			HDMAS[dma_id].dma_mode = snesRAM[0x4300 + (dma_id * 0x10)] & 0b111;
+			
 			HDMAS[dma_id].indirect_address = (snesRAM[0x4307 + (dma_id * 0x10)] << 16) | (snesRAM[0x4306 + (dma_id * 0x10)] << 8) | snesRAM[0x4305 + (dma_id * 0x10)];
 			HDMAS[dma_id].aaddress = (snesRAM[0x4304 + (dma_id * 0x10)] << 16) | (snesRAM[0x4303 + (dma_id * 0x10)] << 8) | snesRAM[0x4302 + (dma_id * 0x10)];
 			HDMAS[dma_id].address = HDMAS[dma_id].aaddress;
-			HDMAS[dma_id].repeat = snesRAM[HDMAS[dma_id].address] >> 7;
+
+			//HDMAS[dma_id].repeat = snesRAM[HDMAS[dma_id].address] >> 7;
+			HDMAS[dma_id].repeat = snesRAM[0x430a + (dma_id * 0x10)] >> 7;
+
 			HDMAS[dma_id].line_counter = snesRAM[HDMAS[dma_id].address] & 0x7f;
 
 			//	initial transfer
 			HDMAS[dma_id].address++;
 
-			if (HDMAS[dma_id].addressing_mode) 
+			//	0 - Direct, 1 - Indirect
+			if (HDMAS[dma_id].addressing_mode)
 			{
-				//	0 - Direct, 1 - Indirect
 				HDMAS[dma_id].indirect_address = (snesRAM[HDMAS[dma_id].address + 1] << 8) | snesRAM[HDMAS[dma_id].address];
 				HDMAS[dma_id].address += 2;
 				mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].indirect_address, HDMAS[dma_id].IO);
 			}
-			else 
+			else
 			{
 				mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].address, HDMAS[dma_id].IO);
 			}
@@ -284,54 +293,60 @@ void mmu::resetHDMA()
 	}
 }
 
-void mmu::startHDMA() 
+void mmu::startHDMA()
 {
-	for (unsigned char dma_id = 0; dma_id < 8; dma_id++) 
+	for (unsigned char dma_id = 0; dma_id < 8; dma_id++)
 	{
-		if (HDMAS[dma_id].enabled && !HDMAS[dma_id].terminated) 
+		if (HDMAS[dma_id].enabled && !HDMAS[dma_id].terminated)
 		{
-			if (HDMAS[dma_id].line_counter-- == 0) 
+			if (HDMAS[dma_id].line_counter-- == 0)
 			{
-				if (snesRAM[HDMAS[dma_id].address] == 0x00) 
+				if (snesRAM[HDMAS[dma_id].address] == 0x00)
 				{
 					HDMAS[dma_id].terminated = true;
-					return;
+					goto nextHDMA;
 				}
-				HDMAS[dma_id].repeat = snesRAM[HDMAS[dma_id].address] >> 7;
+				
+				//HDMAS[dma_id].repeat = snesRAM[HDMAS[dma_id].address] >> 7;
+				HDMAS[dma_id].repeat = snesRAM[0x430a + (dma_id * 0x10)] >> 7;
+				
 				HDMAS[dma_id].line_counter = snesRAM[HDMAS[dma_id].address] & 0x7f;
 				HDMAS[dma_id].address++;
 
-				if (HDMAS[dma_id].addressing_mode) 
+				if (HDMAS[dma_id].addressing_mode)
 				{		//	0 - Direct, 1 - Indirect
 					HDMAS[dma_id].indirect_address = (snesRAM[HDMAS[dma_id].address + 1] << 8) | snesRAM[HDMAS[dma_id].address];
 					HDMAS[dma_id].address += 2;
 				}
 
-				if (HDMAS[dma_id].addressing_mode) 
+				if (HDMAS[dma_id].addressing_mode)
 				{		//	0 - Direct, 1 - Indirect
 					mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].indirect_address, HDMAS[dma_id].IO);
-					return;
+					goto nextHDMA;
 				}
-				else 
+				else
 				{
 					mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].address, HDMAS[dma_id].IO);
-					return;
+					goto nextHDMA;
 				}
 			}
 
-			if (HDMAS[dma_id].repeat) 
+			if (HDMAS[dma_id].repeat)
 			{
-				if (HDMAS[dma_id].addressing_mode) 
-				{		
+				if (HDMAS[dma_id].addressing_mode)
+				{
 					//	0 - Direct, 1 - Indirect
 					mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].indirect_address, HDMAS[dma_id].IO);
 				}
-				else 
+				else
 				{
 					mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].address, HDMAS[dma_id].IO);
 				}
 			}
 		}
+
+		nextHDMA:
+		int nxt = 1;
 	}
 }
 
@@ -582,6 +597,12 @@ void mmu::write8(unsigned int address, unsigned char val)
 			snesRAM[0x4217] = (unsigned short int)(((snesRAM[0x4205] << 8) | snesRAM[0x4204]) % val) >> 8;
 			return;
 		}
+		else if (isHiRom && ((bank_nr >= 0x30) && (bank_nr < 0x3f)))
+		{
+			// SRAM
+			snesRAM[adr] = val;
+			return;
+		}
 
 		snesRAM[adr] = val;
 	}
@@ -747,12 +768,22 @@ unsigned char mmu::read8(unsigned int address)
 
 			return res;
 		}
+		else if ((adr == 0x421a)|| (adr == 0x421b))
+		{
+			// 421Ah/421Bh - JOY2L/JOY2H - Joypad 2 (gameport 2, pin 4) (R) TODO
+			return 0;
+		}
 		else if ((adr == 0x4214)|| (adr == 0x4215)|| (adr == 0x4216)|| (adr == 0x4217))
 		{
 			//4214h - RDDIVL - Unsigned Division Result(Quotient) (lower 8bit) (R)
 			//4215h - RDDIVH - Unsigned Division Result(Quotient) (upper 8bit) (R)
 			//4216h - RDMPYL - Unsigned Division Remainder / Multiply Product(lo.8bit) (R)
 			//4217h - RDMPYH - Unsigned Division Remainder / Multiply Product(up.8bit) (R)
+			return snesRAM[adr];
+		}
+		else if (isHiRom && ((bank_nr >= 0x30) && (bank_nr < 0x3f)))
+		{
+			// SRAM
 			return snesRAM[adr];
 		}
 		else
@@ -764,7 +795,7 @@ unsigned char mmu::read8(unsigned int address)
 	{
 		// sram - some games (like tetris&dr.mario) complain if they find SRAM at this address, 
 		// and refuse to run, thinking you are using a copier 
-		if (!hasSRAM)
+		if ((!isHiRom) && (!hasSRAM))
 		{
 			if ((bank_nr >= 0x70) && (bank_nr <= 0x77))
 			{
@@ -772,18 +803,12 @@ unsigned char mmu::read8(unsigned int address)
 			}
 			else return snesRAM[address];
 		}
-
-		if (address >= 0x1000000)
+		else if ((!isHiRom) && (hasSRAM))
 		{
-			int err = 11;
+			return snesRAM[address];
 		}
 
 		return snesRAM[address];
-	}
-
-	if (address >= 0x1000000)
-	{
-		int err = 11;
 	}
 
 	return snesRAM[address];

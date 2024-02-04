@@ -46,6 +46,7 @@ private:
 	bool nmiFlag = false;
 	unsigned char nmiTimen = 0;
 	
+	int isHiRom = false;
 	bool hasSRAM = false;
 	std::string sramFileName = "";
 	int standard = 0; // 0 NTSC, 1 PAL
@@ -87,6 +88,7 @@ public:
 	void setNMIFlag() { nmiFlag = true; }
 	void clearNMIFlag() { nmiFlag = false; }
 	void setStandard(int val) { standard = val; }
+	void setHiRom(bool val) { isHiRom = val; }
 
 	void pressSelectKey(bool val) { isKeySelectPressed = val; }
 	void pressStartKey(bool val) { isKeyStartPressed = val; }

@@ -19,7 +19,7 @@ private:
 public:
 
 	romLoader();
-	int loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>& loadLog);
+	int loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>& loadLog,bool isHirom=false);
 };
 
 #endif

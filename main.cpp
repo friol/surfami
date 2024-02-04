@@ -633,9 +633,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     ppu thePPU;
     apu theAPU;
     mmu theMMU(thePPU,theAPU);
-    theMMU.setStandard(snesStandard);
-    thePPU.setStandard(snesStandard);
     std::vector<std::string> romLoadingLog;
+    bool isHiRom = false;
 
     romLoader theRomLoader;
     //std::string romName = "d:\\prova\\snes\\HelloWorld.sfc";
@@ -693,10 +692,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Mickey Mania (E).smc";
     //std::string romName = "d:\\prova\\snes\\Pinball Dreams (E).smc";
     //std::string romName = "d:\\prova\\snes\\Monopoly (V1.1) (U).smc";
-    //std::string romName = "d:\\prova\\snes\\R-Type 3 (U).smc"; // SPC
-    //std::string romName = "d:\\prova\\snes\\Street Fighter II - The World Warrior (U).smc"; // SPC
-    std::string romName = "d:\\prova\\snes\\Super Double Dragon (U).smc"; // boh
-    //std::string romName = "d:\\prova\\snes\\Robocop 3 (U).smc"; // SPC
+    //std::string romName = "d:\\prova\\snes\\R-Type 3 (U).smc"; // stuck
+    //std::string romName = "d:\\prova\\snes\\Street Fighter II - The World Warrior (U).smc"; snesStandard = 1; // blank screen
+    //std::string romName = "d:\\prova\\snes\\Super Double Dragon (U).smc"; // boh
+    //std::string romName = "d:\\prova\\snes\\Robocop 3 (U).smc"; // strange robocop sprite
     //std::string romName = "d:\\prova\\snes\\Micro Machines (U).smc"; // SPC
     //std::string romName = "d:\\prova\\snes\\Gradius III (U) [!].smc"; // 36
     //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
@@ -730,18 +729,31 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Williams Arcade's Greatest Hits (E) [!].smc"; // a1
     //std::string romName = "d:\\prova\\snes\\Unirally (E) [!].smc"; // crash, SRAM test
     //std::string romName = "d:\\prova\\snes\\International Superstar Soccer (U) [!].smc";
+    //std::string romName = "d:\\prova\\snes\\F-Zero (U).smc"; // bah
+    //std::string romName = "d:\\prova\\snes\\Incredible Crash Dummies, The (U).smc";
     //std::string romName = "D:\\prova\\snes\\SNES-master\\Games\\MonsterFarmJump\\MonsterFarmJump.sfc";
 
+    // hiroms
+    //std::string romName = "D:\\prova\\snes\\HiRom\\Flashback - The Quest for Identity (U) [!].smc"; isHiRom = true;
+    //std::string romName = "D:\\romz\\nintendo\\snes\\Earthbound (U).smc"; isHiRom = true;
+    //std::string romName = "D:\\prova\\snes\\HiRom\\Donkey Kong Country (V1.1) (E).smc"; isHiRom = true; snesStandard = 1; 
+    //std::string romName = "D:\\prova\\snes\\HiRom\\Final Fantasy III (USA).sfc"; isHiRom = true;
+    //std::string romName = "D:\\prova\\snes\\HiRom\\Earthworm Jim (U).smc"; isHiRom = true;
+
+    // demos
     //std::string romName = "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc"; // SPC
     //std::string romName = "d:\\prova\\snes\\elix-smashit-pal.sfc"; 
     //std::string romName = "D:\\prova\\snes\\demos\\elix-nu-pal.sfc"; // SPC
     //std::string romName = "D:\\prova\\snes\\demos\\2.68 MHz Demo (PD).smc"; // doesn't work
     //std::string romName = "D:\\prova\\snes\\demos\\DSR_STNICCC_NOFX_SNES_PAL.sfc"; // no mode7
     //std::string romName = "D:\\prova\\snes\\demos\\rse-intro.sfc"; // 42
-    
-    //std::string romName = "d:\\prova\\snes\\demo_mode3.smc"; // hirom
+    //std::string romName = "d:\\prova\\snes\\demo_mode3.smc";
 
-    if (theRomLoader.loadRom(romName,theMMU,romLoadingLog) != 0)
+    theMMU.setStandard(snesStandard);
+    theMMU.setHiRom(isHiRom);
+    thePPU.setStandard(snesStandard);
+
+    if (theRomLoader.loadRom(romName,theMMU,romLoadingLog,isHiRom) != 0)
     {
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplWin32_Shutdown();
@@ -1223,7 +1235,93 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0xfdb7, 0xea);
 
     }
+    else if (romName == "D:\\prova\\snes\\HiRom\\Flashback - The Quest for Identity (U) [!].smc")
+    {
+        theMMU.write8(0xd900fd, 0xea);
+        theMMU.write8(0xd900fe, 0xea);
+        
+        theMMU.write8(0xc15b60, 0xea);
+        theMMU.write8(0xc15b61, 0xea);
+        theMMU.write8(0xc159cf, 0xea);
+        theMMU.write8(0xc159d0, 0xea);
+        theMMU.write8(0xc15974, 0xea);
+        theMMU.write8(0xc15975, 0xea);
+    }
+    else if (romName == "D:\\prova\\snes\\HiRom\\Donkey Kong Country (V1.1) (E).smc")
+    {
+        theMMU.write8(0x8ab51c, 0xea);
+        theMMU.write8(0x8ab51d, 0xea);
+        theMMU.write8(0x8ab20e, 0xea);
+        theMMU.write8(0x8ab20f, 0xea);
+        theMMU.write8(0x8ab1b9, 0xea);
+        theMMU.write8(0x8ab1ba, 0xea);
+
+    }
+    else if (romName == "D:\\prova\\snes\\HiRom\\Final Fantasy III (USA).sfc")
+    {
+        theMMU.write8(0xc50055, 0xea);
+        theMMU.write8(0xc50056, 0xea);
+        
+        theMMU.write8(0xc0b7a3, 0xea);
+        theMMU.write8(0xc0b7a4, 0xea);
+
+    }
+    else if (romName == "D:\\romz\\nintendo\\snes\\Earthbound (U).smc")
+    {
+        theMMU.write8(0xc0abba, 0xea);
+        theMMU.write8(0xc0abbb, 0xea);
+        theMMU.write8(0xc0ab93, 0xea);
+        theMMU.write8(0xc0ab94, 0xea);
+
+    }
+    else if (romName == "D:\\prova\\snes\\HiRom\\Earthworm Jim (U).smc")
+    {
+        theMMU.write8(0xc30654, 0xea);
+        theMMU.write8(0xc30655, 0xea);
+
+    }
+    else if (romName == "d:\\prova\\snes\\Incredible Crash Dummies, The (U).smc")
+    {
+        theMMU.write8(0x9d8498, 0xea);
+        theMMU.write8(0x9d8499, 0xea);
+        theMMU.write8(0x9d85cd, 0xea);
+        theMMU.write8(0x9d85ce, 0xea);
+
+    }
+    else if (romName == "d:\\prova\\snes\\Street Fighter II - The World Warrior (U).smc")
+    {
+        theMMU.write8(0x8b76, 0xea);
+        theMMU.write8(0x8b77, 0xea);
+        theMMU.write8(0x8b65, 0xea);
+        theMMU.write8(0x8b66, 0xea);
+        theMMU.write8(0x80fb, 0xea);
+        theMMU.write8(0x80fc, 0xea);
+
+    }
+    else if (romName == "d:\\prova\\snes\\R-Type 3 (U).smc")
+    {
+        theMMU.write8(0xaa820e, 0xea);
+        theMMU.write8(0xaa820f, 0xea);
+        theMMU.write8(0xaa822a, 0xea);
+        theMMU.write8(0xaa822b, 0xea);
+
+    }
+    else if (romName == "d:\\prova\\snes\\Robocop 3 (U).smc")
+    {
+        theMMU.write8(0xe9cb, 0xea);
+        theMMU.write8(0xe9cc, 0xea);
+        theMMU.write8(0xe9dd, 0xea);
+        theMMU.write8(0xe9de, 0xea);
+        theMMU.write8(0xe9e4, 0xea);
+        theMMU.write8(0xe9e5, 0xea);
+        theMMU.write8(0x8130, 0xea);
+        theMMU.write8(0x8131, 0xea);
+        theMMU.write8(0x8296, 0xea);
+        theMMU.write8(0x8297, 0xea);
+
+    }
     
+
     //
 
     debugger5a22 theDebugger5a22;
