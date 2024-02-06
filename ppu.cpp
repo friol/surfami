@@ -103,11 +103,6 @@ void ppu::writeBgScrollX(int bgId,unsigned char val)
 
 void ppu::writeBgScrollY(int bgId, unsigned char val)
 {
-	if (bgId >= 4)
-	{
-		int err = 1;
-	}
-
 	bgScrollY[bgId] = (val << 8) | BGSCROLL_L1;
 	BGSCROLL_L1 = val;
 }
@@ -411,7 +406,7 @@ void ppu::tileViewerRenderTile2bpp(int px, int py, int tileAddr)
 
 void ppu::tileViewerRenderTiles()
 {
-	int tileAddr = 0x1400;
+	int tileAddr = 0x6000;
 	for (int y = 0;y < 24;y++)
 	{
 		for (int x = 0;x < 16;x++)
@@ -1164,7 +1159,6 @@ void ppu::renderSpritesScanline(int scanlinenum)
 		int x_flip = (byte4 >> 6) & 1;
 		int paletteNum = (byte4 >> 1) & 0b111;
 		unsigned char priority = (byte4 >> 4) & 0b11;
-		//int spriteSize = (attr >> 1) & 0x01;
 
 		if (attr & 0x01) x_pos -= 256;
 
@@ -1229,9 +1223,6 @@ void ppu::renderSpritesScanline(int scanlinenum)
 							*pObjColorAppo = palArr[(pixPalIdx * 3) + 0]; pObjColorAppo++;
 							*pObjColorAppo = palArr[(pixPalIdx * 3) + 1]; pObjColorAppo++;
 							*pObjColorAppo = palArr[(pixPalIdx * 3) + 2]; pObjColorAppo++;
-							//*pObjColorAppo = 0xff; pObjColorAppo++;
-							//*pObjColorAppo = 0xff; pObjColorAppo++;
-							//*pObjColorAppo = 0xff; pObjColorAppo++;
 							*pObjColorAppo = 0xff; pObjColorAppo++;
 							*pObjPriAppo = priority; 
 							*pObjTranspAppo = false; 

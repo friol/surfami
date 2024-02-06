@@ -448,7 +448,7 @@ void displayMemoryWindow(mmu& theMMU,ppu& thePPU,int& baseAddress)
     int bgmode = thePPU.getCurrentBGMode();
     bgmode++;
 
-    const char* items[] = {"VRAM","Memory"};
+    const char* items[] = {"VRAM","Memory","OAM"};
     static const char* current_item = "VRAM";
 
     if (ImGui::BeginCombo("##combo", current_item))
@@ -490,6 +490,33 @@ void displayMemoryWindow(mmu& theMMU,ppu& thePPU,int& baseAddress)
                 sRow += strr2.str() + " ";
 
                 curAddr += 1;
+            }
+
+            ImGui::Text(sRow.c_str());
+        }
+    }
+    else if (strcmp(current_item, "OAM") == 0)
+    {
+        int curAddr = 0;
+        for (int r = 0;r < rows;r++)
+        {
+            std::string sRow;
+            std::stringstream strr;
+            strr << std::hex << std::setw(6) << std::setfill('0') << curAddr;
+            sRow += strr.str() + "  ";
+
+            for (int x = 0;x < hSteps;x += 1)
+            {
+                unsigned char* pOAM = thePPU.getOAMPtr();
+                unsigned char byteSized0 = *pOAM;
+                //unsigned char byteSized0 = theMMU.read8(curAddr);
+
+                std::stringstream strrloc;
+                strrloc << std::hex << std::setw(2) << std::setfill('0') << (int)byteSized0;
+                sRow += strrloc.str() + " ";
+
+                curAddr += 1;
+                pOAM++;
             }
 
             ImGui::Text(sRow.c_str());
@@ -689,15 +716,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars + Super Mario World (USA).sfc"; 
     //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars (U) [!].smc"; 
     //std::string romName = "d:\\prova\\snes\\Mario Paint (E) [!].smc";
-    std::string romName = "d:\\prova\\snes\\Mickey Mania (E).smc";
-    //std::string romName = "d:\\prova\\snes\\Pinball Dreams (E).smc"; // no ball
+    //std::string romName = "d:\\prova\\snes\\Mickey Mania (E).smc";
+    //std::string romName = "d:\\prova\\snes\\Pinball Dreams (E).smc"; // stuck, no ball
     //std::string romName = "d:\\prova\\snes\\Monopoly (V1.1) (U).smc";
     //std::string romName = "d:\\prova\\snes\\R-Type 3 (U).smc"; // stuck
     //std::string romName = "d:\\prova\\snes\\Street Fighter II - The World Warrior (U).smc"; snesStandard = 1; // blank screen
     //std::string romName = "d:\\prova\\snes\\Super Double Dragon (U).smc"; // no input
     //std::string romName = "d:\\prova\\snes\\Robocop 3 (U).smc"; // strange robocop sprite
     //std::string romName = "d:\\prova\\snes\\Micro Machines (U).smc"; // stuck
-    //std::string romName = "d:\\prova\\snes\\Gradius III (U) [!].smc"; // 36
+    std::string romName = "d:\\prova\\snes\\Gradius III (U) [!].smc"; // 36
     //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc";
     //std::string romName = "d:\\prova\\snes\\Parodius Da! - Shinwa kara Owarai e (Japan).sfc";
     //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // mode4
@@ -1203,6 +1230,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x80d9d3, 0xea);
         theMMU.write8(0x80d9f6, 0xea);
         theMMU.write8(0x80d9f7, 0xea);
+        
+        theMMU.write8(0x894b, 0xea);
+        theMMU.write8(0x894c, 0xea);
+        theMMU.write8(0x8956, 0xea);
+        theMMU.write8(0x8957, 0xea);
+        theMMU.write8(0x8987, 0xea);
+        theMMU.write8(0x8988, 0xea);
 
     }
     else if (romName == "d:\\prova\\snes\\Final Fight (U).smc")
@@ -1348,6 +1382,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x1f701, 0xea);
 
     }
+    else if (romName == "d:\\prova\\snes\\Super Mario All-Stars + Super Mario World (USA).sfc")
+    {
+        /*theMMU.write8(0x886b, 0xea);
+        theMMU.write8(0x886c, 0xea);
+        theMMU.write8(0x882a, 0xea);
+        theMMU.write8(0x882b, 0xea);
+        theMMU.write8(0x8835, 0xea);
+        theMMU.write8(0x8836, 0xea);
+        theMMU.write8(0x883d, 0xea);
+        theMMU.write8(0x883e, 0xea);
+        theMMU.write8(0x8848, 0xea);
+        theMMU.write8(0x8849, 0xea);
+        theMMU.write8(0x8850, 0xea);
+        theMMU.write8(0x8851, 0xea);
+        theMMU.write8(0x8c21, 0xea);
+        theMMU.write8(0x8c22, 0xea);
+        */
+    }
     
 
     //
@@ -1371,7 +1423,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     bool isTVWindowFocused = false;
     char jumpToAppoBuf[256];
     jumpToAppoBuf[0] = '\0';
-    int baseMemoryAddress = 0x0;
+    int baseMemoryAddress = 0x800;
     unsigned long int totCPUCycles = 0;
     int emustatus = 0; // 0 debugging, 1 running
     //unsigned char* selectedMemoryPortion = (unsigned char*)"VRAM";
@@ -1554,7 +1606,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
 
                 //if ( ((theCPU.getPC()) == 0x808a5a) && thePPU.getWriteBreakpoint() )
                 //if ( ((theCPU.getPC()) == 0x808a4d) && (theCPU.getX()==0x14fb))
-                if ( ((theCPU.getPC()&0xffff) == 0x8278))
+                //if ( ((theCPU.getPC()&0xffff) == 0x9e3b))
+                if ( ((theCPU.getPC()&0xffff) == 0x8946))
                 {
                     //emustatus = 0;
                 }

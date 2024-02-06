@@ -71,6 +71,10 @@ void mmu::DMAstart(unsigned char val)
 			if (dma_dir == 0)
 			{
 				glbTheLogger.logMsg("Data will be written to:" + sDMATargetAddr2 + " DMA bytes to move:" + std::to_string(byteCount));
+				//if (sDMATargetAddr2 == "2104")
+				//{
+				//	int block = 1;
+				//}
 			}
 			else
 			{
@@ -402,7 +406,7 @@ void mmu::write8(unsigned int address, unsigned char val)
 		else if (adr == 0x4200)
 		{
 			// NMITIMEN - Interrupt Enable and Joypad Request (W)
-			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x4200 (NMITIMEN - Interrupt Enable and Joypad Request)");
+			//glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x4200 (NMITIMEN - Interrupt Enable and Joypad Request)");
 			nmiTimen = val;
 			return;
 		}
@@ -448,7 +452,7 @@ void mmu::write8(unsigned int address, unsigned char val)
 		else if ((adr == 0x2107) || (adr == 0x2108) || (adr == 0x2109) || (adr == 0x210A))
 		{
 			int bgid = adr - 0x2107 +1;
-			glbTheLogger.logMsg("Writing [" + strr.str() + "] for BG"+std::to_string(bgid)+" (BGx Screen Base and Screen Size)");
+			//glbTheLogger.logMsg("Writing [" + strr.str() + "] for BG"+std::to_string(bgid)+" (BGx Screen Base and Screen Size)");
 			pPPU->writeRegister(adr, val);
 			return;
 		}
@@ -513,13 +517,13 @@ void mmu::write8(unsigned int address, unsigned char val)
 		}
 		else if (adr == 0x210B)
 		{
-			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x210B (BG tile base address lower)");
+			//glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x210B (BG tile base address lower)");
 			pPPU->writeRegister(0x210B, val);
 			return;
 		}
 		else if (adr == 0x210C)
 		{
-			glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x210C (BG tile base address upper)");
+			//glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x210C (BG tile base address upper)");
 			pPPU->writeRegister(0x210C, val);
 			return;
 		}
