@@ -90,6 +90,17 @@ void ppu::writeM7SEL(unsigned char val)
 	m7xFlip = val & 0x1;
 }
 
+void ppu::writeSubscreenFixedColor(unsigned char val)
+{
+	bool r = ((val >> 5) & 1) == 1;
+	bool g = ((val >> 6) & 1) == 1;
+	bool b = ((val >> 7) & 1) == 1;
+	unsigned char intensity = val & 0b11111;
+	if (r) coldataColor = (coldataColor & 0b11111'11111'00000'1) | (intensity << 1);
+	if (g) coldataColor = (coldataColor & 0b11111'00000'11111'1) | (intensity << 6);
+	if (b) coldataColor = (coldataColor & 0b00000'11111'11111'1) | (intensity << 11);
+}
+
 void ppu::writeBgScrollX(int bgId,unsigned char val)
 {
 	if (bgId >= 4)
@@ -406,7 +417,7 @@ void ppu::tileViewerRenderTile2bpp(int px, int py, int tileAddr)
 
 void ppu::tileViewerRenderTiles()
 {
-	int tileAddr = 0x6000;
+	int tileAddr = 0x0000;
 	for (int y = 0;y < 24;y++)
 	{
 		for (int x = 0;x < 16;x++)
@@ -1211,14 +1222,16 @@ void ppu::renderSpritesScanline(int scanlinenum)
 
 					int realx = x;
 					if (x_flip) realx = spriteDimX - x - 1;
-					unsigned int pixaddr = ((x_pos + realx) + (scanlinenum * ppuResolutionX)) * 4;
+					int theEx = (x_pos + realx);
+					//if (theEx >= 256) theEx %= 256;
+					unsigned int pixaddr = (theEx + (scanlinenum * ppuResolutionX)) * 4;
 					if ((pixaddr >= 0) && (pixaddr < (ppuResolutionX * ppuResolutionY * 4)))
 					{
-						if ( (((x_pos + realx) >= 0) && ((x_pos + realx) < 256)) && (pixPalIdx != 0) )
+						if ( ((theEx >= 0) && (theEx < 256)) && (pixPalIdx != 0) )
 						{
-							unsigned char* pObjColorAppo = &objColorAppo[(x_pos + realx) * 4];
-							unsigned char* pObjPriAppo = &objPriorityAppo[x_pos + realx];
-							bool* pObjTranspAppo = &objIsTransparentAppo[x_pos + realx];
+							unsigned char* pObjColorAppo = &objColorAppo[theEx * 4];
+							unsigned char* pObjPriAppo = &objPriorityAppo[theEx];
+							bool* pObjTranspAppo = &objIsTransparentAppo[theEx];
 
 							*pObjColorAppo = palArr[(pixPalIdx * 3) + 0]; pObjColorAppo++;
 							*pObjColorAppo = palArr[(pixPalIdx * 3) + 1]; pObjColorAppo++;
@@ -1229,9 +1242,9 @@ void ppu::renderSpritesScanline(int scanlinenum)
 						}
 						else
 						{
-							if (((x_pos + realx) >= 0) && ((x_pos + realx) < 256))
+							if ((theEx >= 0) && (theEx < 256))
 							{
-								unsigned char* pObjPriAppo = &objPriorityAppo[x_pos + realx];
+								unsigned char* pObjPriAppo = &objPriorityAppo[theEx];
 								*pObjPriAppo = priority; 
 							}
 						}
@@ -1484,7 +1497,8 @@ void ppu::renderScanline(int scanlinenum)
 
 			if (finalCol == -1)
 			{
-				unsigned int backdropColor = (((int)(cgram[1] & 0x7f)) << 8) | cgram[0];
+				//unsigned int backdropColor = (((int)(cgram[1] & 0x7f)) << 8) | cgram[0];
+				unsigned int backdropColor = coldataColor;
 				unsigned char red = backdropColor & 0x1f; red <<= 3;
 				unsigned char green = (backdropColor >> 5) & 0x1f; green <<= 3;
 				unsigned char blue = (backdropColor >> 10) & 0x1f; blue <<= 3;
@@ -1536,7 +1550,8 @@ void ppu::renderScanline(int scanlinenum)
 
 			if (finalCol == -1)
 			{
-				unsigned int backdropColor = (((int)(cgram[1] & 0x7f)) << 8) | cgram[0];
+				//unsigned int backdropColor = (((int)(cgram[1] & 0x7f)) << 8) | cgram[0];
+				unsigned int backdropColor = coldataColor;
 				unsigned char red = backdropColor & 0x1f; red <<= 3;
 				unsigned char green = (backdropColor >> 5) & 0x1f; green <<= 3;
 				unsigned char blue = (backdropColor >> 10) & 0x1f; blue <<= 3;

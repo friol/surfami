@@ -56,6 +56,7 @@ private:
 	unsigned char* vramViewerBitmap;
 	void tileViewerRenderTile2bpp(int px, int py, int tileAddr);
 
+	unsigned int coldataColor = 0;
 	unsigned char bgColorAppo[4][256 * 4];
 	unsigned char bgPriorityAppo[4][256];
 	bool bgIsTransparentAppo[4][256];
@@ -121,18 +122,18 @@ public:
 	void writeOAMAddressLow(unsigned char val) 
 	{ 
 		OAMAddr = (OAMAddr & 0x0200) | (val << 1);
-		//OAMAddr = (OAMAddr & 0xff00) | val; 
 	}
 	
 	void writeOAMAddressHigh(unsigned char val) 
 	{ 
 		OAMAddr = ((val & 1) << 9) | (OAMAddr & 0x01fe);
-		//OAMAddr = (OAMAddr & 0xff) | (val<<8); 
 	}
 
 	void writeOAM(unsigned char val);
 	unsigned char readOAM() { return OAM[OAMAddr++ & 0x1ff]; }
 	unsigned char* getOAMPtr() { return OAM; }
+
+	void writeSubscreenFixedColor(unsigned char val);
 
 	void getPalette(unsigned char* destArr);
 	int getCurrentBGMode();

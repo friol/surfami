@@ -55,6 +55,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x32,2,"AND (param0)",Immediate8,false,false,true}, // validatedF
 	{0x34,2,"BIT param0,X",Immediate8,false,false,true}, // validatedF
 	{0x35,2,"AND param0,X",Immediate8,false,false,true}, // validatedF
+	{0x36,2,"ROL param0,X",Immediate8,false,false,true}, // validatedF
 	{0x37,2,"AND [param0],Y",Immediate8,false,false,true}, // fck
 	{0x38,1,"SEC",None,false,false,true}, // validatedF
 	{0x39,3,"AND param0,Y",Absolute16,false,false,true}, // validatedF

@@ -89,7 +89,6 @@ void mmu::DMAstart(unsigned char val)
 				{
 					if (!dma_dir)
 					{
-						//write8(0x2100 + BBusAddr, snesRAM[targetAddr]);
 						write8(0x2100 + BBusAddr, read8(targetAddr));
 					}
 					else
@@ -116,19 +115,23 @@ void mmu::DMAstart(unsigned char val)
 					{
 						write8(0x2100 + BBusAddr, read8(targetAddr));
 						if (!--byteCount) return;
-						write8(0x2100 + BBusAddr+1, read8(targetAddr+1));
+						targetAddr += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+						write8(0x2100 + BBusAddr+1, read8(targetAddr));
 						if (!--byteCount) return;
+						targetAddr += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
 					}
 					else 
 					{
 						write8(targetAddr, read8(0x2100 + BBusAddr));
 						if (!--byteCount) return;
-						write8(targetAddr + 1, read8(0x2100 + BBusAddr + 1));
+						targetAddr += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+						write8(targetAddr, read8(0x2100 + BBusAddr + 1));
 						if (!--byteCount) return;
+						targetAddr += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
 					}
 					snesRAM[0x4306 + (dmaChannel * 0x10)] = (unsigned char)(byteCount >> 8);
 					snesRAM[0x4305 + (dmaChannel * 0x10)] = (unsigned char)(byteCount & 0xff);
-					targetAddr += (dma_step == 0) ? 2 : ((dma_step == 2) ? -2 : 0);
+					//targetAddr += (dma_step == 0) ? 2 : ((dma_step == 2) ? -2 : 0);
 				}
 
 				snesRAM[0x4306 + (dmaChannel * 0x10)] = 0;
@@ -142,10 +145,8 @@ void mmu::DMAstart(unsigned char val)
 				{
 					if (!dma_dir)
 					{
-						//write8(0x2100 + BBusAddr, snesRAM[targetAddr]);
 						write8(0x2100 + BBusAddr, read8(targetAddr));
 						if (!--byteCount) return;
-						//write8(0x2100 + BBusAddr, snesRAM[targetAddr + 1]);
 						write8(0x2100 + BBusAddr, read8(targetAddr+1));
 						if (!--byteCount) return;
 					}
@@ -176,14 +177,24 @@ void mmu::DMAstart(unsigned char val)
 
 void mmu::mmuDMATransfer(unsigned char dma_mode, unsigned char dma_dir, unsigned char dma_step,unsigned int& cpu_address, unsigned char io_address) 
 {
+	if (dma_step != 0)
+	{
+		int err = 0;
+	}
+
 	switch (dma_mode) 
 	{
 	case 0: 
 	{						//	transfer 1 byte (e.g. WRAM)
 		if (!dma_dir)
+		{
 			write8(0x2100 + io_address, read8(cpu_address));
+		}
 		else
+		{
 			write8(cpu_address, read8(0x2100 + io_address));
+		}
+
 		cpu_address += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
 		break;
 	}
@@ -191,35 +202,46 @@ void mmu::mmuDMATransfer(unsigned char dma_mode, unsigned char dma_dir, unsigned
 		if (!dma_dir) 
 		{
 			write8(0x2100 + io_address, read8(cpu_address));
-			write8(0x2100 + io_address + 1, read8(cpu_address + 1));
+			cpu_address += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+			write8(0x2100 + io_address + 1, read8(cpu_address));
+			cpu_address += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
 		}
 		else 
 		{
 			write8(cpu_address,read8(0x2100 + io_address));
-			write8(cpu_address + 1, read8(0x2100 + io_address + 1));
+			cpu_address += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+			write8(cpu_address, read8(0x2100 + io_address + 1));
+			cpu_address += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
 		}
-		cpu_address += (dma_step == 0) ? 2 : ((dma_step == 2) ? -2 : 0);
+		//cpu_address += (dma_step == 0) ? 2 : ((dma_step == 2) ? -2 : 0);
 		break;
 	case 2:							//	transfer 2 bytes (xx, xx) (e.g. OAM / CGRAM)
 		if (!dma_dir) 
 		{
 			write8(0x2100 + io_address, read8(cpu_address));
-			write8(0x2100 + io_address, read8(cpu_address + 1));
+			cpu_address += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+			write8(0x2100 + io_address, read8(cpu_address));
+			cpu_address += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
 		}
 		else 
 		{
 			write8(cpu_address, read8(0x2100 + io_address));
 			write8(cpu_address, read8(0x2100 + io_address + 1));
+			cpu_address += (dma_step == 0) ? 2 : ((dma_step == 2) ? -2 : 0);
 		}
-		cpu_address += (dma_step == 0) ? 2 : ((dma_step == 2) ? -2 : 0);
+		//cpu_address += (dma_step == 0) ? 2 : ((dma_step == 2) ? -2 : 0);
 		break;
 	case 3:							//	transfer 4 bytes (xx, xx, xx + 1, xx + 1) (e.g. BGnxOFX, M7x)
 		if (!dma_dir) 
 		{
 			write8(0x2100 + io_address, read8(cpu_address));
-			write8(0x2100 + io_address, read8(cpu_address + 1));
-			write8(0x2100 + io_address + 1, read8(cpu_address + 2));
-			write8(0x2100 + io_address + 1, read8(cpu_address + 3));
+			cpu_address += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+			write8(0x2100 + io_address, read8(cpu_address));
+			cpu_address += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+			write8(0x2100 + io_address + 1, read8(cpu_address));
+			cpu_address += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+			write8(0x2100 + io_address + 1, read8(cpu_address));
+			cpu_address += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
 		}
 		else 
 		{
@@ -227,25 +249,34 @@ void mmu::mmuDMATransfer(unsigned char dma_mode, unsigned char dma_dir, unsigned
 			write8(cpu_address, read8(0x2100 + io_address + 1));
 			write8(cpu_address + 1, read8(0x2100 + io_address + 2));
 			write8(cpu_address + 1, read8(0x2100 + io_address + 3));
+			cpu_address += (dma_step == 0) ? 4 : ((dma_step == 2) ? -4 : 0);
 		}
-		cpu_address += (dma_step == 0) ? 4 : ((dma_step == 2) ? -4 : 0);
+		//cpu_address += (dma_step == 0) ? 4 : ((dma_step == 2) ? -4 : 0);
 		break;
 	case 4:							//	transfer 4 bytes (xx, xx + 1, xx + 2, xx + 3) (e.g. BGnSC, Window, APU...)
 		if (!dma_dir) 
 		{
 			write8(0x2100 + io_address, read8(cpu_address));
-			write8(0x2100 + io_address + 1, read8(cpu_address + 1));
-			write8(0x2100 + io_address + 2, read8(cpu_address + 2));
-			write8(0x2100 + io_address + 3, read8(cpu_address + 3));
+			cpu_address += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+			write8(0x2100 + io_address + 1, read8(cpu_address));
+			cpu_address += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+			write8(0x2100 + io_address + 2, read8(cpu_address));
+			cpu_address += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+			write8(0x2100 + io_address + 3, read8(cpu_address));
+			cpu_address += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
 		}
 		else 
 		{
 			write8(cpu_address, read8(0x2100 + io_address));
-			write8(cpu_address + 1, read8(0x2100 + io_address + 1));
-			write8(cpu_address + 2, read8(0x2100 + io_address + 2));
-			write8(cpu_address + 2, read8(0x2100 + io_address + 3));
+			cpu_address += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+			write8(cpu_address, read8(0x2100 + io_address + 1));
+			cpu_address += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+			write8(cpu_address, read8(0x2100 + io_address + 2));
+			cpu_address += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+			write8(cpu_address, read8(0x2100 + io_address + 3));
+			cpu_address += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
 		}
-		cpu_address += (dma_step == 0) ? 4 : ((dma_step == 2) ? -4 : 0);
+		//cpu_address += (dma_step == 0) ? 4 : ((dma_step == 2) ? -4 : 0);
 		break;
 	case 5:					//	transfer 4 bytes (xx, xx + 1, xx, xx + 1) - RESERVED
 		break;
@@ -451,7 +482,7 @@ void mmu::write8(unsigned int address, unsigned char val)
 		}
 		else if ((adr == 0x2107) || (adr == 0x2108) || (adr == 0x2109) || (adr == 0x210A))
 		{
-			int bgid = adr - 0x2107 +1;
+			//int bgid = adr - 0x2107 +1;
 			//glbTheLogger.logMsg("Writing [" + strr.str() + "] for BG"+std::to_string(bgid)+" (BGx Screen Base and Screen Size)");
 			pPPU->writeRegister(adr, val);
 			return;
@@ -553,6 +584,12 @@ void mmu::write8(unsigned int address, unsigned char val)
 			{
 				pPPU->writeM7VOFS(val);
 			}
+			return;
+		}
+		else if (adr == 0x2132)
+		{
+			// 2132h - COLDATA - Color Math Sub Screen Backdrop Color (W)
+			pPPU->writeSubscreenFixedColor(val);
 			return;
 		}
 		else if ((adr == 0x2140) || (adr == 0x2141) || (adr == 0x2142) || (adr == 0x2143))
