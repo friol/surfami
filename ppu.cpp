@@ -1468,7 +1468,7 @@ void ppu::renderScanline(int scanlinenum)
 	else if (screenMode == 0x01)
 	{
 		// 1      16-color    16-color    4-color     -         ;Normal
-		if ((((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 0)))) renderBGScanline(0, 4, scanlinenum);
+		if ((((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) ) renderBGScanline(0, 4, scanlinenum);
 		if ( (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1))) ) renderBGScanline(1, 4, scanlinenum);
 		if ((((mainScreenDesignation & 0x1f) & (1 << 2)) > 0)) renderBGScanline(2, 2, scanlinenum);
 
@@ -1497,8 +1497,17 @@ void ppu::renderScanline(int scanlinenum)
 
 			if (finalCol == -1)
 			{
-				//unsigned int backdropColor = (((int)(cgram[1] & 0x7f)) << 8) | cgram[0];
-				unsigned int backdropColor = coldataColor;
+				unsigned int backdropColor;
+				
+				if (((subScreenDesignation & 0x1f) & (1 << 1)))
+				{
+					backdropColor = coldataColor;
+				}
+				else
+				{
+					backdropColor= (((int)(cgram[1] & 0x7f)) << 8) | cgram[0];
+				}
+				
 				unsigned char red = backdropColor & 0x1f; red <<= 3;
 				unsigned char green = (backdropColor >> 5) & 0x1f; green <<= 3;
 				unsigned char blue = (backdropColor >> 10) & 0x1f; blue <<= 3;
@@ -1759,6 +1768,7 @@ void ppu::step(int numCycles, mmu& theMMU, cpu5a22& theCPU)
 			{
 				theCPU.triggerNMI();
 			}
+			OAMAddr = OAMAddrSave;
 		}
 
 		if (scanline >= totScanlines)

@@ -20,6 +20,7 @@ private:
 	unsigned short int vram[0x8000];
 	unsigned char OAM[0x220];
 	unsigned short int OAMAddr=0;
+	unsigned short int OAMAddrSave = 0;
 	unsigned char OAM_Lsb = 0;
 
 	unsigned char vmainVRAMAddrIncrMode;
@@ -122,11 +123,13 @@ public:
 	void writeOAMAddressLow(unsigned char val) 
 	{ 
 		OAMAddr = (OAMAddr & 0x0200) | (val << 1);
+		OAMAddrSave = OAMAddr;
 	}
 	
 	void writeOAMAddressHigh(unsigned char val) 
 	{ 
 		OAMAddr = ((val & 1) << 9) | (OAMAddr & 0x01fe);
+		OAMAddrSave = OAMAddr;
 	}
 
 	void writeOAM(unsigned char val);
@@ -174,6 +177,8 @@ public:
 			totScanlines = 312;
 		}
 	}
+
+	int getCurrentScanline() { return scanline; }
 
 	~ppu();
 };

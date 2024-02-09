@@ -165,6 +165,41 @@ void mmu::DMAstart(unsigned char val)
 				snesRAM[0x4306 + (dmaChannel * 0x10)] = 0;
 				snesRAM[0x4305 + (dmaChannel * 0x10)] = 0;
 			}
+			else if (dma_mode == 4)
+			{
+				//	4  =  Transfer 4 bytes   xx, xx+1, xx+2, xx+3  ;eg. for BGnSC, Window, APU..
+				while (byteCount > 0)
+				{
+					if (!dma_dir)
+					{
+						write8(0x2100 + BBusAddr, read8(targetAddr));
+						if (!--byteCount) return;
+						write8(0x2100 + BBusAddr+1, read8(targetAddr + 1));
+						if (!--byteCount) return;
+						write8(0x2100 + BBusAddr+2, read8(targetAddr + 2));
+						if (!--byteCount) return;
+						write8(0x2100 + BBusAddr+3, read8(targetAddr + 3));
+						if (!--byteCount) return;
+					}
+					else
+					{
+						write8(targetAddr, read8(0x2100 + BBusAddr));
+						if (!--byteCount) return;
+						write8(targetAddr+1, read8(0x2100 + BBusAddr + 1));
+						if (!--byteCount) return;
+						write8(targetAddr+2, read8(0x2100 + BBusAddr + 2));
+						if (!--byteCount) return;
+						write8(targetAddr+3, read8(0x2100 + BBusAddr + 3));
+						if (!--byteCount) return;
+					}
+					snesRAM[0x4306 + (dmaChannel * 0x10)] = (unsigned char)(byteCount >> 8);
+					snesRAM[0x4305 + (dmaChannel * 0x10)] = (unsigned char)(byteCount & 0xff);
+					targetAddr += (dma_step == 0) ? 4 : ((dma_step == 2) ? -4 : 0);
+				}
+
+				snesRAM[0x4306 + (dmaChannel * 0x10)] = 0;
+				snesRAM[0x4305 + (dmaChannel * 0x10)] = 0;
+			}
 			else
 			{
 				glbTheLogger.logMsg("Error: unsupported dma mode " + std::to_string(dma_mode));
@@ -638,10 +673,10 @@ void mmu::write8(unsigned int address, unsigned char val)
 			snesRAM[0x4217] = (unsigned short int)(((snesRAM[0x4205] << 8) | snesRAM[0x4204]) % val) >> 8;
 			return;
 		}
-		else if (isHiRom && ((bank_nr >= 0x30) && (bank_nr < 0x3f)))
+		else if (isHiRom && ((bank_nr >= 0x30) && (bank_nr < 0x3f)) && hasSRAM)
 		{
 			// SRAM
-			snesRAM[adr] = val;
+			snesRAM[adr%sramSize] = val;
 			return;
 		}
 
@@ -680,6 +715,12 @@ unsigned char mmu::read8(unsigned int address)
 		{
 			return pPPU->getMPY(adr);
 		}
+		else if (adr == 0x2137)
+		{
+			// 2137h - SLHV - Latch H/V-Counter by Software (R)
+			// TODO 
+			return 0x21;
+		}
 		else if (adr == 0x2138)
 		{
 			//	PPU - RDOAM - Read OAM Data (R)
@@ -697,6 +738,12 @@ unsigned char mmu::read8(unsigned int address)
 			//return PPU_readCGRAM(memory[0x2121]);
 			glbTheLogger.logMsg("Error: reading from 213b (CGRAM)");
 		}
+		else if (adr == 0x213d)
+		{
+			// 213Dh - OPVCT - Vertical Counter Latch (R)
+			// TODO
+			return pPPU->getCurrentScanline();
+		}
 		else if (adr == 0x213f)
 		{
 			unsigned char retval = 0x03;
@@ -712,7 +759,9 @@ unsigned char mmu::read8(unsigned int address)
 			// 4016h / Read - JOYA - Joypad Input Register A(R)
 			// manual reading
 
-			return 0x00;
+			//return 0x00;
+			//return rand()%256;
+			return 0xff;
 		}
 		else if (adr==0x4200) 
 		{
@@ -821,10 +870,10 @@ unsigned char mmu::read8(unsigned int address)
 			//4217h - RDMPYH - Unsigned Division Remainder / Multiply Product(up.8bit) (R)
 			return snesRAM[adr];
 		}
-		else if (isHiRom && ((bank_nr >= 0x30) && (bank_nr < 0x3f)))
+		else if (isHiRom && ((bank_nr >= 0x30) && (bank_nr < 0x3f)) && hasSRAM)
 		{
 			// SRAM
-			return snesRAM[adr];
+			return snesRAM[adr%sramSize];
 		}
 		else
 		{

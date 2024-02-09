@@ -48,6 +48,7 @@ private:
 	
 	int isHiRom = false;
 	bool hasSRAM = false;
+	unsigned int sramSize = 0;
 	std::string sramFileName = "";
 	int standard = 0; // 0 NTSC, 1 PAL
 
@@ -78,7 +79,7 @@ public:
 	void write8(unsigned int address, unsigned char val);
 	unsigned char read8(unsigned int address);
 	unsigned char* getInternalRAMPtr() { return snesRAM; }
-	void hasSram(std::string& sramName) { hasSRAM = true; sramFileName = sramName; }
+	void hasSram(std::string& sramName, unsigned int sz) { hasSRAM = true; sramFileName = sramName; sramSize = sz; }
 	unsigned char get4200() { return nmiTimen; }
 
 	void resetHDMA();

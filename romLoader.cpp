@@ -139,10 +139,17 @@ int romLoader::loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>
 
 		for (int pos = 0;pos < fileSize;pos++)
 		{
-			theMMU.write8(0x700000 + pos, sramData[pos]);
+			if (!isHirom)
+			{
+				theMMU.write8(0x700000 + pos, sramData[pos]);
+			}
+			else
+			{
+				theMMU.write8(0x306000 + pos, sramData[pos]);
+			}
 		}
 
-		theMMU.hasSram(sramFileName);
+		theMMU.hasSram(sramFileName, (unsigned int)fileSize);
 	}
 
 	// RESET (emulation)	0xFFFC / 0xFFFD
