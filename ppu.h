@@ -34,6 +34,7 @@ private:
 	unsigned char iniDisp = 0;
 	unsigned char obSel = 0;
 	unsigned char screenDisabled = 0;
+	unsigned char cgwSel = 0;
 
 	int bgTileMapBaseAddress[4];
 	unsigned short int bgScrollX[4];
@@ -119,7 +120,12 @@ public:
 	void writeM7VOFS(unsigned char val);
 	void writeM7Matrix(int mtxparm,unsigned char val);
 	void writeM7SEL(unsigned char val);
-	
+
+	void setCGWSEL(unsigned char val) 
+	{ 
+		cgwSel = val; 
+	}
+
 	void writeOAMAddressLow(unsigned char val) 
 	{ 
 		OAMAddr = (OAMAddr & 0x0200) | (val << 1);

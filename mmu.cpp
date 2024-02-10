@@ -212,11 +212,6 @@ void mmu::DMAstart(unsigned char val)
 
 void mmu::mmuDMATransfer(unsigned char dma_mode, unsigned char dma_dir, unsigned char dma_step,unsigned int& cpu_address, unsigned char io_address) 
 {
-	if (dma_step != 0)
-	{
-		int err = 0;
-	}
-
 	switch (dma_mode) 
 	{
 	case 0: 
@@ -346,10 +341,10 @@ void mmu::resetHDMA()
 			HDMAS[dma_id].line_counter = snesRAM[HDMAS[dma_id].address] & 0x7f;
 
 			//	initial transfer
-			HDMAS[dma_id].address++;
+			//HDMAS[dma_id].address++;
 
 			//	0 - Direct, 1 - Indirect
-			if (HDMAS[dma_id].addressing_mode)
+			/*if (HDMAS[dma_id].addressing_mode)
 			{
 				HDMAS[dma_id].indirect_address = (snesRAM[HDMAS[dma_id].address + 1] << 8) | snesRAM[HDMAS[dma_id].address];
 				HDMAS[dma_id].address += 2;
@@ -358,7 +353,7 @@ void mmu::resetHDMA()
 			else
 			{
 				mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].address, HDMAS[dma_id].IO);
-			}
+			}*/
 		}
 	}
 }
@@ -403,9 +398,9 @@ void mmu::startHDMA()
 
 			if (HDMAS[dma_id].repeat)
 			{
+				//	0 - Direct, 1 - Indirect
 				if (HDMAS[dma_id].addressing_mode)
 				{
-					//	0 - Direct, 1 - Indirect
 					mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].indirect_address, HDMAS[dma_id].IO);
 				}
 				else
@@ -619,6 +614,12 @@ void mmu::write8(unsigned int address, unsigned char val)
 			{
 				pPPU->writeM7VOFS(val);
 			}
+			return;
+		}
+		else if (adr == 0x2130)
+		{
+			// 2130h - CGWSEL - Color Math Control Register A (W)
+			pPPU->setCGWSEL(val);
 			return;
 		}
 		else if (adr == 0x2132)

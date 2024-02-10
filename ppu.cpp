@@ -1589,7 +1589,8 @@ void ppu::renderScanline(int scanlinenum)
 	{
 		// 3      256-color   16-color    -           -         ;Normal   
 		if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBGScanline(1, 4, scanlinenum);
-		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBGScanline(0, 8, scanlinenum);
+		//if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBGScanline(0, 8, scanlinenum);
+		if ((((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 0)))) renderBGScanline(0, 8, scanlinenum);
 
 		if (mainScreenDesignation & 0x10)
 		{
