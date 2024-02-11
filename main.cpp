@@ -699,7 +699,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\BGMAP\\8x8\\8BPP\\32x32\\8x8BGMap8BPP32x32.sfc"; // bg scrolling
     //std::string romName = "d:\\prova\\snes\\Rings.sfc";
     //std::string romName = "d:\\prova\\snes\\MosaicMode3.sfc";
-    std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\HDMA\\RedSpaceHDMA\\RedSpaceHDMA.sfc";
+    //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\HDMA\\RedSpaceHDMA\\RedSpaceHDMA.sfc";
     //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\HDMA\\HiColor64PerTileRow\\HiColor64PerTileRow.sfc"; 
     //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\HDMA\\WaveHDMA\\WaveHDMA.sfc"; 
     //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\HDMA\\RedSpaceIndirectHDMA\\RedSpaceIndirectHDMA.sfc";
@@ -723,23 +723,28 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\International Superstar Soccer (U) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Kick Off (E).smc";
     //std::string romName = "d:\\prova\\snes\\Tetris Attack (E).smc"; snesStandard = 1;
-    //std::string romName = "d:\\prova\\snes\\Prince of Persia (E) [!].smc";
+    std::string romName = "d:\\prova\\snes\\Prince of Persia (E) [!].smc";
+    //std::string romName = "d:\\prova\\snes\\James Pond's Crazy Sports (E).smc";
+    //std::string romName = "d:\\prova\\snes\\Yoshi's Cookie (E).smc";
+    //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc";
+    //std::string romName = "d:\\prova\\snes\\Incredible Crash Dummies, The (U).smc";
+    //std::string romName = "d:\\prova\\snes\\Sim City (E) [!].smc";
+
+    // suspect HDMA problems
+    //std::string romName = "d:\\prova\\snes\\Frogger (U).smc"; snesStandard = 1; // corrupted frog, cars are not moving
+    //std::string romName = "d:\\prova\\snes\\F-Zero (U).smc"; snesStandard = 1; // mode 7 corrupted perspective, sprites bug (maybe HDMA)
+    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // mode4, HDMA not working
+    //std::string romName = "d:\\prova\\snes\\Gun Force (E).smc"; snesStandard = 1; // black screen with new HDMA?
+
     //std::string romName = "d:\\prova\\snes\\Tiny Toons - Wild and Wacky Sports (U).smc"; // stuck after player select
-
-    // suspected HDMA problems
-    //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc"; // HDMA not working
-    //std::string romName = "d:\\prova\\snes\\Frogger (U).smc"; // corrupted frog, cars are not moving
-    //std::string romName = "d:\\prova\\snes\\F-Zero (U).smc"; // mode 7 corrupted perspective, sprites bug (maybe HDMA)
-
     //std::string romName = "d:\\prova\\snes\\Monopoly (V1.1) (U).smc"; // gah
-    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // mode4
     //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc"; // screen blackens
     //std::string romName = "d:\\prova\\snes\\Final Fight (U).smc"; // missing bgs, screen blacks out in gameplay
     //std::string romName = "d:\\prova\\snes\\Lemmings (E).sfc"; // bg corrupted in mode 1, then crashes
     //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars + Super Mario World (USA).sfc"; // stuck somewhere before first screen
     //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars (U) [!].smc"; // stuck
     //std::string romName = "d:\\prova\\snes\\Pinball Dreams (E).smc"; // stuck, no ball
-    //std::string romName = "d:\\prova\\snes\\R-Type 3 (U).smc"; // stuck
+    //std::string romName = "d:\\prova\\snes\\R-Type 3 (U).smc"; // no graphics
     //std::string romName = "d:\\prova\\snes\\Street Fighter II - The World Warrior (U).smc"; snesStandard = 1; // blank screen
     //std::string romName = "d:\\prova\\snes\\Micro Machines (U).smc"; // stuck
     //std::string romName = "d:\\prova\\snes\\Super Double Dragon (U).smc"; // no input
@@ -753,18 +758,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc"; // stuck 
     //std::string romName = "d:\\prova\\snes\\Super Off Road (E) [!].smc"; // 34, a bg remains uncleared
     //std::string romName = "d:\\prova\\snes\\Sensible Soccer - International Edition (E).smc"; // blank screen
-    //std::string romName = "d:\\prova\\snes\\Gun Force (E).smc";
     //std::string romName = "d:\\prova\\snes\\The Legend Of Zelda -  A Link To The Past.smc"; // bad bg, strange sprites
-    //std::string romName = "d:\\prova\\snes\\Yoshi's Cookie (E).smc";
-    //std::string romName = "d:\\prova\\snes\\Sim City (E) [!].smc";
-    //std::string romName = "d:\\prova\\snes\\James Pond's Crazy Sports (E).smc";
     //std::string romName = "d:\\prova\\snes\\Spanky's Quest (E).smc"; // stuck
     //std::string romName = "d:\\prova\\snes\\Spectre (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Lawnmower Man, The (E).smc"; 
     //std::string romName = "d:\\prova\\snes\\Williams Arcade's Greatest Hits (E) [!].smc"; // a1
     //std::string romName = "d:\\prova\\snes\\Unirally (E) [!].smc"; // crash, SRAM test
     //std::string romName = "d:\\prova\\snes\\petsciirobotsdemo.sfc"; snesStandard = 1; // stuck, missing part of screen
-    //std::string romName = "d:\\prova\\snes\\Incredible Crash Dummies, The (U).smc";
     //std::string romName = "d:\\prova\\snes\\Out of This World (U).smc"; // stuck LDA 0x0800
     //std::string romName = "D:\\prova\\snes\\SNES-master\\Games\\MonsterFarmJump\\MonsterFarmJump.sfc";
 
@@ -774,15 +774,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "D:\\prova\\snes\\HiRom\\Donkey Kong Country (V1.1) (E).smc"; isHiRom = true; snesStandard = 1; 
     //std::string romName = "D:\\prova\\snes\\HiRom\\Final Fantasy III (USA).sfc"; isHiRom = true; // corrupted bg mode 1
     //std::string romName = "D:\\prova\\snes\\HiRom\\Earthworm Jim (U).smc"; isHiRom = true;
-    //std::string romName = "D:\\prova\\snes\\HiRom\\Super Bomberman (U).smc"; isHiRom = true; // gah
+    //std::string romName = "D:\\prova\\snes\\HiRom\\Super Bomberman (U).smc"; isHiRom = true; // black screen on mode 1
     //std::string romName = "D:\\prova\\snes\\HiRom\\Diddy's Kong Quest (E).smc"; isHiRom = true; snesStandard = 1;
 
     // demos
     //std::string romName = "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc"; snesStandard = 1;
-    //std::string romName = "d:\\prova\\snes\\elix-smashit-pal.sfc"; snesStandard = 1;
+    //std::string romName = "d:\\prova\\snes\\elix-smashit-pal.sfc"; snesStandard = 1; // mode6
     //std::string romName = "D:\\prova\\snes\\demos\\elix-nu-pal.sfc"; snesStandard = 1;
     //std::string romName = "D:\\prova\\snes\\demos\\2.68 MHz Demo (PD).sfc"; snesStandard = 1; // stuck on wai
-    //std::string romName = "D:\\prova\\snes\\demos\\DSR_STNICCC_NOFX_SNES_PAL.sfc"; // no mode7
+    //std::string romName = "D:\\prova\\snes\\demos\\DSR_STNICCC_NOFX_SNES_PAL.sfc"; // no mode7 graphics
     //std::string romName = "D:\\prova\\snes\\demos\\rse-intro.sfc"; snesStandard = 1; // 42, HDMA problems
     //std::string romName = "d:\\prova\\snes\\demo_mode3.smc"; isHiRom = true;
 
@@ -1262,7 +1262,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x808259, 0xea);
         theMMU.write8(0x809b94, 0xea);
         theMMU.write8(0x809b95, 0xea);
-        
         theMMU.write8(0x80bcca, 0xea);
         theMMU.write8(0x80bccb, 0xea);
         theMMU.write8(0x80bceb, 0xea);
@@ -1450,6 +1449,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0xb58427, 0xea);
         theMMU.write8(0xb58431, 0xea);
         theMMU.write8(0xb58432, 0xea);
+
+    }
+    else if (romName == "d:\\prova\\snes\\Final Fantasy IV (J).smc")
+    {
+        theMMU.write8(0x9260, 0xea);
+        theMMU.write8(0x9261, 0xea);
+        theMMU.write8(0x9287, 0xea);
+        theMMU.write8(0x9288, 0xea);
 
     }
     

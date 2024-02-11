@@ -18,14 +18,20 @@ public:
 	bool enabled = false;
 	bool repeat = false;
 	bool terminated = false;
+	bool doTransfer = false;
+
 	unsigned char direction = 0;
 	unsigned char addressing_mode = 0;
 	unsigned char dma_mode = 0;
-	unsigned char IO = 0;
 	unsigned int indirect_address = 0;
-	unsigned char line_counter = 0;
+	unsigned char repCount = 0;
 	unsigned int aaddress = 0;
 	unsigned int address = 0;
+	unsigned int size = 0;
+	unsigned char indBank = 0;
+	unsigned char bAdr = 0;
+	unsigned char aBank = 0;
+	unsigned char fromB = 0;
 
 	DMA() {};
 	void hdmaEnable(bool e) 
@@ -51,10 +57,12 @@ private:
 	unsigned int sramSize = 0;
 	std::string sramFileName = "";
 	int standard = 0; // 0 NTSC, 1 PAL
+	unsigned short int input1latch = 0;
 
 	void DMAstart(unsigned char val);
 	DMA HDMAS[8];
 	void mmuDMATransfer(unsigned char dma_mode, unsigned char dma_dir, unsigned char dma_step,unsigned int& cpu_address, unsigned char io_address);
+	void dma_transferByte(unsigned short int aAdr, unsigned char aBank, unsigned char bAdr, bool fromB);
 	//const int hdmaAmount = 128;
 
 	unsigned char wram281x[3];
@@ -83,7 +91,7 @@ public:
 	unsigned char get4200() { return nmiTimen; }
 
 	void resetHDMA();
-	void startHDMA();
+	void executeHDMA();
 
 	bool isVblankNMIEnabled() { return ((nmiTimen & 0x80) == 0x80); }
 	void setNMIFlag() { nmiFlag = true; }

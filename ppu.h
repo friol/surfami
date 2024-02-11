@@ -70,10 +70,9 @@ private:
 	unsigned char* screenFramebuffer;
 
 	void renderTile(int bpp,int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip);
-	void renderSprite(int px, int py, int tileNum, int palId);
+	//void renderSprite(int px, int py, int tileNum, int palId);
 
 	void renderBackdrop();
-	/*void renderBG(int bgnum, int bpp);*/
 	void renderSprites();
 	void renderSpritesScanline(int scanlinenum);
 

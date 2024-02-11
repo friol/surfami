@@ -1409,9 +1409,12 @@ void ppu::renderScanline(int scanlinenum)
 		// 0      4-color     4-color     4-color     4-color   ;Normal   
 		for (int bg = 3;bg >= 0;bg--)
 		{
-			if (((mainScreenDesignation & 0x1f) & (1 << bg)) > 0)
+			//if (bg == 1)
 			{
-				renderBGScanline(bg, 2, scanlinenum);
+				if (((mainScreenDesignation & 0x1f) & (1 << bg)) > 0)
+				{
+					renderBGScanline(bg, 2, scanlinenum);
+				}
 			}
 		}
 
@@ -1499,14 +1502,14 @@ void ppu::renderScanline(int scanlinenum)
 			{
 				unsigned int backdropColor;
 				
-				if (((subScreenDesignation & 0x1f) & (1 << 1)))
-				{
-					backdropColor = coldataColor;
-				}
-				else
-				{
+				//if (((subScreenDesignation & 0x1f) & (1 << 1)))
+				//{
+				//	backdropColor = coldataColor;
+				//}
+				//else
+				//{
 					backdropColor= (((int)(cgram[1] & 0x7f)) << 8) | cgram[0];
-				}
+				//}
 				
 				unsigned char red = backdropColor & 0x1f; red <<= 3;
 				unsigned char green = (backdropColor >> 5) & 0x1f; green <<= 3;
@@ -1749,7 +1752,7 @@ void ppu::step(int numCycles, mmu& theMMU, cpu5a22& theCPU)
 	if ((internalCyclesCounter >= hdmaStartingPos)&&(hdmaStartedForThisLine==false))
 	{
 		hdmaStartedForThisLine = true;
-		theMMU.startHDMA();
+		theMMU.executeHDMA();
 	}
 
 	if (internalCyclesCounter >= cyclesPerScanline)
@@ -1762,7 +1765,7 @@ void ppu::step(int numCycles, mmu& theMMU, cpu5a22& theCPU)
 		// NMI
 		if (scanline == vblankStartScanline)
 		{
-			theMMU.resetHDMA();
+			//theMMU.resetHDMA();
 			theMMU.setNMIFlag();
 			// trigger nmi if not blocked
 			if (theMMU.isVblankNMIEnabled())

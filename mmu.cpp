@@ -210,6 +210,7 @@ void mmu::DMAstart(unsigned char val)
 	snesRAM[0x420b] = 0x00;
 }
 
+/*
 void mmu::mmuDMATransfer(unsigned char dma_mode, unsigned char dma_dir, unsigned char dma_step,unsigned int& cpu_address, unsigned char io_address) 
 {
 	switch (dma_mode) 
@@ -341,10 +342,10 @@ void mmu::resetHDMA()
 			HDMAS[dma_id].line_counter = snesRAM[HDMAS[dma_id].address] & 0x7f;
 
 			//	initial transfer
-			//HDMAS[dma_id].address++;
+			HDMAS[dma_id].address++;
 
 			//	0 - Direct, 1 - Indirect
-			/*if (HDMAS[dma_id].addressing_mode)
+			if (HDMAS[dma_id].addressing_mode)
 			{
 				HDMAS[dma_id].indirect_address = (snesRAM[HDMAS[dma_id].address + 1] << 8) | snesRAM[HDMAS[dma_id].address];
 				HDMAS[dma_id].address += 2;
@@ -353,7 +354,7 @@ void mmu::resetHDMA()
 			else
 			{
 				mmuDMATransfer(HDMAS[dma_id].dma_mode, HDMAS[dma_id].direction, 0, HDMAS[dma_id].address, HDMAS[dma_id].IO);
-			}*/
+			}
 		}
 	}
 }
@@ -412,6 +413,159 @@ void mmu::startHDMA()
 
 		nextHDMA:
 		int nxt = 1; nxt = 2;
+	}
+}
+*/
+
+void mmu::resetHDMA()
+{
+	bool hdmaEnabled = false;
+	for (int i = 0; i < 8; i++) 
+	{
+		if (HDMAS[i].enabled) hdmaEnabled = true;
+		HDMAS[i].doTransfer = false;
+		HDMAS[i].terminated = false;
+	}
+	
+	if (!hdmaEnabled) return;
+
+	// init
+
+	for (unsigned char dma_id = 0; dma_id < 8; dma_id++)
+	{
+		if (HDMAS[dma_id].enabled)
+		{
+			HDMAS[dma_id].aaddress = (snesRAM[0x4304 + (dma_id * 0x10)] << 16) | (snesRAM[0x4303 + (dma_id * 0x10)] << 8) | snesRAM[0x4302 + (dma_id * 0x10)];
+			HDMAS[dma_id].address = HDMAS[dma_id].aaddress;
+			HDMAS[dma_id].addressing_mode = (snesRAM[0x4300 + (dma_id * 0x10)] >> 6) & 1;
+			HDMAS[dma_id].dma_mode = snesRAM[0x4300 + (dma_id * 0x10)] & 0b111;
+			HDMAS[dma_id].indBank = snesRAM[0x4307 + (dma_id * 0x10)];
+			HDMAS[dma_id].bAdr = snesRAM[0x4301 + (dma_id * 0x10)];
+			HDMAS[dma_id].aBank = snesRAM[0x4304 + (dma_id * 0x10)];
+			HDMAS[dma_id].fromB = (snesRAM[0x4300 + (dma_id * 0x10)]) & 0x80;
+			HDMAS[dma_id].repCount = read8((HDMAS[dma_id].aBank << 16) | HDMAS[dma_id].address++);
+
+			if (HDMAS[dma_id].repCount == 0) HDMAS[dma_id].terminated = true;
+
+			if (HDMAS[dma_id].addressing_mode==1)
+			{
+				HDMAS[dma_id].size = read8((HDMAS[dma_id].aBank << 16) | HDMAS[dma_id].address++);
+				HDMAS[dma_id].size |= read8((HDMAS[dma_id].aBank << 16) | HDMAS[dma_id].address++) << 8;
+			}
+			
+			HDMAS[dma_id].doTransfer = true;
+		}
+	}
+}
+
+void mmu::dma_transferByte(unsigned short int aAdr, unsigned char aBank, unsigned char bAdr, bool fromB) 
+{
+	bool validB = !(bAdr == 0x80 && (aBank == 0x7e || aBank == 0x7f || 
+		(
+		(aBank < 0x40 || (aBank >= 0x80 && aBank < 0xc0)) && aAdr < 0x2000
+		)));
+
+	bool validA = !((aBank < 0x40 || (aBank >= 0x80 && aBank < 0xc0)) && (
+		aAdr == 0x420b || aAdr == 0x420c || (aAdr >= 0x4300 && aAdr < 0x4380) || (aAdr >= 0x2100 && aAdr < 0x2200)
+		));
+
+	if (fromB) 
+	{
+		unsigned char val = validB ? read8(0x2100+bAdr) : 0x00;
+		if (validA) write8((aBank << 16) | aAdr, val);
+	}
+	else 
+	{
+		unsigned char val = validA ? read8((aBank << 16) | aAdr) : 0x00;
+		if (validB) write8(0x2100+bAdr, val);
+	}
+}
+
+void mmu::executeHDMA()
+{
+	const int bAdrOffsets[8][4] = {
+	  {0, 0, 0, 0},
+	  {0, 1, 0, 1},
+	  {0, 0, 0, 0},
+	  {0, 0, 1, 1},
+	  {0, 1, 2, 3},
+	  {0, 1, 0, 1},
+	  {0, 0, 0, 0},
+	  {0, 0, 1, 1}
+	};
+
+	const int transferLength[8] = {
+	  1, 2, 2, 4, 4, 4, 2, 4
+	};
+
+	bool hdmaActive = false;
+	int lastActive = 0;
+	for (int i = 0; i < 8; i++) 
+	{
+		if (HDMAS[i].enabled)
+		{
+			hdmaActive = true;
+			if (!HDMAS[i].terminated) lastActive = i;
+		}
+	}
+
+	if (!hdmaActive) return;
+
+	for (int i = 0; i < 8; i++) 
+	{
+		if (HDMAS[i].enabled && (!HDMAS[i].terminated))
+		{
+			if (HDMAS[i].doTransfer)
+			{
+				for (int j = 0; j < transferLength[HDMAS[i].dma_mode]; j++)
+				{
+					if (HDMAS[i].addressing_mode == 1)
+					{
+						dma_transferByte(
+							HDMAS[i].size++, HDMAS[i].indBank,
+							HDMAS[i].bAdr + bAdrOffsets[HDMAS[i].dma_mode][j], HDMAS[i].fromB
+						);
+					}
+					else 
+					{
+						dma_transferByte(
+							HDMAS[i].address++, HDMAS[i].aBank,
+							HDMAS[i].bAdr + bAdrOffsets[HDMAS[i].dma_mode][j], HDMAS[i].fromB
+						);
+					}
+				}
+			}
+		}
+	}
+	
+	for (int i = 0; i < 8; i++) 
+	{
+		if (HDMAS[i].enabled && (!HDMAS[i].terminated))
+		{
+			HDMAS[i].repCount--;
+			HDMAS[i].doTransfer = HDMAS[i].repCount & 0x80;
+
+			unsigned char newRepCount = read8((HDMAS[i].aBank << 16) | HDMAS[i].address);
+			if ((HDMAS[i].repCount & 0x7f) == 0) 
+			{
+				HDMAS[i].repCount = newRepCount;
+				HDMAS[i].address++;
+				if (HDMAS[i].addressing_mode==1)
+				{
+					if (HDMAS[i].repCount == 0 && i == lastActive)
+					{
+						HDMAS[i].size = 0;
+					}
+					else 
+					{
+						HDMAS[i].size = read8((HDMAS[i].aBank << 16) | HDMAS[i].address++);
+					}
+					HDMAS[i].size |= read8((HDMAS[i].aBank << 16) | HDMAS[i].address++) << 8;
+				}
+				if (HDMAS[i].repCount == 0) HDMAS[i].terminated = true;
+				HDMAS[i].doTransfer = true;
+			}
+		}
 	}
 }
 
@@ -633,6 +787,26 @@ void mmu::write8(unsigned int address, unsigned char val)
 			pAPU->write8(adr, val);
 			return;
 		}
+		else if (adr == 0x4016)
+		{
+			if (val & 0x01)
+			{
+				input1latch = 0;
+				if (isKeyBPressed) input1latch |= 0x8000;
+				if (isKeyYPressed) input1latch |= 0x4000;
+				if (isKeySelectPressed) input1latch |= 0x2000;
+				if (isKeyStartPressed) input1latch |= 0x1000;
+				if (isKeyRightPressed) input1latch |= 0x0100;
+				if (isKeyLeftPressed) input1latch |= 0x0200;
+				if (isKeyDownPressed) input1latch |= 0x0400;
+				if (isKeyUpPressed) input1latch |= 0x0800;
+				if (isKeyAPressed) input1latch |= 0x80;
+				if (isKeyXPressed) input1latch |= 0x40;
+				if (isKeyLPressed) input1latch |= 0x20;
+				if (isKeyRPressed) input1latch |= 0x10;
+			}
+			return;
+		}
 		else if (adr == 0x4202)			//	CPU MATH - WRMPYA - Multiplicand
 		{
 			snesRAM[adr] = val;
@@ -758,11 +932,12 @@ unsigned char mmu::read8(unsigned int address)
 		else if (adr == 0x4016)
 		{
 			// 4016h / Read - JOYA - Joypad Input Register A(R)
-			// manual reading
+			// manual reading TODO
 
-			//return 0x00;
-			//return rand()%256;
-			return 0xff;
+			unsigned char ret = input1latch & 1;
+			input1latch >>= 1;
+			input1latch |= 0x8000;
+			return ret;
 		}
 		else if (adr==0x4200) 
 		{
@@ -862,6 +1037,12 @@ unsigned char mmu::read8(unsigned int address)
 		{
 			// 421Ah/421Bh - JOY2L/JOY2H - Joypad 2 (gameport 2, pin 4) (R) TODO
 			return 0;
+		}
+		else if ((adr == 0x430a) || (adr == 0x431a) || (adr == 0x432a) || (adr == 0x433a) || (adr == 0x434a) || (adr == 0x435a) || (adr == 0x436a) || (adr == 0x437a))
+		{
+			// 43xAh - NTRLx - HDMA Line - Counter(from current Table entry) (R / W)
+			int hdmaChan = (adr & 0x70)>>4;
+			return HDMAS[hdmaChan].repCount;
 		}
 		else if ((adr == 0x4214)|| (adr == 0x4215)|| (adr == 0x4216)|| (adr == 0x4217))
 		{
