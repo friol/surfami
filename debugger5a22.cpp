@@ -8,72 +8,72 @@ static const debugInfoRec debugInstrData[] =
 	{0x00,1,"BRK",None,false,false,true},						// validatedFC
 	{0x02,2,"COP param0",Immediate8,false,false,true},			// validatedFC
 	{0x03,2,"ORA param0",Immediate8,false,false,true},			// validatedFC
-	{0x04,2,"TSB param0",Immediate8,false,false,true},			// validatedF
-	{0x05,2,"ORA param0",Immediate8,false,false,true},			// validatedF
-	{0x06,2,"ASL param0",Immediate8,false,false,true},			// validatedF
-	{0x07,2,"ORA param0",Immediate8,false,false,true},			// validatedF
+	{0x04,2,"TSB param0",Immediate8,false,false,true},			// validatedFC
+	{0x05,2,"ORA param0",Immediate8,false,false,true},			// validatedFC
+	{0x06,2,"ASL param0",Immediate8,false,false,true},			// validatedFC
+	{0x07,2,"ORA param0",Immediate8,false,false,true},			// validatedFC
 	{0x08,1,"PHP",None,false,false,true},						// validatedFC
-	{0x09,2,"ORA param0",Immediate,false,true,true}, // validatedF
-	{0x0A,1,"ASL A",None,false,false,true}, // validatedF
-	{0x0B,1,"PHD",None,false,false,true}, // validatedF
-	{0x0C,3,"TSB param0",Absolute16,false,false,true}, // validatedF
-	{0x0D,3,"ORA param0",Absolute16,false,false,true}, // validatedF
-	{0x0e,3,"ASL param0",Absolute16,false,false,true}, // validatedF
-	{0x0f,4,"ORA param0",AbsoluteLong,false,false,true}, // validatedF
-	{0x10,2,"BPL param0",Immediate8,false,false,true}, // validatedF
-	{0x11,2,"ORA (param0),Y",Immediate8,false,false,true}, // validatedF
-	{0x12,2,"ORA (param0)",Immediate8,false,false,true}, // validatedF
-	{0x14,2,"TRB param0",Immediate8,false,false,true}, // validatedF
-	{0x15,2,"ORA param0,X",Immediate8,false,false,true}, // validatedF
-	{0x16,2,"ASL param0,X",Immediate8,false,false,true}, // validatedF
-	{0x17,2,"ORA [param0],Y",Immediate8,false,false,true}, // validatedF
-	{0x18,1,"CLC",None,false,false,true}, // validatedF
-	{0x19,3,"ORA param0,Y",Absolute16,false,false,true}, // validatedF
+	{0x09,2,"ORA param0",Immediate,false,true,true}, // validatedFC
+	{0x0A,1,"ASL A",None,false,false,true}, // validatedFC
+	{0x0B,1,"PHD",None,false,false,true}, // validatedFC
+	{0x0C,3,"TSB param0",Absolute16,false,false,true}, // validatedFC
+	{0x0D,3,"ORA param0",Absolute16,false,false,true}, // validatedFC
+	{0x0e,3,"ASL param0",Absolute16,false,false,true}, // validatedFC
+	{0x0f,4,"ORA param0",AbsoluteLong,false,false,true}, // validatedFC
+	{0x10,2,"BPL param0",Immediate8,false,false,true}, // validatedFC
+	{0x11,2,"ORA (param0),Y",Immediate8,false,false,true}, // validatedFC
+	{0x12,2,"ORA (param0)",Immediate8,false,false,true}, // validatedFC
+	{0x14,2,"TRB param0",Immediate8,false,false,true}, // validatedFC
+	{0x15,2,"ORA param0,X",Immediate8,false,false,true}, // validatedFC
+	{0x16,2,"ASL param0,X",Immediate8,false,false,true}, // validatedFC
+	{0x17,2,"ORA [param0],Y",Immediate8,false,false,true}, // validatedFC
+	{0x18,1,"CLC",None,false,false,true}, // validatedFC
+	{0x19,3,"ORA param0,Y",Absolute16,false,false,true}, // validatedFC
 	{0x1A,1,"INC A",None,false,false,true}, // validatedFC
-	{0x1B,1,"TCS",None,false,false,true}, // validatedF
-	{0x1c,3,"TRB param0",Absolute16,false,false,true}, // validatedF
-	{0x1d,3,"ORA param0",Absolute16,false,false,true}, // validatedF
-	{0x1e,3,"ASL param0,X",Absolute16,false,false,true}, // validatedF
-	{0x1f,4,"ORA param0,X",AbsoluteLong,false,false,true}, // validatedF
-	{0x20,3,"JSR param0",Absolute16,false,false,true}, // validatedF
-	{0x21,2,"AND param0,X",Immediate8,false,false,true}, // validatedF
-	{0x22,4,"JSL param0",AbsoluteLong,false,false,true}, // validatedF
-	{0x23,2,"AND param0,S",Immediate8,false,false,true}, // validatedF
-	{0x24,2,"BIT param0",Immediate,false,false,true}, // validatedF
-	{0x25,2,"AND param0",Immediate8,false,false,true}, // validatedF
-	{0x26,2,"ROL param0",Immediate8,false,false,true}, // validatedF
-	{0x27,2,"AND [param0]",Immediate8,false,false,true}, // validatedF
-	{0x28,1,"PLP",None,false,false,true}, // validatedF
-	{0x29,2,"AND param0",Immediate,false,true,true}, // validatedF
-	{0x2a,1,"ROL",None,false,false,true}, // validatedF
-	{0x2b,1,"PLD",None,false,false,true}, // validatedF
-	{0x2c,3,"BIT param0",Absolute16,false,false,true}, // validatedF
-	{0x2d,3,"AND param0",Absolute16,false,false,true}, // validatedF
-	{0x2e,3,"ROL param0",Absolute16,false,false,true}, // validatedF
-	{0x2f,4,"AND param0",AbsoluteLong,false,false,true}, // validatedF
-	{0x30,2,"BMI param0",Immediate8,false,false,true}, // validatedF
-	{0x32,2,"AND (param0)",Immediate8,false,false,true}, // validatedF
-	{0x34,2,"BIT param0,X",Immediate8,false,false,true}, // validatedF
-	{0x35,2,"AND param0,X",Immediate8,false,false,true}, // validatedF
-	{0x36,2,"ROL param0,X",Immediate8,false,false,true}, // validatedF
+	{0x1B,1,"TCS",None,false,false,true}, // validatedFC
+	{0x1c,3,"TRB param0",Absolute16,false,false,true}, // validatedFC
+	{0x1d,3,"ORA param0",Absolute16,false,false,true}, // validatedFC
+	{0x1e,3,"ASL param0,X",Absolute16,false,false,true}, // validatedFC
+	{0x1f,4,"ORA param0,X",AbsoluteLong,false,false,true}, // validatedFC
+	{0x20,3,"JSR param0",Absolute16,false,false,true}, // validatedFC
+	{0x21,2,"AND param0,X",Immediate8,false,false,true}, // validatedFC
+	{0x22,4,"JSL param0",AbsoluteLong,false,false,true}, // validatedFC
+	{0x23,2,"AND param0,S",Immediate8,false,false,true}, // validatedFC
+	{0x24,2,"BIT param0",Immediate,false,false,true}, // validatedFC
+	{0x25,2,"AND param0",Immediate8,false,false,true}, // validatedFC
+	{0x26,2,"ROL param0",Immediate8,false,false,true}, // validatedFC
+	{0x27,2,"AND [param0]",Immediate8,false,false,true}, // validatedFC
+	{0x28,1,"PLP",None,false,false,true}, // validatedFC
+	{0x29,2,"AND param0",Immediate,false,true,true}, // validatedFC
+	{0x2a,1,"ROL",None,false,false,true}, // validatedFC
+	{0x2b,1,"PLD",None,false,false,true}, // validatedFC
+	{0x2c,3,"BIT param0",Absolute16,false,false,true}, // validatedFC
+	{0x2d,3,"AND param0",Absolute16,false,false,true}, // validatedFC
+	{0x2e,3,"ROL param0",Absolute16,false,false,true}, // validatedFC
+	{0x2f,4,"AND param0",AbsoluteLong,false,false,true}, // validatedFC
+	{0x30,2,"BMI param0",Immediate8,false,false,true}, // validatedFC
+	{0x32,2,"AND (param0)",Immediate8,false,false,true}, // validatedFC
+	{0x34,2,"BIT param0,X",Immediate8,false,false,true}, // validatedFC
+	{0x35,2,"AND param0,X",Immediate8,false,false,true}, // validatedFC
+	{0x36,2,"ROL param0,X",Immediate8,false,false,true}, // validatedFC
 	{0x37,2,"AND [param0],Y",Immediate8,false,false,true}, // fck
-	{0x38,1,"SEC",None,false,false,true}, // validatedF
-	{0x39,3,"AND param0,Y",Absolute16,false,false,true}, // validatedF
-	{0x3a,1,"DEC A",None,false,false,true}, // validatedF
-	{0x3b,1,"TSC",None,false,false,true}, // validatedF
-	{0x3c,3,"BIT param0,X",Absolute16,false,false,true}, // validatedF
-	{0x3d,3,"AND param0,X",Absolute16,false,false,true}, // validatedF
-	{0x3e,3,"ROL param0,X",Absolute16,false,false,true}, // validatedF
-	{0x3f,4,"AND param0,X",AbsoluteLong,false,false,true}, // validatedF
-	{0x40,1,"RTI",None,false,false,true}, // validatedF
+	{0x38,1,"SEC",None,false,false,true}, // validatedFC
+	{0x39,3,"AND param0,Y",Absolute16,false,false,true}, // validatedFC
+	{0x3a,1,"DEC A",None,false,false,true}, // validatedFC
+	{0x3b,1,"TSC",None,false,false,true}, // validatedFC
+	{0x3c,3,"BIT param0,X",Absolute16,false,false,true}, // validatedFC
+	{0x3d,3,"AND param0,X",Absolute16,false,false,true}, // validatedFC
+	{0x3e,3,"ROL param0,X",Absolute16,false,false,true}, // validatedFC
+	{0x3f,4,"AND param0,X",AbsoluteLong,false,false,true}, // validatedFC
+	{0x40,1,"RTI",None,false,false,true}, // validatedFC
 	{0x43,2,"EOR param0,S",Immediate8,false,false,true}, // validatedF
 	{0x44,3,"MVP param0",Absolute16,false,false,true},
 	{0x45,2,"EOR param0",Immediate8,false,false,true}, // validatedF
 	{0x46,2,"LSR param0",Immediate8,false,false,true}, // validatedF
 	{0x48,1,"PHA",None,false,false,true}, // validatedF
-	{0x49,2,"EOR param0",Immediate,false,true,true}, // validatedF
-	{0x4a,1,"LSR A",None,false,false,true}, // validatedF
-	{0x4c,3,"JMP param0",Absolute16,false,false,true}, // validatedF
+	{0x49,2,"EOR param0",Immediate,false,true,true}, // validatedFC
+	{0x4a,1,"LSR A",None,false,false,true}, // validatedFC
+	{0x4c,3,"JMP param0",Absolute16,false,false,true}, // validatedFC
 	{0x4d,3,"EOR param0",Absolute16,false,false,true}, // validatedF
 	{0x4e,3,"LSR param0",Absolute16,false,false,true}, // validatedF
 	{0x4f,4,"EOR param0",AbsoluteLong,false,false,true}, // validatedF

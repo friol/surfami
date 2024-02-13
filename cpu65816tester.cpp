@@ -60,8 +60,8 @@ int cpu65816tester::executeTest()
 
 		pCPU->reset();
 		pCPU->setState(initialPC, initialA, initialX, initialY, initialSP, initialDBR, initialD, initialPBR, initialP, initialE);
-		pCPU->stepOne();
-		//int cycles=pCPU->stepOne();
+		//pCPU->stepOne();
+		int cycles=pCPU->stepOne();
 
 		unsigned int finalPC = testData[testId]["final"]["pc"];
 		unsigned int finalA = testData[testId]["final"]["a"];
@@ -144,12 +144,12 @@ int cpu65816tester::executeTest()
 			referenceCycles += 1;
 		}
 
-		/*if (referenceCycles != cycles)
+		if (referenceCycles != cycles)
 		{
 			glbTheLogger.logMsg("Emulated cycles [" + std::to_string(cycles) +
 				"] different from reference val [" + std::to_string(referenceCycles) + "].");
 			return 1;
-		}*/
+		}
 
 		if (breakkk)
 		{

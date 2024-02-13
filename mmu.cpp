@@ -775,6 +775,7 @@ unsigned char mmu::read8(unsigned int address)
 			unsigned char val = (vIrqEnabled && irqTriggered) << 7;
 			irqTriggered = false;
 			return val;// | (snes->openBus & 0x7f);
+			//return val | ((256*rand()) & 0x7f);
 		}
 		else if (adr == 0x4212)
 		{

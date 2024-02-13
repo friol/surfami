@@ -176,12 +176,6 @@ unsigned int cpu5a22::getImmediateAddress16()
 
 unsigned int cpu5a22::getAbsoluteAddress16() 
 {
-	//unsigned char dbr = regDBR;
-	//unsigned short int adr = (
-	//		(pMMU->read8((regPB << 16) | (regPC+2)) << 8) | 
-	//		pMMU->read8((regPB << 16) | (regPC+1))
-	//		);
-	//return (dbr << 16) | adr;
 	unsigned short int adr = ((pMMU->read8((regPB << 16) | ((regPC+2)&0xffff)) << 8) | pMMU->read8((regPB << 16) | ((regPC+1)&0xffff)));
 	return ((regDBR << 16) | adr)&0xffffff;
 }
@@ -189,24 +183,14 @@ unsigned int cpu5a22::getAbsoluteAddress16()
 unsigned int cpu5a22::getAbsoluteAddress16IndexedX()
 {
 	unsigned short int adr = ((pMMU->read8((regPB << 16) | ((regPC + 2)&0xffff)) << 8) | pMMU->read8((regPB << 16) | ((regPC + 1)&0xffff)));
+	pageBound = ((adr & 0xff00) != ((adr + (regX_lo | (regX_hi << 8))) & 0xff00)) | (!regP.getIndexSize());
 	return ((regDBR << 16) + adr + (regX_lo | (regX_hi << 8))) & 0xffffff;
 }
 
 unsigned int cpu5a22::getAbsoluteAddress16IndexedY()
 {
-	//unsigned int adr = ( (pMMU->read8((regPB << 16) | (regPC + 2)) << 8) | pMMU->read8((regPB << 16) | (regPC + 1))	);
-	//bool pbr = (adr & 0xff00) != ((adr + (regY_lo | (regY_hi << 8))) & 0xff00);
-	//if (!regP.getIndexSize() && !regP.getEmulation()) 
-	//{
-	//	adr = adr + (unsigned int)(regY_lo | (regY_hi << 8));
-	//}
-	//else
-	//{
-	//	adr = adr + regY_lo;
-	//}
-	//return ((regDBR << 16) | (adr&0xffffff));
-
 	unsigned short int adr = ( (pMMU->read8((regPB << 16) | (regPC + 2)) << 8) | pMMU->read8((regPB << 16) | (regPC + 1))	);
+	pageBound = ((adr & 0xff00) != ((adr + (regY_lo | (regY_hi << 8))) & 0xff00)) | (!regP.getIndexSize());
 	return ((regDBR << 16) + adr + (regY_lo|(regY_hi<<8))) & 0xffffff;
 }
 
@@ -299,6 +283,7 @@ unsigned int cpu5a22::getDirectPageIndirectIndexedYAddress()
 {
 	unsigned char dp_index = pMMU->read8(((regPB << 16) | ((regPC + 1)&0xffff)));
 	unsigned short int dp_adr = ((pMMU->read8((dp_index + regD + 1)&0xffff) << 8)) | (pMMU->read8((dp_index+ regD)&0xffff));
+	pageBound = ((dp_adr & 0xff00) != ((dp_adr + (regY_lo | (regY_hi << 8))) & 0xff00)) | (!regP.getIndexSize());
 	return ((regDBR << 16) + dp_adr + (regY_lo | (regY_hi << 8)))&0xffffff;
 }
 
@@ -1162,7 +1147,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 3 + cycAdder;
@@ -1419,7 +1404,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 3 + cycAdder;
@@ -1461,7 +1446,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 3 + cycAdder;
@@ -1542,7 +1527,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 3 + cycAdder;
@@ -1635,7 +1620,7 @@ int cpu5a22::stepOne()
 				cycAdder += 2;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 5 + cycAdder;
@@ -1701,7 +1686,7 @@ int cpu5a22::stepOne()
 				cycAdder += 2;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 6 + cycAdder;
@@ -1729,7 +1714,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 3 + cycAdder;
@@ -1748,7 +1733,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 3 + cycAdder;
@@ -1817,7 +1802,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 4 + cycAdder;
@@ -2020,7 +2005,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 4 + cycAdder;
@@ -2271,7 +2256,7 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 3 + cycAdder;
@@ -2307,7 +2292,7 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 5 + cycAdder;
@@ -2343,7 +2328,7 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 6 + cycAdder;
@@ -2375,7 +2360,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 6 + cycAdder;
@@ -2734,7 +2719,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 3 + cycAdder;
@@ -2786,7 +2771,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 6 + cycAdder;
@@ -2821,7 +2806,7 @@ int cpu5a22::stepOne()
 				cycAdder += 2;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 5 + cycAdder;
@@ -2860,7 +2845,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 3 + cycAdder;
@@ -2958,7 +2943,7 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 3 + cycAdder;
@@ -3148,6 +3133,7 @@ int cpu5a22::stepOne()
 				unsigned short int res = val | (regA_lo | (regA_hi << 8));
 				pMMU->write8(addr, res & 0xff);
 				pMMU->write8(addr + 1, res >> 8);
+				cycAdder += 2;
 			}
 
 			regPC += 3;
@@ -3278,7 +3264,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 4+cycAdder;
@@ -3364,7 +3350,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 5 + cycAdder;
@@ -3396,10 +3382,10 @@ int cpu5a22::stepOne()
 				pMMU->write8(addr + 1, val >> 8);
 				regP.setZero(val == 0);
 				regP.setNegative(val >> 15);
-				cycAdder += 1;
+				cycAdder += 2;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 5 + cycAdder;
@@ -3418,7 +3404,7 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 6 + cycAdder;
@@ -3450,7 +3436,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 3 + cycAdder;
@@ -3469,7 +3455,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 6 + cycAdder;
@@ -3500,7 +3486,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 3 + cycAdder;
@@ -3654,7 +3640,7 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder+= 1;
+			if (regD&0xff) cycAdder+= 1;
 
 			regPC += 2;
 			cycles = 6 + cycAdder;
@@ -3724,7 +3710,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 5 + cycAdder; // TODO
@@ -3794,7 +3780,7 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 3 + cycAdder;
@@ -3858,8 +3844,10 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
+			if (pageBoundaryCrossed()) cycAdder += 1;
+
 			regPC += 3;
-			cycles = 4 + cycAdder; // TODO page boundary
+			cycles = 4 + cycAdder;
 			break;
 		}
 		case 0xed:
@@ -3963,7 +3951,7 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 6 + cycAdder;
@@ -4116,7 +4104,7 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 5 + cycAdder;
@@ -4147,7 +4135,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 5 + cycAdder;
@@ -4180,7 +4168,7 @@ int cpu5a22::stepOne()
 				cycAdder += 2;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 5 + cycAdder;
@@ -4210,7 +4198,7 @@ int cpu5a22::stepOne()
 				pMMU->write8(addr + 1, (val << 1) >> 8);
 				regP.setZero((unsigned short int)(val << 1) == 0);
 				regP.setNegative((unsigned short int)(val << 1) >> 15);
-				cycAdder += 1;
+				cycAdder += 2;
 			}
 
 			regPC += 3;
@@ -4290,7 +4278,7 @@ int cpu5a22::stepOne()
 				regP.setZero(res == 0);
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 4 + cycAdder;
@@ -4361,9 +4349,10 @@ int cpu5a22::stepOne()
 				
 				pMMU->write8(addr, res & 0xff);
 				pMMU->write8(addr + 1, res >> 8);
+				cycAdder += 2;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 5 + cycAdder;
@@ -4405,7 +4394,7 @@ int cpu5a22::stepOne()
 			// ADC [dp],Y
 			unsigned int addr = getDirectPageIndirectLongIndexedYAddress();
 			cycles = doADC(addr);
-			if (regP.isDPLowNotZero()) cycles += 1;
+			if (regD&0xff) cycles += 1;
 			regPC += 2;
 			break;
 		}
@@ -4471,7 +4460,8 @@ int cpu5a22::stepOne()
 				regPC = (regPB << 16) | (hi << 8) | lo;
 			}
 
-			cycles=6 + regP.getEmulation();
+			cycles = 6;
+			if (!regP.getEmulation()) cycles += 1;
 			break;
 		}
 		case 0xfe:
@@ -4520,7 +4510,8 @@ int cpu5a22::stepOne()
 				regP.setNegative(regA_lo >> 7);
 				regP.setZero((regA_lo & 0xff) == 0);
 			}
-			else {
+			else 
+			{
 				unsigned char lo = pMMU->read8(addr);
 				unsigned char hi = pMMU->read8(addr + 1);
 				unsigned short int val = (hi << 8) | lo;
@@ -4536,8 +4527,10 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
+			if (pageBoundaryCrossed()) cycAdder += 1;
+
 			regPC += 3;
-			cycles = 4 + cycAdder; // check page crossed
+			cycles = 4 + cycAdder;
 			break;
 		}
 		case 0xba:
@@ -4591,7 +4584,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 4 + cycAdder;
@@ -4627,7 +4620,7 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 4 + cycAdder;
@@ -4733,7 +4726,7 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 6 + cycAdder;
@@ -4822,8 +4815,10 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
+			if (pageBoundaryCrossed()) cycAdder += 1;
+
 			regPC += 3;
-			cycles = 4 + cycAdder; // TODO check page bound
+			cycles = 4 + cycAdder;
 			break;
 		}
 		case 0x19:
@@ -4855,8 +4850,10 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
+			if (pageBoundaryCrossed()) cycAdder += 1;
+
 			regPC += 3;
-			cycles = 4 + cycAdder; // TODO bound
+			cycles = 4 + cycAdder;
 			break;
 		}
 		case 0xcf:
@@ -4945,7 +4942,7 @@ int cpu5a22::stepOne()
 				regP.setZero(res == 0);
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 3 + cycAdder;
@@ -4975,7 +4972,8 @@ int cpu5a22::stepOne()
 				regP.setNegative(regA_lo >> 7);
 				regP.setZero((regA_lo & 0xff) == 0);
 			}
-			else {
+			else 
+			{
 				unsigned char lo = pMMU->read8(addr);
 				unsigned char hi = pMMU->read8(addr + 1);
 				unsigned short int val = (hi << 8) | lo;
@@ -4992,7 +4990,6 @@ int cpu5a22::stepOne()
 			}
 
 			regPC += 4;
-			if (!regP.getAccuMemSize()) cycAdder += 1;
 			cycles = 5 + cycAdder;
 			break;
 		}
@@ -5022,7 +5019,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 4 + cycAdder;
@@ -5074,7 +5071,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 4 + cycAdder;
@@ -5106,7 +5103,7 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 4 + cycAdder;
@@ -5144,7 +5141,10 @@ int cpu5a22::stepOne()
 				unsigned short int res = val | (regA_lo | (regA_hi << 8));
 				pMMU->write8(addr, res & 0xff);
 				pMMU->write8(addr + 1, res >> 8);
+				cycAdder += 2;
 			}
+
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 5 + cycAdder;
@@ -5357,7 +5357,7 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 4 + cycAdder;
@@ -5390,7 +5390,7 @@ int cpu5a22::stepOne()
 			pushToStack8((unsigned char)hi);
 			pushToStack8((unsigned char)lo);
 
-			if (regP.isDPLowNotZero()) cycAdder = 1;
+			if (regD&0xff) cycAdder = 1;
 
 			regPC += 2;
 			cycles = 6 + cycAdder;
@@ -5459,7 +5459,7 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 6 + cycAdder;
@@ -5494,7 +5494,7 @@ int cpu5a22::stepOne()
 				cycAdder += 2;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 6 + cycAdder;
@@ -5611,11 +5611,13 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
+
+			if (pageBoundaryCrossed()) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 5 + cycAdder;
-			break; // TODO page bound
+			break;
 		}
 		case 0xd7:
 		{
@@ -5644,7 +5646,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 6 + cycAdder;
@@ -5686,7 +5688,7 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 6 + cycAdder;
@@ -5856,7 +5858,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 4 + cycAdder;
@@ -5889,7 +5891,7 @@ int cpu5a22::stepOne()
 				cycAdder += 2;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 6 + cycAdder;
@@ -5907,7 +5909,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 5 + cycAdder;
@@ -5974,9 +5976,11 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
+			if (pageBoundaryCrossed()) cycAdder += 1;
+
 			regPC += 3;
 			cycles = 4 + cycAdder;
-			break; // TODO check page bound
+			break;
 		}
 		case 0xe7:
 		{
@@ -5990,7 +5994,7 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 6 + cycAdder;
@@ -6008,7 +6012,7 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 6 + cycAdder;
@@ -6065,7 +6069,7 @@ int cpu5a22::stepOne()
 				regP.setZero(res == 0);
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 6 + cycAdder;
@@ -6097,7 +6101,7 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 5 + cycAdder;
@@ -6154,7 +6158,7 @@ int cpu5a22::stepOne()
 			doADC(addr);
 
 			if (!regP.getAccuMemSize()) cycAdder += 1;
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 5 + cycAdder;
@@ -6203,7 +6207,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 4 + cycAdder;
@@ -6242,7 +6246,7 @@ int cpu5a22::stepOne()
 		{
 			// WAI
 			waitingForIrq = true;
-			cycles = 2;
+			cycles = 3;
 			break;
 		}
 		case 0x12:
@@ -6274,7 +6278,7 @@ int cpu5a22::stepOne()
 				cycAdder = 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 5 + cycAdder;
@@ -6321,7 +6325,7 @@ int cpu5a22::stepOne()
 				cycAdder = 2;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 6 + cycAdder;
@@ -6339,7 +6343,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 5 + cycAdder;
@@ -6357,7 +6361,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = cycAdder + 6;
@@ -6390,7 +6394,7 @@ int cpu5a22::stepOne()
 				cycAdder += 1;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 5 + cycAdder;
@@ -6425,7 +6429,7 @@ int cpu5a22::stepOne()
 				cycAdder += 2;
 			}
 
-			if (regP.isDPLowNotZero()) cycAdder += 1;
+			if (regD&0xff) cycAdder += 1;
 
 			regPC += 2;
 			cycles = 6 + cycAdder;

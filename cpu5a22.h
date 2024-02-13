@@ -175,6 +175,14 @@ private:
 	unsigned short int regPC;
 	regStatus regP;
 
+	bool pageBound = false;
+	bool pageBoundaryCrossed() 
+	{
+		bool v = pageBound;
+		pageBound = false;
+		return v;
+	}
+
 	bool isTestMMU;
 	genericMMU* pMMU;
 

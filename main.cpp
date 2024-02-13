@@ -583,13 +583,12 @@ void displayAppoWindow(ppu& thePPU, mmu& ourMMU, debugger5a22& theDebugger5a22)
     }
     ImGui::SameLine();
 
-
     if (ImGui::Button("Start test"))
     {
         for (auto& testCase : *pOpcodeList)
         {
-            if (testCase.validatedTomHarte == false)
-            //if (testCase.opcode>=0x00)
+            //if (testCase.validatedTomHarte == false)
+            if (testCase.opcode>=0x40)
             {
                 testMMU testMMU;
                 cpu5a22 testCPU(&testMMU, true);
@@ -748,17 +747,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     // HDMA problems
     //std::string romName = "d:\\prova\\snes\\Frogger (U).smc"; snesStandard = 1; // corrupted sprites, cars are not moving
     //std::string romName = "d:\\prova\\snes\\F-Zero (U).smc"; snesStandard = 1; // sprites bug (maybe HDMA)
-    std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // mode4, HDMA not working
+    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // mode4, HDMA not working
+    //std::string romName = "d:\\prova\\snes\\Street Fighter II - The World Warrior (U).smc"; // background problems if HDMA enabled
 
-    //std::string romName = "d:\\prova\\snes\\Tiny Toons - Wild and Wacky Sports (U).smc"; // stuck after player select
+    //std::string romName = "d:\\prova\\snes\\Tiny Toons - Wild and Wacky Sports (U).smc"; // stuck after player select 0x2137
     //std::string romName = "d:\\prova\\snes\\Final Fantasy IV (J).smc"; // bad sprites
     //std::string romName = "d:\\prova\\snes\\Monopoly (V1.1) (U).smc"; // wrong controls, sprite at the start
     //std::string romName = "d:\\prova\\snes\\Lemmings (E).sfc"; // bg corrupted in mode 1, then crashes
-    //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars + Super Mario World (USA).sfc"; // stuck somewhere before first screen
+    std::string romName = "d:\\prova\\snes\\Super Mario All-Stars + Super Mario World (USA).sfc"; // stuck somewhere before first screen
     //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars (U) [!].smc"; // stuck
     //std::string romName = "d:\\prova\\snes\\Pinball Dreams (E).smc"; // stuck, no ball
     //std::string romName = "d:\\prova\\snes\\R-Type 3 (U).smc"; // better but gets stuck
-    //std::string romName = "d:\\prova\\snes\\Street Fighter II - The World Warrior (U).smc"; // better but too fast
     //std::string romName = "d:\\prova\\snes\\Micro Machines (U).smc"; // stuck
     //std::string romName = "d:\\prova\\snes\\Super Double Dragon (U).smc"; // no input
     //std::string romName = "d:\\prova\\snes\\Robocop 3 (U).smc"; // strange robocop sprite
@@ -776,7 +775,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Williams Arcade's Greatest Hits (E) [!].smc"; // a1
     //std::string romName = "d:\\prova\\snes\\Unirally (E) [!].smc"; // crash, SRAM test
     //std::string romName = "d:\\prova\\snes\\petsciirobotsdemo.sfc"; // stuck, missing part of screen
-    //std::string romName = "d:\\prova\\snes\\Out of This World (U).smc"; // jumps to nowhere
+    //std::string romName = "d:\\prova\\snes\\Out of This World (U).smc"; // jumps to nowhere after introduction of VIRQ
     //std::string romName = "D:\\prova\\snes\\SNES-master\\Games\\MonsterFarmJump\\MonsterFarmJump.sfc";
 
     // hiroms
@@ -785,16 +784,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "D:\\prova\\snes\\HiRom\\Donkey Kong Country (V1.1) (E).smc"; isHiRom = true; snesStandard = 1; 
     //std::string romName = "D:\\prova\\snes\\HiRom\\Final Fantasy III (USA).sfc"; isHiRom = true; // stuck
     //std::string romName = "D:\\prova\\snes\\HiRom\\Diddy's Kong Quest (E).smc"; isHiRom = true; snesStandard = 1;
-    //std::string romName = "D:\\prova\\snes\\HiRom\\Wolfenstein 3D (U).smc"; isHiRom = true; 
+    //std::string romName = "D:\\prova\\snes\\HiRom\\Wolfenstein 3D (U).smc"; isHiRom = true; // HDMA? SPC
     //std::string romName = "D:\\prova\\snes\\HiRom\\Chrono Trigger (U) [!].smc"; isHiRom = true; // 31
-    //std::string romName = "D:\\prova\\snes\\HiRom\\Secret of Mana (Europe).sfc"; isHiRom = true; // stuck
+    //std::string romName = "D:\\prova\\snes\\HiRom\\Secret of Mana (Europe).sfc"; isHiRom = true; snesStandard = 1; // stuck
 
     // demos
     //std::string romName = "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc"; snesStandard = 1; // SPC
     //std::string romName = "d:\\prova\\snes\\elix-smashit-pal.sfc"; snesStandard = 1; // mode6
     //std::string romName = "D:\\prova\\snes\\demos\\elix-nu-pal.sfc"; snesStandard = 1;
     //std::string romName = "D:\\prova\\snes\\demos\\2.68 MHz Demo (PD).sfc"; snesStandard = 1;
-    //std::string romName = "D:\\prova\\snes\\demos\\DSR_STNICCC_NOFX_SNES_PAL.sfc"; // jumps to nowhere, no mode7 graphics
+    //std::string romName = "D:\\prova\\snes\\demos\\DSR_STNICCC_NOFX_SNES_PAL.sfc"; snesStandard = 1; // jumps to nowhere, no mode7 graphics
     //std::string romName = "D:\\prova\\snes\\demos\\rse-intro.sfc"; snesStandard = 1; // 42, HDMA wrong palette if bAdr is reloaded
     //std::string romName = "d:\\prova\\snes\\demo_mode3.smc"; isHiRom = true;
 
@@ -1349,9 +1348,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x8b77, 0xea);
         theMMU.write8(0x8b65, 0xea);
         theMMU.write8(0x8b66, 0xea);
-        theMMU.write8(0x80fb, 0xea);
-        theMMU.write8(0x80fc, 0xea);
-
     }
     else if (romName == "d:\\prova\\snes\\R-Type 3 (U).smc")
     {
@@ -1477,6 +1473,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0xc7005e, 0xea);
         theMMU.write8(0xc7007b, 0xea);
         theMMU.write8(0xc7007c, 0xea);
+    }
+    else if (romName == "D:\\prova\\snes\\HiRom\\Secret of Mana (Europe).sfc")
+    {
+        theMMU.write8(0xc301ee, 0xea);
+        theMMU.write8(0xc301ef, 0xea);
     }
     
 
@@ -1717,6 +1718,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
 
         // Present
         ::SwapBuffers(g_MainWindow.hDC);
+
+        // throttle
+        float fps = ImGui::GetIO().Framerate;
+        if (fps > 60.0)
+        {
+            Sleep(10);
+        }
     }
 
     // dispose everything
