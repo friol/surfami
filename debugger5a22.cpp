@@ -79,6 +79,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x4f,4,"EOR param0",AbsoluteLong,false,false,true}, // validatedF
 	{0x4B,1,"PHK",None,false,false,true}, // validatedF
 	{0x50,2,"BVC param0",Immediate8,false,false,true}, // validatedF
+	{0x53,2,"EOR (param0,S),Y",Immediate8,false,false,true}, // validatedF
 	{0x54,3,"MVN param0",Absolute16,false,false,true},
 	{0x55,2,"EOR param0,X",Immediate8,false,false,true}, // validatedF
 	{0x56,2,"LSR param0,X",Immediate8,false,false,true}, // validatedF

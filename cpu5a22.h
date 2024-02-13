@@ -238,6 +238,7 @@ public:
 		unsigned short int sp, unsigned char dbr, unsigned short int d, unsigned char pb, unsigned char p,unsigned char e);
 
 	void triggerNMI() { nmiRequested = true; }
+	void triggerIRQ() { irqRequested = true; }
 	//bool getNMIFlag() { return nmiFlag;  }
 	//void clearNMIFlag() { nmiFlag = false; }
 	

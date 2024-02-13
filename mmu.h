@@ -51,6 +51,9 @@ private:
 
 	bool nmiFlag = false;
 	unsigned char nmiTimen = 0;
+	bool vIrqEnabled = false;
+	unsigned short int vIrqTimer = 0;
+	bool irqTriggered = false;
 	
 	int isHiRom = false;
 	bool hasSRAM = false;
@@ -89,6 +92,10 @@ public:
 	unsigned char* getInternalRAMPtr() { return snesRAM; }
 	void hasSram(std::string& sramName, unsigned int sz) { hasSRAM = true; sramFileName = sramName; sramSize = sz; }
 	unsigned char get4200() { return nmiTimen; }
+
+	bool isVIRQEnabled() { return vIrqEnabled; }
+	unsigned short int getVIRQScanline() { return vIrqTimer; }
+	void setIrqTriggered() { irqTriggered = true; }
 
 	void resetHDMA();
 	void executeHDMA();

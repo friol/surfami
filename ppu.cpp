@@ -1403,6 +1403,7 @@ void ppu::renderScanline(int scanlinenum)
 	int screenMode = (bgMode & 0x07);
 
 	resetAppoBuffers();
+	//screenMode = 7;
 
 	if (screenMode == 0)
 	{
@@ -1773,6 +1774,13 @@ void ppu::step(int numCycles, mmu& theMMU, cpu5a22& theCPU)
 				theCPU.triggerNMI();
 			}
 			OAMAddr = OAMAddrSave;
+		}
+
+		// VIRQ
+		if (theMMU.isVIRQEnabled() && (scanline==theMMU.getVIRQScanline()))
+		{
+			theCPU.triggerIRQ();
+			theMMU.setIrqTriggered();
 		}
 
 		if (scanline >= totScanlines)
