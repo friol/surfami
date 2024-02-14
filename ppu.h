@@ -57,6 +57,7 @@ private:
 	const int vramViewerYsize = 256;
 	unsigned char* vramViewerBitmap;
 	void tileViewerRenderTile2bpp(int px, int py, int tileAddr);
+	void tileViewerRenderTile4bpp(int px, int py, int tileAddr);
 
 	unsigned int coldataColor = 0;
 	unsigned char bgColorAppo[4][256 * 4];

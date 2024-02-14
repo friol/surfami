@@ -313,7 +313,7 @@ void ppu::writeRegister(int reg, unsigned char val)
 			vramAddressUpper = (nextAddr >> 8) & 0xff;
 		}
 
-		if (vramAddr == 0x1500)
+		if (vramAddr == 0x6060)
 		{
 			writeBreakpoint = true;
 		}
@@ -415,15 +415,65 @@ void ppu::tileViewerRenderTile2bpp(int px, int py, int tileAddr)
 	}
 }
 
+void ppu::tileViewerRenderTile4bpp(int px, int py, int tileAddr)
+{
+	unsigned char* pBuf;
+	const int numCols = 16;
+	unsigned char palArr[3 * numCols];
+
+	int colidx = (0 * numCols) * 2;
+
+	for (int col = 0;col < numCols;col++)
+	{
+		unsigned int palcol = (((int)(cgram[colidx + 1] & 0x7f)) << 8) | cgram[colidx];
+		int red = palcol & 0x1f; red <<= 3;
+		int green = (palcol >> 5) & 0x1f; green <<= 3;
+		int blue = (palcol >> 10) & 0x1f; blue <<= 3;
+
+		palArr[(col * 3) + 0] = red;
+		palArr[(col * 3) + 1] = green;
+		palArr[(col * 3) + 2] = blue;
+
+		colidx += 2;
+	}
+
+	for (int y = 0;y < 8;y++)
+	{
+		pBuf = &vramViewerBitmap[(px * 4) + ((py + y) * vramViewerXsize * 4)];
+
+		const unsigned char b_1 = vram[tileAddr] & 0xff;
+		const unsigned char b_2 = vram[tileAddr] >> 8;
+		const unsigned char b_3 = vram[tileAddr + 8] & 0xff;
+		const unsigned char b_4 = vram[tileAddr + 8] >> 8;
+
+		for (int x = 7;x >= 0;x--)
+		{
+			const unsigned short int curCol = ((b_1 >> x) & 1) +
+				(2 * ((b_2 >> x) & 1)) +
+				(4 * ((b_3 >> x) & 1)) +
+				(8 * ((b_4 >> x) & 1));
+
+			*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
+			*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
+			*pBuf = palArr[(curCol * 3) + 2]; pBuf++;
+			*pBuf = 0xff; pBuf++;
+		}
+
+		tileAddr += 1;
+	}
+}
+
 void ppu::tileViewerRenderTiles()
 {
-	int tileAddr = 0x0000;
-	for (int y = 0;y < 24;y++)
+	//int tileAddr = 0x0000;
+	int tileAddr = 0x6000;
+	for (int y = 0;y < 16;y++)
 	{
 		for (int x = 0;x < 16;x++)
 		{
-			tileViewerRenderTile2bpp(x * 8, y * 8, tileAddr);
-			tileAddr += 8;
+			//tileViewerRenderTile2bpp(x * 8, y * 8, tileAddr);
+			tileViewerRenderTile4bpp(x * 8, y * 8, tileAddr);
+			tileAddr += 16;
 		}
 	}
 }
@@ -1194,7 +1244,8 @@ void ppu::renderSpritesScanline(int scanlinenum)
 			colidx += 2;
 		}
 
-		const unsigned int OAMBase = (obSel & 0x03) * 0x2000;
+		//const unsigned int OAMBase = (obSel & 0x03) * 0x2000;
+		const unsigned int OAMBase = (obSel & 0x07)<<13;
 
 		int ybase = 0; int yend = spriteDimY; int yinc = 1;
 
@@ -1205,15 +1256,20 @@ void ppu::renderSpritesScanline(int scanlinenum)
 
 			if (((y_pos + realy)&0xff) == scanlinenum)
 			{
+				if (i == 2)
+				{
+					int ourSprite = 2;
+				}
+
 				for (int x = 0;x != spriteDimX; x += 1)
 				{
 					const unsigned char shift_x = 7 - (x % 8);
-					const unsigned int tile_address = OAMBase + (tile_nr + x / 8) * 0x10 + (y % 8) + (y / 8 * 0x100);
+					unsigned int tile_address = OAMBase + ((((tile_nr) + x / 8) * 0x10 + (y % 8) + (y / 8 * 0x100)));
 
-					const unsigned char b_1 = vram[tile_address] & 0xff;
-					const unsigned char b_2 = vram[tile_address] >> 8;
-					const unsigned char b_3 = vram[tile_address + 8] & 0xff;
-					const unsigned char b_4 = vram[tile_address + 8] >> 8;
+					const unsigned char b_1 = vram[tile_address&0x7fff] & 0xff;
+					const unsigned char b_2 = vram[tile_address & 0x7fff] >> 8;
+					const unsigned char b_3 = vram[(tile_address + 8) & 0x7fff] & 0xff;
+					const unsigned char b_4 = vram[(tile_address + 8) & 0x7fff] >> 8;
 
 					const unsigned short int pixPalIdx = ((b_1 >> shift_x) & 1) +
 						(2 * ((b_2 >> shift_x) & 1)) +

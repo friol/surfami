@@ -102,68 +102,78 @@ void mmu::DMAstart(unsigned char val)
 					targetAddr += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
 				}
 
+				snesRAM[0x4303 + (dmaChannel * 0x10)] = (targetAddr >> 8) & 0xff;
+				snesRAM[0x4302 + (dmaChannel * 0x10)] = targetAddr & 0xff;
+
 				snesRAM[0x4306 + (dmaChannel * 0x10)] = 0;
 				snesRAM[0x4305 + (dmaChannel * 0x10)] = 0;
 			}
 			else if (dma_mode == 1)
 			{
 				//  001 -> transfer 2 bytes (xx, xx + 1) (e.g. VRAM)
-				//while (((snesRAM[0x4306 + (dmaChannel * 0x10)] << 8) | snesRAM[0x4305 + (dmaChannel * 0x10)]) > 0)
 				while (byteCount>0)
 				{
 					if (!dma_dir) 
 					{
 						write8(0x2100 + BBusAddr, read8(targetAddr));
-						if (!--byteCount) return;
 						targetAddr += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+						if (!--byteCount) goto endDma1;
 						write8(0x2100 + BBusAddr+1, read8(targetAddr));
-						if (!--byteCount) return;
 						targetAddr += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+						if (!--byteCount) goto endDma1;
 					}
 					else 
 					{
 						write8(targetAddr, read8(0x2100 + BBusAddr));
-						if (!--byteCount) return;
 						targetAddr += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+						if (!--byteCount) goto endDma1;
 						write8(targetAddr, read8(0x2100 + BBusAddr + 1));
-						if (!--byteCount) return;
 						targetAddr += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+						if (!--byteCount) goto endDma1;
 					}
 					snesRAM[0x4306 + (dmaChannel * 0x10)] = (unsigned char)(byteCount >> 8);
 					snesRAM[0x4305 + (dmaChannel * 0x10)] = (unsigned char)(byteCount & 0xff);
 					//targetAddr += (dma_step == 0) ? 2 : ((dma_step == 2) ? -2 : 0);
 				}
 
+				endDma1:
 				snesRAM[0x4306 + (dmaChannel * 0x10)] = 0;
 				snesRAM[0x4305 + (dmaChannel * 0x10)] = 0;
+				
+				//snesRAM[0x4304 + (dmaChannel * 0x10)] = (targetAddr >> 16) & 0xff;
+				snesRAM[0x4303 + (dmaChannel * 0x10)] = (targetAddr >> 8) & 0xff;
+				snesRAM[0x4302 + (dmaChannel * 0x10)] = targetAddr & 0xff;
 			}
 			else if (dma_mode == 2)
 			{
 				//	002 -> transfer 2 bytes (xx, xx) (e.g. OAM / CGRAM)
-				//while (((snesRAM[0x4306 + (dmaChannel * 0x10)] << 8) | snesRAM[0x4305 + (dmaChannel * 0x10)]) > 0)
 				while (byteCount > 0)
 				{
 					if (!dma_dir)
 					{
 						write8(0x2100 + BBusAddr, read8(targetAddr));
-						if (!--byteCount) return;
+						if (!--byteCount) goto endDma2;
 						write8(0x2100 + BBusAddr, read8(targetAddr+1));
-						if (!--byteCount) return;
+						if (!--byteCount) goto endDma2;
 					}
 					else
 					{
 						write8(targetAddr, read8(0x2100 + BBusAddr));
-						if (!--byteCount) return;
+						if (!--byteCount) goto endDma2;
 						write8(targetAddr, read8(0x2100 + BBusAddr + 1));
-						if (!--byteCount) return;
+						if (!--byteCount) goto endDma2;
 					}
 					snesRAM[0x4306 + (dmaChannel * 0x10)] = (unsigned char)(byteCount >> 8);
 					snesRAM[0x4305 + (dmaChannel * 0x10)] = (unsigned char)(byteCount & 0xff);
 					targetAddr += (dma_step == 0) ? 2 : ((dma_step == 2) ? -2 : 0);
 				}
 
+				endDma2:
 				snesRAM[0x4306 + (dmaChannel * 0x10)] = 0;
 				snesRAM[0x4305 + (dmaChannel * 0x10)] = 0;
+
+				snesRAM[0x4303 + (dmaChannel * 0x10)] = (targetAddr >> 8) & 0xff;
+				snesRAM[0x4302 + (dmaChannel * 0x10)] = targetAddr & 0xff;
 			}
 			else if (dma_mode == 4)
 			{
@@ -173,32 +183,36 @@ void mmu::DMAstart(unsigned char val)
 					if (!dma_dir)
 					{
 						write8(0x2100 + BBusAddr, read8(targetAddr));
-						if (!--byteCount) return;
+						if (!--byteCount) goto endDma4;
 						write8(0x2100 + BBusAddr+1, read8(targetAddr + 1));
-						if (!--byteCount) return;
+						if (!--byteCount) goto endDma4;
 						write8(0x2100 + BBusAddr+2, read8(targetAddr + 2));
-						if (!--byteCount) return;
+						if (!--byteCount) goto endDma4;
 						write8(0x2100 + BBusAddr+3, read8(targetAddr + 3));
-						if (!--byteCount) return;
+						if (!--byteCount) goto endDma4;
 					}
 					else
 					{
 						write8(targetAddr, read8(0x2100 + BBusAddr));
-						if (!--byteCount) return;
+						if (!--byteCount) goto endDma4;
 						write8(targetAddr+1, read8(0x2100 + BBusAddr + 1));
-						if (!--byteCount) return;
+						if (!--byteCount) goto endDma4;
 						write8(targetAddr+2, read8(0x2100 + BBusAddr + 2));
-						if (!--byteCount) return;
+						if (!--byteCount) goto endDma4;
 						write8(targetAddr+3, read8(0x2100 + BBusAddr + 3));
-						if (!--byteCount) return;
+						if (!--byteCount) goto endDma4;
 					}
 					snesRAM[0x4306 + (dmaChannel * 0x10)] = (unsigned char)(byteCount >> 8);
 					snesRAM[0x4305 + (dmaChannel * 0x10)] = (unsigned char)(byteCount & 0xff);
 					targetAddr += (dma_step == 0) ? 4 : ((dma_step == 2) ? -4 : 0);
 				}
 
+				endDma4:
 				snesRAM[0x4306 + (dmaChannel * 0x10)] = 0;
 				snesRAM[0x4305 + (dmaChannel * 0x10)] = 0;
+
+				snesRAM[0x4303 + (dmaChannel * 0x10)] = (targetAddr >> 8) & 0xff;
+				snesRAM[0x4302 + (dmaChannel * 0x10)] = targetAddr & 0xff;
 			}
 			else
 			{
