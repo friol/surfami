@@ -66,20 +66,20 @@ static const debugInfoRec debugInstrData[] =
 	{0x3e,3,"ROL param0,X",Absolute16,false,false,true}, // validatedFC
 	{0x3f,4,"AND param0,X",AbsoluteLong,false,false,true}, // validatedFC
 	{0x40,1,"RTI",None,false,false,true}, // validatedFC
-	{0x43,2,"EOR param0,S",Immediate8,false,false,true}, // validatedF
+	{0x43,2,"EOR param0,S",Immediate8,false,false,true}, // validatedFC
 	{0x44,3,"MVP param0",Absolute16,false,false,true},
-	{0x45,2,"EOR param0",Immediate8,false,false,true}, // validatedF
-	{0x46,2,"LSR param0",Immediate8,false,false,true}, // validatedF
-	{0x48,1,"PHA",None,false,false,true}, // validatedF
+	{0x45,2,"EOR param0",Immediate8,false,false,true}, // validatedFC
+	{0x46,2,"LSR param0",Immediate8,false,false,true}, // validatedFC
+	{0x48,1,"PHA",None,false,false,true}, // validatedFC
 	{0x49,2,"EOR param0",Immediate,false,true,true}, // validatedFC
 	{0x4a,1,"LSR A",None,false,false,true}, // validatedFC
 	{0x4c,3,"JMP param0",Absolute16,false,false,true}, // validatedFC
-	{0x4d,3,"EOR param0",Absolute16,false,false,true}, // validatedF
-	{0x4e,3,"LSR param0",Absolute16,false,false,true}, // validatedF
-	{0x4f,4,"EOR param0",AbsoluteLong,false,false,true}, // validatedF
-	{0x4B,1,"PHK",None,false,false,true}, // validatedF
-	{0x50,2,"BVC param0",Immediate8,false,false,true}, // validatedF
-	{0x53,2,"EOR (param0,S),Y",Immediate8,false,false,true}, // validatedF
+	{0x4d,3,"EOR param0",Absolute16,false,false,true}, // validatedFC
+	{0x4e,3,"LSR param0",Absolute16,false,false,true}, // validatedFC
+	{0x4f,4,"EOR param0",AbsoluteLong,false,false,true}, // validatedFC
+	{0x4B,1,"PHK",None,false,false,true}, // validatedFC
+	{0x50,2,"BVC param0",Immediate8,false,false,true}, // validatedFC
+	{0x53,2,"EOR (param0,S),Y",Immediate8,false,false,true}, // validatedFC
 	{0x54,3,"MVN param0",Absolute16,false,false,true},
 	{0x55,2,"EOR param0,X",Immediate8,false,false,true}, // validatedF
 	{0x56,2,"LSR param0,X",Immediate8,false,false,true}, // validatedF

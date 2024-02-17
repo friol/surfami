@@ -3075,6 +3075,7 @@ int cpu5a22::stepOne()
 				regA_hi = res >> 8;
 				regP.setNegative(res >> 15);
 				regP.setZero(res == 0);
+				cycAdder = 1;
 			}
 
 			regPC += 3;
@@ -4101,7 +4102,7 @@ int cpu5a22::stepOne()
 				pMMU->write8(addr, (val >> 1) & 0xff);
 				pMMU->write8(addr + 1, (val >> 1) >> 8);
 				regP.setZero((val >> 1) == 0);
-				cycAdder = 1;
+				cycAdder = 2;
 			}
 
 			if (regD&0xff) cycAdder += 1;
@@ -4940,6 +4941,7 @@ int cpu5a22::stepOne()
 				regA_hi = res >> 8;
 				regP.setNegative(res >> 15);
 				regP.setZero(res == 0);
+				cycAdder += 1;
 			}
 
 			if (regD&0xff) cycAdder += 1;
@@ -5718,6 +5720,7 @@ int cpu5a22::stepOne()
 				regA_hi = res >> 8;
 				regP.setNegative(res >> 15);
 				regP.setZero(res == 0);
+				cycAdder = 1;
 			}
 
 			regPC += 2;
@@ -6188,6 +6191,7 @@ int cpu5a22::stepOne()
 				regA_hi = res >> 8;
 				regP.setNegative(res >> 15);
 				regP.setZero(res == 0);
+				cycAdder = 1;
 			}
 
 			regPC += 4;

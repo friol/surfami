@@ -70,21 +70,16 @@ void mmu::DMAstart(unsigned char val)
 
 			if (dma_dir == 0)
 			{
-				glbTheLogger.logMsg("Data will be written to:" + sDMATargetAddr2 + " DMA bytes to move:" + std::to_string(byteCount));
-				//if (sDMATargetAddr2 == "2104")
-				//{
-				//	int block = 1;
-				//}
+				glbTheLogger.logMsg("Data will be written to:" + sDMATargetAddr2 + " DMA bytes to move:" + std::to_string(byteCount)+ " DMA mode: "+std::to_string(dma_mode));
 			}
 			else
 			{
-				glbTheLogger.logMsg("DMA will be written to:" + sDMATargetAddr + " DMA bytes to move:" + std::to_string(byteCount));
+				glbTheLogger.logMsg("DMA will be written to:" + sDMATargetAddr + " DMA bytes to move:" + std::to_string(byteCount) + " DMA mode: " + std::to_string(dma_mode));
 			}
 
 			if (dma_mode == 0)
 			{
 				// 000 -> transfer 1 byte
-				//while (((snesRAM[0x4306 + (dmaChannel * 0x10)] << 8) | snesRAM[0x4305 + (dmaChannel * 0x10)]) > 0)
 				while (byteCount > 0)
 				{
 					if (!dma_dir)
@@ -754,6 +749,7 @@ unsigned char mmu::read8(unsigned int address)
 		{
 			unsigned char retval = 0x03;
 			if (standard == 1) retval |= 0x10;
+			pPPU->resetOpvctFlipFlop();
 			return retval;
 		}
 		else if ((adr == 0x2140) || (adr == 0x2141) || (adr == 0x2142) || (adr == 0x2143))
@@ -797,9 +793,7 @@ unsigned char mmu::read8(unsigned int address)
 			unsigned char res = 0;
 			if (pPPU->isVBlankActive()) res |= 0x80;
 			int intcyc = pPPU->getInternalCyclesCounter();
-
 			if (/*(intcyc<1) ||*/ (intcyc>(1096 / 6))) res |= 0x40;
-
 			return res;
 		}
 		else if (adr == 0x4017)

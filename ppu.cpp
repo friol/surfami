@@ -463,17 +463,83 @@ void ppu::tileViewerRenderTile4bpp(int px, int py, int tileAddr)
 	}
 }
 
+void ppu::tileViewerRenderTile8bpp(int px, int py, int tileAddr)
+{
+	unsigned char* pBuf;
+	const int numCols = 256;
+	unsigned char palArr[3 * numCols];
+
+	int colidx = (0 * numCols) * 2;
+
+	for (int col = 0;col < numCols;col++)
+	{
+		unsigned int palcol = (((int)(cgram[colidx + 1] & 0x7f)) << 8) | cgram[colidx];
+		int red = palcol & 0x1f; red <<= 3;
+		int green = (palcol >> 5) & 0x1f; green <<= 3;
+		int blue = (palcol >> 10) & 0x1f; blue <<= 3;
+
+		palArr[(col * 3) + 0] = red;
+		palArr[(col * 3) + 1] = green;
+		palArr[(col * 3) + 2] = blue;
+
+		colidx += 2;
+	}
+
+	//int tileAddr = tileNum * 32;
+	//tileAddr += ((bgTileBaseAddress >> (4 * bgnum)) & 0x0f) * 1024 * 4;
+	//tileAddr &= 0x7fff;
+
+	int ybase = 0; int yend = 8; int yinc = 1; int tileAddrInc = 1;
+
+	for (int y = ybase;y != yend;y += yinc)
+	{
+		pBuf = &vramViewerBitmap[(px * 4) + ((py + y) * ppuResolutionX * 4)];
+
+		const unsigned char b_1 = vram[tileAddr] & 0xff;
+		const unsigned char b_2 = vram[tileAddr] >> 8;
+		const unsigned char b_3 = vram[tileAddr + 8] & 0xff;
+		const unsigned char b_4 = vram[tileAddr + 8] >> 8;
+		const unsigned char b_5 = vram[tileAddr + 16] & 0xff;
+		const unsigned char b_6 = vram[tileAddr + 16] >> 8;
+		const unsigned char b_7 = vram[tileAddr + 24] & 0xff;
+		const unsigned char b_8 = vram[tileAddr + 24] >> 8;
+
+		int xbase = 7; int xend = -1; int xinc = -1;
+
+		for (int x = xbase;x != xend;x += xinc)
+		{
+			const unsigned short int curCol = ((b_1 >> x) & 1) +
+				(2 * ((b_2 >> x) & 1)) +
+				(4 * ((b_3 >> x) & 1)) +
+				(8 * ((b_4 >> x) & 1)) +
+				(16 * ((b_5 >> x) & 1)) +
+				(32 * ((b_6 >> x) & 1)) +
+				(64 * ((b_7 >> x) & 1)) +
+				(128 * ((b_8 >> x) & 1));
+
+			*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
+			*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
+			*pBuf = palArr[(curCol * 3) + 2]; pBuf++;
+			*pBuf = 0xff; pBuf++;
+		}
+
+		tileAddr += 1;
+	}
+
+}
+
 void ppu::tileViewerRenderTiles()
 {
 	//int tileAddr = 0x0000;
-	int tileAddr = 0x6000;
+	int tileAddr = 0x2000;
 	for (int y = 0;y < 16;y++)
 	{
 		for (int x = 0;x < 16;x++)
 		{
 			//tileViewerRenderTile2bpp(x * 8, y * 8, tileAddr);
-			tileViewerRenderTile4bpp(x * 8, y * 8, tileAddr);
-			tileAddr += 16;
+			//tileViewerRenderTile4bpp(x * 8, y * 8, tileAddr);
+			tileViewerRenderTile8bpp(x * 8, y * 8, tileAddr);
+			tileAddr += 32;
 		}
 	}
 }
@@ -678,9 +744,13 @@ void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, in
 			colidx = ((palId * 4) * 2);
 		}
 	}
-	else
+	else if (bpp==4)
 	{
 		colidx = (palId * numCols) * 2;
+	}
+	else
+	{
+		colidx = 0;
 	}
 
 	for (int col = 0;col < numCols;col++)
@@ -820,10 +890,12 @@ void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, in
 					}
 					else
 					{
-						//*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
-						//*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
-						//*pBuf = palArr[(curCol * 3) + 2]; pBuf++;
-						//*pBuf = 0xff; pBuf++;
+						/*unsigned char r = curCol;
+						unsigned char g = curCol;
+						unsigned char b = curCol;
+						*pBgColorAppo = r; pBgColorAppo++;
+						*pBgColorAppo = g; pBgColorAppo++;
+						*pBgColorAppo = b; pBgColorAppo++;*/
 
 						*pBgColorAppo = palArr[(curCol * 3) + 0]; pBgColorAppo++;
 						*pBgColorAppo = palArr[(curCol * 3) + 1]; pBgColorAppo++;
@@ -1030,6 +1102,11 @@ void ppu::renderBGScanline(int bgnum, int bpp, int scanlinenum)
 				int realx = x + (xscroll / tileDim);
 				int realy = y + (yscroll / tileDim);
 
+				if ((x == 9) && (y == 6))
+				{
+					bool stopped = true;
+				}
+
 				if (((yscroll % tileDim) + (scanlinenum % tileDim)) > (tileDim-1))
 				{
 					realy += 1;
@@ -1054,127 +1131,28 @@ void ppu::renderBGScanline(int bgnum, int bpp, int scanlinenum)
 				{
 					if (((yscroll+scanlinenum) % tileDim) < 8)
 					{
-						renderTileScanline(bpp, (x * 16) - (xscroll % tileDim), yscroll, tileNum, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
-						renderTileScanline(bpp, ((x * 16) + 8) - (xscroll % tileDim), yscroll, (tileNum + 1) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
-					}
-					else
-					{
-						renderTileScanline(bpp, (x * 16) - (xscroll % tileDim), yscroll, (tileNum+16) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
-						renderTileScanline(bpp, ((x * 16) + 8) - (xscroll % tileDim), yscroll, (tileNum + 17) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
-					}
-				}
-			}
-		}
-	}
-}
-
-void ppu::renderSprites()
-{
-	int spriteDimensions[8][2][2] = {
-		{{8,8},{16,16}},
-		{{8,8},{32,32}},
-		{{8,8},{64,64}},
-		{{16,16},{32,32}},
-		{{16,16},{64,64}},
-		{{32,32},{64,64}},
-		{{16,32},{32,64}},
-		{{16,32},{32,32}},
-	};
-
-	int spriteDim = (obSel >> 5)&0x7;
-
-	// 4 - 3   Gap between OBJ 0FFh and 100h(0 = None) (4K - word steps) (8K - byte steps)
-	int spriteGap = (obSel >> 3) & 0x03;
-	if (spriteGap != 0)
-	{
-		int err = 1; err = 2;
-	}
-
-	for (auto i = 127; i >= 0; i--)
-	{
-		const unsigned char byte1 = OAM[(i * 4)];
-		const unsigned char byte2 = OAM[(i * 4) + 1];
-		const unsigned char byte3 = OAM[(i * 4) + 2];
-		const unsigned char byte4 = OAM[(i * 4) + 3];
-		const unsigned char attr = (OAM[512 + (i / 4)] >> ((i % 4) * 2)) & 0b11;
-
-		int x_pos = byte1;
-		int y_pos = byte2;
-		int tile_nr = ((byte4 & 1) << 8) | byte3;
-		int y_flip = byte4 >> 7;
-		int x_flip = (byte4 >> 6) & 1;
-		int paletteNum = (byte4 >> 1) & 0b111;
-		//priority = (byte4 >> 4) & 0b11;
-		//int spriteSize = (attr >> 1) & 0x01;
-
-		if (attr & 0x01) x_pos -= 256;
-
-		const int spriteDimX = spriteDimensions[spriteDim][(attr>>1) & 1][0];
-		const int spriteDimY = spriteDimensions[spriteDim][(attr>>1) & 1][1];
-
-		const int numCols = 16;
-		unsigned char palArr[3 * numCols];
-
-		int colidx = 256+( paletteNum * 16 * 2);
-		for (int col = 0;col < numCols;col++)
-		{
-			unsigned int palcol = (((int)(cgram[colidx + 1] & 0x7f)) << 8) | cgram[colidx];
-			int red = palcol & 0x1f; red <<= 3;
-			int green = (palcol >> 5) & 0x1f; green <<= 3;
-			int blue = (palcol >> 10) & 0x1f; blue <<= 3;
-
-			palArr[(col * 3) + 0] = (unsigned char)red;
-			palArr[(col * 3) + 1] = (unsigned char)green;
-			palArr[(col * 3) + 2] = (unsigned char)blue;
-
-			colidx += 2;
-		}
-
-		//const unsigned int OAMBase = 0xc000 / 2;
-		const unsigned int OAMBase = (obSel & 0x03) * 0x2000;
-
-		int ybase = 0; int yend = spriteDimY; int yinc = 1; 
-		/*if (y_flip)
-		{
-			ybase = spriteDimY-1; yend = -1; yinc = -1;
-		}*/
-
-		for (int y = ybase;y != yend;y+=yinc)
-		{
-			int realy = y;
-			for (int x = 0;x != spriteDimX; x+=1)
-			{
-				const unsigned char shift_x = 7 - (x % 8);
-				const unsigned int tile_address = OAMBase + (tile_nr + x / 8) * 0x10 + (y % 8) + (y / 8 * 0x100);
-				const unsigned char b_1 = vram[tile_address] & 0xff;
-				const unsigned char b_2 = vram[tile_address] >> 8;
-				const unsigned char b_3 = vram[tile_address + 8] & 0xff;
-				const unsigned char b_4 = vram[tile_address + 8] >> 8;
-				const unsigned short int pixPalIdx = ((b_1 >> shift_x) & 1) +
-					(2 * ((b_2 >> shift_x) & 1)) +
-					(4 * ((b_3 >> shift_x) & 1)) +
-					(8 * ((b_4 >> shift_x) & 1));
-
-				if (pixPalIdx != 0)
-				{
-					int realx = x;
-					if (x_flip) realx = spriteDimX - x - 1;
-					if (y_flip) realy = spriteDimY - y - 1;
-					unsigned int pixaddr = ((x_pos + realx) + ((y_pos + realy) * ppuResolutionX)) * 4;
-					if ((pixaddr>=0) && (pixaddr < (ppuResolutionX * ppuResolutionY * 4)))
-					{
-						unsigned char* pBuf = &screenFramebuffer[pixaddr];
-						
-						if (((x_pos + realx) >=0 ) && ((x_pos + realx) < 256))
+						if (!xflip)
 						{
-							*pBuf = palArr[(pixPalIdx * 3) + 0]; pBuf++;
-							*pBuf = palArr[(pixPalIdx * 3) + 1]; pBuf++;
-							*pBuf = palArr[(pixPalIdx * 3) + 2]; pBuf++;
-							*pBuf = 0xff;
+							renderTileScanline(bpp, (x * 16) - (xscroll % tileDim), yscroll, tileNum, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
+							renderTileScanline(bpp, ((x * 16) + 8) - (xscroll % tileDim), yscroll, (tileNum + 1) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
 						}
 						else
 						{
-							pBuf += 4;
+							renderTileScanline(bpp, ((x * 16) + 8) - (xscroll % tileDim), yscroll, tileNum , palId, bgnum, xflip, yflip, scanlinenum, bgPri);
+							renderTileScanline(bpp, (x * 16) - (xscroll % tileDim), yscroll, (tileNum+1) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
+						}
+					}
+					else
+					{
+						if (!xflip)
+						{
+							renderTileScanline(bpp, (x * 16) - (xscroll % tileDim), yscroll, (tileNum + 16) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
+							renderTileScanline(bpp, ((x * 16) + 8) - (xscroll % tileDim), yscroll, (tileNum + 17) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
+						}
+						else
+						{
+							renderTileScanline(bpp, ((x * 16) + 8) - (xscroll % tileDim), yscroll, (tileNum + 16) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
+							renderTileScanline(bpp, (x * 16) - (xscroll % tileDim), yscroll, (tileNum + 17) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
 						}
 					}
 				}
@@ -1265,6 +1243,10 @@ void ppu::renderSpritesScanline(int scanlinenum)
 				{
 					const unsigned char shift_x = 7 - (x % 8);
 					unsigned int tile_address = OAMBase + ((((tile_nr) + x / 8) * 0x10 + (y % 8) + (y / 8 * 0x100)));
+					if (tile_nr&0x100)
+					{
+						tile_address += (((obSel & 0x18)) << 9);
+					}
 
 					const unsigned char b_1 = vram[tile_address&0x7fff] & 0xff;
 					const unsigned char b_2 = vram[tile_address & 0x7fff] >> 8;

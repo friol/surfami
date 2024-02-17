@@ -58,6 +58,7 @@ private:
 	unsigned char* vramViewerBitmap;
 	void tileViewerRenderTile2bpp(int px, int py, int tileAddr);
 	void tileViewerRenderTile4bpp(int px, int py, int tileAddr);
+	void tileViewerRenderTile8bpp(int px, int py, int tileAddr);
 
 	unsigned int coldataColor = 0;
 	unsigned char bgColorAppo[4][256 * 4];
@@ -71,10 +72,8 @@ private:
 	unsigned char* screenFramebuffer;
 
 	void renderTile(int bpp,int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip);
-	//void renderSprite(int px, int py, int tileNum, int palId);
 
 	void renderBackdrop();
-	void renderSprites();
 	void renderSpritesScanline(int scanlinenum);
 
 	void calculateMode7Starts(int y);
@@ -94,6 +93,7 @@ private:
 	bool hdmaStartedForThisLine = false;
 
 	bool writeBreakpoint = false;
+	bool opvctFlipFlop = false;
 
 public:
 
@@ -124,6 +124,10 @@ public:
 	void setCGWSEL(unsigned char val) 
 	{ 
 		cgwSel = val; 
+		if (cgwSel & 0x01)
+		{
+			bool directMode = 1;
+		}
 	}
 
 	void writeOAMAddressLow(unsigned char val) 
@@ -169,6 +173,7 @@ public:
 	unsigned char getMPY(unsigned int addr);
 
 	unsigned short int* getVRAMPtr() { return vram; }
+	unsigned char* getCGRAMPtr() { return cgram; }
 	void setStandard(int val) 
 	{ 
 		standard = val; 
@@ -184,7 +189,21 @@ public:
 		}
 	}
 
-	int getCurrentScanline() { return scanline; }
+	int getCurrentScanline() 
+	{ 
+		if (opvctFlipFlop == false)
+		{
+			opvctFlipFlop = true;
+			return scanline&0xff;
+		}
+		else
+		{
+			opvctFlipFlop = false;
+			return (scanline >> 8) & 0x01;
+		}
+	}
+
+	void resetOpvctFlipFlop() { opvctFlipFlop = false; }
 
 	~ppu();
 };
