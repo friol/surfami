@@ -3198,10 +3198,13 @@ int cpu5a22::stepOne()
 				regA_hi = res >> 8;
 				regP.setNegative(res >> 15);
 				regP.setZero(res == 0);
+				cycAdder += 1;
 			}
 
+			if (pageBoundaryCrossed()) cycAdder += 1;
+
 			regPC += 3;
-			cycles = 4 + cycAdder; // TODO check page boundary
+			cycles = 4 + cycAdder;
 			break;
 		}
 		case 0xbc:
@@ -4277,6 +4280,7 @@ int cpu5a22::stepOne()
 				regA_hi = res >> 8;
 				regP.setNegative(res >> 15);
 				regP.setZero(res == 0);
+				cycAdder += 1;
 			}
 
 			if (regD&0xff) cycAdder += 1;
@@ -4911,10 +4915,13 @@ int cpu5a22::stepOne()
 				regA_hi = res >> 8;
 				regP.setNegative(res >> 15);
 				regP.setZero(res == 0);
+				cycAdder += 1;
 			}
 
+			if (pageBoundaryCrossed()) cycAdder += 1;
+
 			regPC += 3;
-			cycles = 4 + cycAdder; // TODO bound
+			cycles = 4 + cycAdder;
 			break;
 		}
 		case 0x45:
@@ -6070,6 +6077,7 @@ int cpu5a22::stepOne()
 				regA_hi = res >> 8;
 				regP.setNegative(res >> 15);
 				regP.setZero(res == 0);
+				cycAdder += 1;
 			}
 
 			if (regD&0xff) cycAdder += 1;
@@ -6134,6 +6142,7 @@ int cpu5a22::stepOne()
 				regA_hi = res >> 8;
 				regP.setNegative(res >> 15);
 				regP.setZero(res == 0);
+				cycAdder += 1;
 			}
 
 			regPC += 4;
@@ -6468,6 +6477,44 @@ int cpu5a22::stepOne()
 
 			regPC += 2;
 			cycles = 7 + cycAdder;
+			break;
+		}
+		case 0x31:
+		{
+			// AND (dp),Y
+			int cycAdder = 0;
+			unsigned int addr = getDirectPageIndirectIndexedYAddress();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				regA_lo = regA_lo & val;
+				regP.setNegative(regA_lo >> 7);
+				regP.setZero((regA_lo & 0xff) == 0);
+			}
+			else
+			{
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned short int val = (hi << 8) | lo;
+
+				unsigned short int accu = regA_lo | (regA_hi << 8);
+
+				unsigned short int res = ((unsigned short int)(accu & val));
+				regA_lo = res & 0xff;
+				regA_hi = res >> 8;
+
+				regP.setNegative((regA_lo | (regA_hi << 8)) >> 15);
+				regP.setZero((regA_lo | (regA_hi << 8)) == 0);
+				cycAdder = 1;
+			}
+
+			if (regD & 0xff) cycAdder += 1;
+
+			if (pageBoundaryCrossed()) cycAdder += 1;
+
+			regPC += 2;
+			cycles = 5 + cycAdder;
 			break;
 		}
 		default:

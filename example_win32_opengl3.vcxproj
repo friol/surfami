@@ -161,6 +161,7 @@
     <ClCompile Include="cpu5a22.cpp" />
     <ClCompile Include="cpu65816tester.cpp" />
     <ClCompile Include="debugger5a22.cpp" />
+    <ClCompile Include="debuggerSPC700.cpp" />
     <ClCompile Include="logger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mmu.cpp" />
@@ -179,6 +180,7 @@
     <ClInclude Include="cpu5a22.h" />
     <ClInclude Include="cpu65816tester.h" />
     <ClInclude Include="debugger5a22.h" />
+    <ClInclude Include="debuggerSPC700.h" />
     <ClInclude Include="genericMMU.h" />
     <ClInclude Include="logger.h" />
     <ClInclude Include="mmu.h" />

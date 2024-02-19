@@ -256,6 +256,12 @@ void ppu::writeRegister(int reg, unsigned char val)
 		// 2118h - VMDATAL - VRAM Data Write (lower 8bit) (W)
 		// 2119h - VMDATAH - VRAM Data Write (upper 8bit) (W)
 
+		/*if (scanline <= vblankStartScanline)
+		{
+			bool noWrites = true;
+			return;
+		}*/
+
 		unsigned short int vramAddr = (vramAddressLower | (vramAddressUpper << 8));
 		unsigned short int writeAddr = vramAddr;
 		unsigned char _v_hi_lo = vmainVRAMAddrIncrMode >> 7;

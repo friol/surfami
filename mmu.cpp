@@ -677,7 +677,8 @@ void mmu::write8(unsigned int address, unsigned char val)
 		else if (isHiRom && ((bank_nr >= 0x30) && (bank_nr < 0x3f)) && hasSRAM)
 		{
 			// SRAM
-			snesRAM[adr%sramSize] = val;
+			//snesRAM[adr%sramSize] = val;
+			snesRAM[(bank_nr<<16)|(adr%sramSize)] = val;
 			return;
 		}
 
@@ -685,7 +686,11 @@ void mmu::write8(unsigned int address, unsigned char val)
 	}
 	else
 	{
-		snesRAM[address] = val;
+		if ((!isHiRom) && hasSRAM && (bank_nr >= 0x70) && (bank_nr <= 0x77))
+		{
+			snesRAM[(bank_nr << 16) | (adr % sramSize)] = val;
+		}
+		else snesRAM[address] = val;
 	}
 }
 
@@ -883,7 +888,8 @@ unsigned char mmu::read8(unsigned int address)
 		else if (isHiRom && ((bank_nr >= 0x30) && (bank_nr < 0x3f)) && hasSRAM)
 		{
 			// SRAM
-			return snesRAM[adr%sramSize];
+			//return snesRAM[adr%sramSize];
+			return snesRAM[(bank_nr << 16) | (adr % sramSize)];
 		}
 		else
 		{
@@ -900,6 +906,13 @@ unsigned char mmu::read8(unsigned int address)
 			{
 				return 0;
 			}
+		}
+		else if ((!isHiRom) && (hasSRAM))
+		{
+			if ((bank_nr >= 0x70) && (bank_nr <= 0x77))
+			{
+				return snesRAM[(bank_nr << 16) | (adr % sramSize)];
+			}
 			else return snesRAM[address];
 		}
 
@@ -915,7 +928,7 @@ mmu::~mmu()
 	if (hasSRAM)
 	{
 		std::fstream fout(sramFileName, std::fstream::out | std::fstream::binary);
-		for (int b = 0;b < 0x800;b++)
+		for (int b = 0;b < sramSize;b++)
 		{
 			unsigned char theByte = read8(0x700000 + b);
 			fout.write(reinterpret_cast<char*>(&theByte), 1);

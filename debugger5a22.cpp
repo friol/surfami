@@ -52,6 +52,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x2e,3,"ROL param0",Absolute16,false,false,true}, // validatedFC
 	{0x2f,4,"AND param0",AbsoluteLong,false,false,true}, // validatedFC
 	{0x30,2,"BMI param0",Immediate8,false,false,true}, // validatedFC
+	{0x31,2,"AND (param0),Y",Immediate8,false,false,true}, // validatedFC
 	{0x32,2,"AND (param0)",Immediate8,false,false,true}, // validatedFC
 	{0x34,2,"BIT param0,X",Immediate8,false,false,true}, // validatedFC
 	{0x35,2,"AND param0,X",Immediate8,false,false,true}, // validatedFC
@@ -81,17 +82,17 @@ static const debugInfoRec debugInstrData[] =
 	{0x50,2,"BVC param0",Immediate8,false,false,true}, // validatedFC
 	{0x53,2,"EOR (param0,S),Y",Immediate8,false,false,true}, // validatedFC
 	{0x54,3,"MVN param0",Absolute16,false,false,true},
-	{0x55,2,"EOR param0,X",Immediate8,false,false,true}, // validatedF
-	{0x56,2,"LSR param0,X",Immediate8,false,false,true}, // validatedF
-	{0x57,2,"EOR [param0],Y",Immediate8,false,false,true}, // validatedF
-	{0x58,1,"CLI",None,false,false,true}, // validatedF
-	{0x59,3,"EOR param0,Y",Absolute16,false,false,true}, // fck
-	{0x5a,1,"PHY",None,false,false,true}, // validatedF
-	{0x5b,1,"TCD",None,false,false,true}, // validatedF
-	{0x5c,4,"JML param0",AbsoluteLong,false,false,true}, // validatedF
-	{0x5d,3,"EOR param0,X",Absolute16,false,false,true}, // validatedF
-	{0x5e,3,"LSR param0,X",Absolute16,false,false,true}, // validatedF
-	{0x5f,4,"EOR param0,X",AbsoluteLong,false,false,true}, // validatedF
+	{0x55,2,"EOR param0,X",Immediate8,false,false,true}, // validatedFC
+	{0x56,2,"LSR param0,X",Immediate8,false,false,true}, // validatedFC
+	{0x57,2,"EOR [param0],Y",Immediate8,false,false,true}, // validatedFC
+	{0x58,1,"CLI",None,false,false,true}, // validatedFC
+	{0x59,3,"EOR param0,Y",Absolute16,false,false,true}, // test 9557 fails
+	{0x5a,1,"PHY",None,false,false,true}, // validatedFC
+	{0x5b,1,"TCD",None,false,false,true}, // validatedFC
+	{0x5c,4,"JML param0",AbsoluteLong,false,false,true}, // validatedFC
+	{0x5d,3,"EOR param0,X",Absolute16,false,false,true}, // validatedFC
+	{0x5e,3,"LSR param0,X",Absolute16,false,false,true}, // validatedFC
+	{0x5f,4,"EOR param0,X",AbsoluteLong,false,false,true}, // validatedFC
 	{0x61,2,"ADC (param0,X)",Immediate8,false,false,true}, // validatedF
 	{0x62,3,"PER param0,X",Absolute16,false,false,true}, // validatedF
 	{0x60,1,"RTS",None,false,false,true}, // validatedF
