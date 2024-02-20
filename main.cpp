@@ -184,6 +184,16 @@ void displayRegistersWindow(cpu5a22& theCPU,ppu& thePPU,unsigned long int totCPU
     ImGui::End();
 }
 
+void displaySPCDebugWindow(apu& pAPU, debuggerSPC700& pDbgr)
+{
+    //unsigned int realPC = (theCPU.getPB() << 16) | theCPU.getPC();
+    //std::vector<disasmInfoRec> disasmed = theDebugger5a22.debugCode(realPC, 20, &theCPU, &theMMU);
+
+    ImGui::Begin("SPC700 Debuggah");
+
+    ImGui::End();
+}
+
 void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& theMMU,bool& isDebugWindowFocused,bool& rush,int& rushAddress,char* jumpToAppoBuf,unsigned long int& totCPUCycles,int& emustatus,ppu& thePPU)
 {
     unsigned int realPC = (theCPU.getPB() << 16) | theCPU.getPC();
@@ -707,6 +717,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     }
     theAPU.reset();
 
+    debuggerSPC700 theDebuggerSPC;
+
     mmu theMMU(thePPU,theAPU);
     std::vector<std::string> romLoadingLog;
     bool isHiRom = false;
@@ -779,7 +791,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc";
     //std::string romName = "d:\\prova\\snes\\Incredible Crash Dummies, The (U).smc";
     //std::string romName = "d:\\prova\\snes\\Sim City (E) [!].smc";
-    std::string romName = "d:\\prova\\snes\\Gun Force (E).smc"; snesStandard = 1;
+    //std::string romName = "d:\\prova\\snes\\Gun Force (E).smc"; snesStandard = 1;
     //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc";
     //std::string romName = "d:\\prova\\snes\\Lawnmower Man, The (E).smc";
     //std::string romName = "D:\\prova\\snes\\HiRom\\Earthworm Jim (U).smc"; isHiRom = true;
@@ -811,6 +823,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Spectre (E) [!].smc";
     //std::string romName = "D:\\prova\\snes\\SNES-master\\Games\\MonsterFarmJump\\MonsterFarmJump.sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars + Super Mario World (USA).sfc"; // controls don't work
+    //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars (U) [!].smc"; // no input
     //std::string romName = "d:\\prova\\snes\\Tiny Toons - Wild and Wacky Sports (U).smc"; // stuck after player select 0x2137
     //std::string romName = "d:\\prova\\snes\\Monopoly (V1.1) (U).smc"; // wrong controls, sprite at the start
     //std::string romName = "d:\\prova\\snes\\Lemmings (E).sfc"; // dma mode 7 (?), crash, 0x2137 read
@@ -823,11 +836,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\SHVC-AGING.sfc";
     //std::string romName = "d:\\prova\\snes\\Rock N' Roll Racing (U).smc"; // 31, no bg mode3
     //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // dma mode 4?, jumps to nowhere
-    //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc"; // stuck 
+    std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc"; // stuck 
     //std::string romName = "d:\\prova\\snes\\Spanky's Quest (E).smc"; // sub mode 1,stuck
     //std::string romName = "d:\\prova\\snes\\petsciirobotsdemo.sfc"; // stuck
     //std::string romName = "d:\\prova\\snes\\Out of This World (U).smc"; // jumps to nowhere after introduction of VIRQ
-    //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars (U) [!].smc"; // stuck
     //std::string romName = "d:\\prova\\snes\\Sensible Soccer - International Edition (E).smc"; // blank screen
 
     // hiroms
@@ -1751,6 +1763,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         displayAppoWindow(thePPU, theMMU, theDebugger5a22);
         displayRomLoadingLogWindow(romLoadingLog);
         displayDebugWindow(theCPU, theDebugger5a22,theMMU,isDebugWindowFocused,rush,rushToAddress,jumpToAppoBuf,totCPUCycles,emustatus,thePPU);
+        displaySPCDebugWindow(theAPU, theDebuggerSPC);
         displayRegistersWindow(theCPU,thePPU,totCPUCycles);
         displayPaletteWindow(thePPU);
         displayLogWindow();
