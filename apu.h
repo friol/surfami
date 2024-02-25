@@ -35,6 +35,10 @@ public:
 	unsigned char read8(unsigned int addr);
 	void write8(unsigned int addr,unsigned char val);
 
+	unsigned short int getPC() { return regPC; }
+
+	std::vector<std::string> getRegisters();
+
 };
 
 #endif

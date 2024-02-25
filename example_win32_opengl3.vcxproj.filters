@@ -119,7 +119,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\README.txt" />
     <None Include="..\..\misc\natvis\imgui.natvis">
       <Filter>sources</Filter>
     </None>

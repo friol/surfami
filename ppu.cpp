@@ -1189,13 +1189,16 @@ void ppu::renderSpritesScanline(int scanlinenum)
 		int err = 1; err = 2;
 	}
 
-	for (auto i = 127; i >= 0; i--)
+	for (unsigned int sprNum = 0; sprNum <128; sprNum++)
 	{
-		const unsigned char byte1 = OAM[(i * 4)];
-		const unsigned char byte2 = OAM[(i * 4) + 1];
-		const unsigned char byte3 = OAM[(i * 4) + 2];
-		const unsigned char byte4 = OAM[(i * 4) + 3];
-		const unsigned char attr = (OAM[512 + (i / 4)] >> ((i % 4) * 2)) & 0b11;
+		unsigned int spriteNumber = 127-sprNum;
+		if (oamPriRot) spriteNumber = (((OAMAddr >> 2) & 0x7f) + 127-sprNum) & 0x7f;
+
+		const unsigned char byte1 = OAM[(spriteNumber * 4)];
+		const unsigned char byte2 = OAM[(spriteNumber * 4) + 1];
+		const unsigned char byte3 = OAM[(spriteNumber * 4) + 2];
+		const unsigned char byte4 = OAM[(spriteNumber * 4) + 3];
+		const unsigned char attr = (OAM[512 + (spriteNumber / 4)] >> ((spriteNumber % 4) * 2)) & 0b11;
 
 		int x_pos = byte1;
 		int y_pos = byte2;
@@ -1240,11 +1243,6 @@ void ppu::renderSpritesScanline(int scanlinenum)
 
 			if (((y_pos + realy)&0xff) == scanlinenum)
 			{
-				if (i == 2)
-				{
-					int ourSprite = 2;
-				}
-
 				for (int x = 0;x != spriteDimX; x += 1)
 				{
 					const unsigned char shift_x = 7 - (x % 8);
@@ -1427,7 +1425,7 @@ void ppu::renderMode7Scanline(int scanlinenum)
 
 void ppu::renderScanline(int scanlinenum)
 {
-	if ((scanlinenum < 0) || (scanlinenum >= 224)) return;
+	if ((scanlinenum < 0) || (scanlinenum >= 223)) return;
 
 	/*
 		7-2  SC Base Address in VRAM (in 1K-word steps, aka 2K-byte steps)
@@ -1458,7 +1456,7 @@ void ppu::renderScanline(int scanlinenum)
 			{
 				if (((mainScreenDesignation & 0x1f) & (1 << bg)) > 0)
 				{
-					renderBGScanline(bg, 2, scanlinenum);
+					renderBGScanline(bg, 2, scanlinenum+1);
 				}
 			}
 		}
@@ -1516,9 +1514,9 @@ void ppu::renderScanline(int scanlinenum)
 	else if (screenMode == 0x01)
 	{
 		// 1      16-color    16-color    4-color     -         ;Normal
-		if ((((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) ) renderBGScanline(0, 4, scanlinenum);
-		if ( (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1))) ) renderBGScanline(1, 4, scanlinenum);
-		if ((((mainScreenDesignation & 0x1f) & (1 << 2)) > 0)) renderBGScanline(2, 2, scanlinenum);
+		if ((((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) ) renderBGScanline(0, 4, scanlinenum+1);
+		if ( (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1))) ) renderBGScanline(1, 4, scanlinenum+1);
+		if ((((mainScreenDesignation & 0x1f) & (1 << 2)) > 0)) renderBGScanline(2, 2, scanlinenum+1);
 
 		if (mainScreenDesignation & 0x10)
 		{
@@ -1526,7 +1524,7 @@ void ppu::renderScanline(int scanlinenum)
 		}
 
 		bool bg3_priority = (bgMode & 0x08) != 0;
-		unsigned char* pfbuf = &screenFramebuffer[scanlinenum * ppuResolutionX * 4];
+		unsigned char* pfbuf = &screenFramebuffer[scanlinenum* ppuResolutionX * 4];
 		for (int x = 0;x < 256;x++)
 		{
 			int finalCol=-1;
@@ -1583,15 +1581,15 @@ void ppu::renderScanline(int scanlinenum)
 	else if (screenMode == 0x02)
 	{
 		// 1      16-color    16-color    opt     -         ;Normal
-		if ((((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1)) > 0)) renderBGScanline(1, 4, scanlinenum);
-		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBGScanline(0, 4, scanlinenum);
+		if ((((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1)) > 0)) renderBGScanline(1, 4, scanlinenum+1);
+		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBGScanline(0, 4, scanlinenum+1);
 
 		if (mainScreenDesignation & 0x10)
 		{
 			renderSpritesScanline(scanlinenum);
 		}
 
-		unsigned char* pfbuf = &screenFramebuffer[scanlinenum * ppuResolutionX * 4];
+		unsigned char* pfbuf = &screenFramebuffer[scanlinenum* ppuResolutionX * 4];
 		for (int x = 0;x < 256;x++)
 		{
 			int finalCol = -1;
@@ -1636,9 +1634,9 @@ void ppu::renderScanline(int scanlinenum)
 	else if (screenMode == 0x03)
 	{
 		// 3      256-color   16-color    -           -         ;Normal   
-		if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBGScanline(1, 4, scanlinenum);
+		if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBGScanline(1, 4, scanlinenum+1);
 		//if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBGScanline(0, 8, scanlinenum);
-		if ((((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 0)))) renderBGScanline(0, 8, scanlinenum);
+		if ((((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 0)))) renderBGScanline(0, 8, scanlinenum+1);
 
 		if (mainScreenDesignation & 0x10)
 		{
@@ -1688,8 +1686,8 @@ void ppu::renderScanline(int scanlinenum)
 	}
 	else if (screenMode == 0x04)
 	{
-		if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBGScanline(1, 2, scanlinenum);
-		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBGScanline(0, 8, scanlinenum);
+		if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBGScanline(1, 2, scanlinenum+1);
+		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBGScanline(0, 8, scanlinenum+1);
 
 		if (mainScreenDesignation & 0x10)
 		{

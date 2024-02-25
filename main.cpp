@@ -184,12 +184,69 @@ void displayRegistersWindow(cpu5a22& theCPU,ppu& thePPU,unsigned long int totCPU
     ImGui::End();
 }
 
+void displaySPCRegistersWindow(apu& theAPU)
+{
+    ImGui::Begin("SPC700 Registers window");
+    std::vector<std::string> regInfo = theAPU.getRegisters();
+
+    for (auto& line : regInfo)
+    {
+        ImGui::Text(line.c_str());
+    }
+
+    ImGui::End();
+}
+
 void displaySPCDebugWindow(apu& pAPU, debuggerSPC700& pDbgr)
 {
-    //unsigned int realPC = (theCPU.getPB() << 16) | theCPU.getPC();
-    //std::vector<disasmInfoRec> disasmed = theDebugger5a22.debugCode(realPC, 20, &theCPU, &theMMU);
+    unsigned int realPC = pAPU.getPC();
+    std::vector<std::string> disasmed = pDbgr.disasmOpcodes(realPC,10,&pAPU);
 
     ImGui::Begin("SPC700 Debuggah");
+
+    int iidx = 0;
+    for (auto& instr : disasmed)
+    {
+        if (iidx == 0)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
+            ImGui::Selectable(disasmed[iidx].c_str(), true);
+            ImGui::PopStyleColor();
+        }
+        else ImGui::Selectable(disasmed[iidx].c_str(), false);
+
+        std::string curAddress = disasmed[iidx].substr(0, 6);
+        std::string cmd = "Run to address:" + curAddress;
+
+        std::string curElement = "CtxMenu" + std::to_string(iidx);
+        if (ImGui::BeginPopupContextItem(curElement.c_str()))
+        {
+            if (ImGui::Selectable(cmd.c_str()))
+            {
+                int iAddr;
+                std::stringstream ss;
+                ss << std::hex << curAddress;
+                ss >> iAddr;
+                //rushAddress = iAddr;
+            }
+            ImGui::EndPopup();
+        }
+
+        iidx += 1;
+    }
+
+    // step button
+    ImGui::Text(" ");
+    if (ImGui::Button("StepOne"))
+    {
+        /*int cycs = theCPU.stepOne();
+        if (cycs != -1)
+        {
+            totCPUCycles += cycs;
+            thePPU.step(cycs, theMMU, theCPU);
+        }*/
+    }
+
 
     ImGui::End();
 }
@@ -770,9 +827,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\ctrltest_auto.sfc";
 
     //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
-    //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
-    //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc"; // 5f
-    //std::string romName = "d:\\prova\\snes\\Ninjawarriors (USA).sfc"; // SPC
+    std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
+    //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc";
+    //std::string romName = "d:\\prova\\snes\\Ninjawarriors (USA).sfc";
     //std::string romName = "d:\\prova\\snes\\Mario Paint (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Mickey Mania (E).smc";
     //std::string romName = "d:\\prova\\snes\\Gradius III (U) [!].smc";
@@ -820,12 +877,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Street Fighter II - The World Warrior (U).smc"; // background problems if HDMA enabled
 
     //std::string romName = "d:\\prova\\snes\\Super Off Road (E) [!].smc"; // 34, a bg remains uncleared
+    //std::string romName = "d:\\prova\\snes\\Rock N' Roll Racing (U).smc"; // no bg mode3, corrupted graphics
     //std::string romName = "d:\\prova\\snes\\Spectre (E) [!].smc";
     //std::string romName = "D:\\prova\\snes\\SNES-master\\Games\\MonsterFarmJump\\MonsterFarmJump.sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars + Super Mario World (USA).sfc"; // controls don't work
     //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars (U) [!].smc"; // no input
     //std::string romName = "d:\\prova\\snes\\Tiny Toons - Wild and Wacky Sports (U).smc"; // stuck after player select 0x2137
     //std::string romName = "d:\\prova\\snes\\Monopoly (V1.1) (U).smc"; // wrong controls, sprite at the start
+    //std::string romName = "d:\\prova\\snes\\Super Ghouls 'N Ghosts (E).sfc"; // gameplay garbage
     //std::string romName = "d:\\prova\\snes\\Lemmings (E).sfc"; // dma mode 7 (?), crash, 0x2137 read
     //std::string romName = "d:\\prova\\snes\\Pinball Dreams (E).smc"; // no ball
     //std::string romName = "d:\\prova\\snes\\R-Type 3 (U).smc"; // better but gets stuck
@@ -834,9 +893,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Home Alone (E) [!].smc"; // resets
     //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc"; // mode 5
     //std::string romName = "d:\\prova\\snes\\SHVC-AGING.sfc";
-    //std::string romName = "d:\\prova\\snes\\Rock N' Roll Racing (U).smc"; // 31, no bg mode3
     //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc"; // dma mode 4?, jumps to nowhere
-    std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc"; // stuck 
+    //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc"; // stuck 
     //std::string romName = "d:\\prova\\snes\\Spanky's Quest (E).smc"; // sub mode 1,stuck
     //std::string romName = "d:\\prova\\snes\\petsciirobotsdemo.sfc"; // stuck
     //std::string romName = "d:\\prova\\snes\\Out of This World (U).smc"; // jumps to nowhere after introduction of VIRQ
@@ -1585,6 +1643,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x1884dd, 0xea);
 
     }
+    else if (romName == "d:\\prova\\snes\\Super Ghouls 'N Ghosts (E).sfc")
+    {
+        theMMU.write8(0x81d1, 0xea);
+        theMMU.write8(0x81d2, 0xea);
+
+    }
+    else if (romName == "d:\\prova\\snes\\Ninjawarriors (USA).sfc")
+    {
+        theMMU.write8(0x8240, 0xea);
+        theMMU.write8(0x8241, 0xea);
+        theMMU.write8(0xc863, 0xea);
+        theMMU.write8(0xc864, 0xea);
+
+    }
     
 
     //
@@ -1765,6 +1837,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         displayDebugWindow(theCPU, theDebugger5a22,theMMU,isDebugWindowFocused,rush,rushToAddress,jumpToAppoBuf,totCPUCycles,emustatus,thePPU);
         displaySPCDebugWindow(theAPU, theDebuggerSPC);
         displayRegistersWindow(theCPU,thePPU,totCPUCycles);
+        displaySPCRegistersWindow(theAPU);
         displayPaletteWindow(thePPU);
         displayLogWindow();
         displayVRAMViewerWindow(vramRenderTexture, thePPU.getVRAMViewerXsize(), thePPU.getVRAMViewerYsize(), thePPU.getVRAMViewerBitmap(),thePPU);

@@ -84,6 +84,42 @@ void apu::reset()
 	glbTheLogger.logMsg("SPC700 initial PC: 0x"+ sInitialPC);
 }
 
+std::vector<std::string> apu::getRegisters()
+{
+	std::vector<std::string> result;
+
+	std::string row0;
+
+	std::stringstream strstrdgb;
+	strstrdgb << std::hex << std::setw(2) << std::setfill('0') << (int)regA;
+	row0+="A:"+strstrdgb.str();
+
+	std::stringstream strstrdgb2;
+	strstrdgb2 << std::hex << std::setw(2) << std::setfill('0') << (int)regX;
+	row0 += " X:" + strstrdgb2.str();
+
+	std::stringstream strstrdgb3;
+	strstrdgb3 << std::hex << std::setw(2) << std::setfill('0') << (int)regY;
+	row0 += " Y:" + strstrdgb3.str();
+
+	std::stringstream strstrdgb4;
+	strstrdgb4 << std::hex << std::setw(4) << std::setfill('0') << (int)regPC;
+	row0 += " PC:" + strstrdgb4.str();
+
+	std::stringstream strstrdgb5;
+	strstrdgb5 << std::hex << std::setw(2) << std::setfill('0') << (int)regSP;
+	row0 += " SP:" + strstrdgb5.str();
+
+	result.push_back(row0);
+
+	result.push_back("");
+
+	result.push_back("NVPBHIZC");
+
+
+	return result;
+}
+
 unsigned char apu::read8(unsigned int address)
 {
 	if (address == 0x2140)
@@ -111,6 +147,10 @@ unsigned char apu::read8(unsigned int address)
 		unsigned char value = apuChan[address - 0x2140];
 		apuChan[address - 0x2140] = 0x00;
 		return value;
+	}
+	else
+	{
+		return spc700ram[address];
 	}
 
 	return 0;

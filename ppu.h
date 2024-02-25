@@ -94,6 +94,7 @@ private:
 
 	bool writeBreakpoint = false;
 	bool opvctFlipFlop = false;
+	bool oamPriRot = false;
 
 public:
 
@@ -138,6 +139,15 @@ public:
 	
 	void writeOAMAddressHigh(unsigned char val) 
 	{ 
+		if (val & 0x80)
+		{
+			oamPriRot = true;
+		}
+		else
+		{
+			oamPriRot = false;
+		}
+
 		OAMAddr = ((val & 1) << 9) | (OAMAddr & 0x01fe);
 		OAMAddrSave = OAMAddr;
 	}
