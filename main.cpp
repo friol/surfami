@@ -197,7 +197,7 @@ void displaySPCRegistersWindow(apu& theAPU)
     ImGui::End();
 }
 
-void displaySPCDebugWindow(apu& pAPU, debuggerSPC700& pDbgr)
+void displaySPCDebugWindow(ppu& thePPU, mmu& theMMU, cpu5a22& pCPU, apu& pAPU, debuggerSPC700& pDbgr)
 {
     unsigned int realPC = pAPU.getPC();
     std::vector<std::string> disasmed = pDbgr.disasmOpcodes(realPC,10,&pAPU);
@@ -239,14 +239,16 @@ void displaySPCDebugWindow(apu& pAPU, debuggerSPC700& pDbgr)
     ImGui::Text(" ");
     if (ImGui::Button("StepOne"))
     {
-        /*int cycs = theCPU.stepOne();
+        int cycs = pAPU.stepOne();
         if (cycs != -1)
         {
-            totCPUCycles += cycs;
-            thePPU.step(cycs, theMMU, theCPU);
-        }*/
+            int cpucycs = 0;
+            cpucycs+=pCPU.stepOne();
+            cpucycs += pCPU.stepOne();
+            cpucycs += pCPU.stepOne();
+            thePPU.step(cpucycs, theMMU, pCPU);
+        }
     }
-
 
     ImGui::End();
 }
@@ -875,6 +877,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Frogger (U).smc"; snesStandard = 1; // cars are not moving
     //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // mode4, HDMA not working
     //std::string romName = "d:\\prova\\snes\\Street Fighter II - The World Warrior (U).smc"; // background problems if HDMA enabled
+    //std::string romName = "d:\\prova\\snes\\Super Ghouls 'N Ghosts (E).sfc"; // gameplay garbage, HDMA problems
 
     //std::string romName = "d:\\prova\\snes\\Super Off Road (E) [!].smc"; // 34, a bg remains uncleared
     //std::string romName = "d:\\prova\\snes\\Rock N' Roll Racing (U).smc"; // no bg mode3, corrupted graphics
@@ -884,7 +887,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars (U) [!].smc"; // no input
     //std::string romName = "d:\\prova\\snes\\Tiny Toons - Wild and Wacky Sports (U).smc"; // stuck after player select 0x2137
     //std::string romName = "d:\\prova\\snes\\Monopoly (V1.1) (U).smc"; // wrong controls, sprite at the start
-    //std::string romName = "d:\\prova\\snes\\Super Ghouls 'N Ghosts (E).sfc"; // gameplay garbage
     //std::string romName = "d:\\prova\\snes\\Lemmings (E).sfc"; // dma mode 7 (?), crash, 0x2137 read
     //std::string romName = "d:\\prova\\snes\\Pinball Dreams (E).smc"; // no ball
     //std::string romName = "d:\\prova\\snes\\R-Type 3 (U).smc"; // better but gets stuck
@@ -1835,7 +1837,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         displayAppoWindow(thePPU, theMMU, theDebugger5a22);
         displayRomLoadingLogWindow(romLoadingLog);
         displayDebugWindow(theCPU, theDebugger5a22,theMMU,isDebugWindowFocused,rush,rushToAddress,jumpToAppoBuf,totCPUCycles,emustatus,thePPU);
-        displaySPCDebugWindow(theAPU, theDebuggerSPC);
+        displaySPCDebugWindow(thePPU, theMMU, theCPU,theAPU, theDebuggerSPC);
         displayRegistersWindow(theCPU,thePPU,totCPUCycles);
         displaySPCRegistersWindow(theAPU);
         displayPaletteWindow(thePPU);

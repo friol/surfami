@@ -9,6 +9,7 @@ dbgSPC700info listOfInstrs[]
 	{0xc6,"MOV (X),A",1,0},
 	{0x1d,"DEC X",1,0},
 	{0xd0,"BNE param0",2,1},
+	{0x8f,"MOV $param0,$#param1",3,2},
 };
 
 debuggerSPC700::debuggerSPC700()
@@ -87,6 +88,24 @@ std::string debuggerSPC700::processDisasmTemplate(unsigned short int address, ap
 			strr << std::hex << std::setw(2) << std::setfill('0') << (int)secondByte;
 
 			dis.replace(dis.find("param0"), sizeof("param0") - 1, strr.str());
+			result += dis;
+		}
+		else if (curInstr.instrBytes == 3)
+		{
+			std::string dis = curInstr.disasm;
+			unsigned char secondByte = theAPU->read8(address + 1);
+			unsigned char thirdByte = theAPU->read8(address + 2);
+
+			std::stringstream str2ndByte;
+			str2ndByte << std::hex << std::setw(2) << std::setfill('0') << (int)secondByte;
+			std::stringstream str3rdByte;
+			str3rdByte << std::hex << std::setw(2) << std::setfill('0') << (int)thirdByte;
+
+			if (curInstr.numParams == 2)
+			{
+				dis.replace(dis.find("param0"), sizeof("param0") - 1, str3rdByte.str());
+				dis.replace(dis.find("param1"), sizeof("param1") - 1, str2ndByte.str());
+			}
 			result += dis;
 		}
 

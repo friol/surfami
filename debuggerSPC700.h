@@ -27,8 +27,6 @@ public:
 	debuggerSPC700();
 	std::vector<std::string> disasmOpcodes(unsigned short int pc, unsigned int numInstrs, apu* theAPU);
 	~debuggerSPC700();
-
-
 };
 
 #endif
