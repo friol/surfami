@@ -45,6 +45,10 @@ private:
 	// addressing modes
 	unsigned short int addrModePC();
 	unsigned short int addrModeX();
+	unsigned short int addrImmediate8();
+
+	typedef unsigned char (apu::* internalMemReader)(unsigned int);
+	typedef void (apu::* internalMemWriter)(unsigned int,unsigned char);
 
 public:
 
@@ -54,15 +58,28 @@ public:
 
 	bool isBootRomLoaded();
 
-	unsigned char read8(unsigned int addr);
-	void write8(unsigned int addr,unsigned char val);
+	internalMemReader read8;
+	internalMemWriter write8;
+
+	unsigned char internalRead8(unsigned int addr);
+	void internalWrite8(unsigned int addr,unsigned char val);
+
+	unsigned char testMMURead8(unsigned int addr);
+	void testMMUWrite8(unsigned int addr, unsigned char val);
 
 	int stepOne();
+	void setState(unsigned short int initialPC, unsigned char initialA, unsigned char initialX, unsigned char initialY,
+		unsigned short int initialSP, unsigned char initialFlags);
+	void useTestMMU();
 
 	unsigned short int getPC() { return regPC; }
+	unsigned short int getSP() { return regSP; }
+	unsigned char getA() { return regA; }
+	unsigned char getX() { return regX; }
+	unsigned char getY() { return regY; }
+	unsigned char getPSW();
 
 	std::vector<std::string> getRegisters();
-
 };
 
 #endif

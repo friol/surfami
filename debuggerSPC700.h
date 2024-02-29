@@ -13,11 +13,14 @@ struct dbgSPC700info
 	std::string disasm;
 	unsigned int instrBytes;
 	unsigned int numParams;
+	bool isValidatedTomHarte;
 };
 
 class debuggerSPC700
 {
 private:
+
+	std::vector<dbgSPC700info> debugInstrList;
 
 	unsigned int findOpcodeIndex(unsigned char opcode);
 	std::string processDisasmTemplate(unsigned short int address, apu* theAPU,unsigned int& readBytes);
@@ -26,6 +29,7 @@ public:
 
 	debuggerSPC700();
 	std::vector<std::string> disasmOpcodes(unsigned short int pc, unsigned int numInstrs, apu* theAPU);
+	std::vector<dbgSPC700info>* getOpcodesList();
 	~debuggerSPC700();
 };
 

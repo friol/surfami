@@ -167,6 +167,7 @@
     <ClCompile Include="mmu.cpp" />
     <ClCompile Include="ppu.cpp" />
     <ClCompile Include="romLoader.cpp" />
+    <ClCompile Include="spc700tester.cpp" />
     <ClCompile Include="testMMU.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -186,6 +187,7 @@
     <ClInclude Include="mmu.h" />
     <ClInclude Include="ppu.h" />
     <ClInclude Include="romLoader.h" />
+    <ClInclude Include="spc700tester.h" />
     <ClInclude Include="testMMU.h" />
   </ItemGroup>
   <ItemGroup>

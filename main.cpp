@@ -31,6 +31,7 @@
 #include "cpu65816tester.h"
 #include "testMMU.h"
 #include "debuggerSPC700.h"
+#include "spc700tester.h"
 
 struct WGL_WindowData { HDC hDC; };
 
@@ -197,7 +198,7 @@ void displaySPCRegistersWindow(apu& theAPU)
     ImGui::End();
 }
 
-void displaySPCDebugWindow(ppu& thePPU, mmu& theMMU, cpu5a22& pCPU, apu& pAPU, debuggerSPC700& pDbgr)
+void displaySPCDebugWindow(ppu& thePPU, mmu& theMMU, cpu5a22& pCPU, apu& pAPU, debuggerSPC700& pDbgr, bool& rush, unsigned short int& rushAddress)
 {
     unsigned int realPC = pAPU.getPC();
     std::vector<std::string> disasmed = pDbgr.disasmOpcodes(realPC,10,&pAPU);
@@ -215,7 +216,7 @@ void displaySPCDebugWindow(ppu& thePPU, mmu& theMMU, cpu5a22& pCPU, apu& pAPU, d
         }
         else ImGui::Selectable(disasmed[iidx].c_str(), false);
 
-        std::string curAddress = disasmed[iidx].substr(0, 6);
+        std::string curAddress = disasmed[iidx].substr(0,4);
         std::string cmd = "Run to address:" + curAddress;
 
         std::string curElement = "CtxMenu" + std::to_string(iidx);
@@ -223,11 +224,12 @@ void displaySPCDebugWindow(ppu& thePPU, mmu& theMMU, cpu5a22& pCPU, apu& pAPU, d
         {
             if (ImGui::Selectable(cmd.c_str()))
             {
-                int iAddr;
+                unsigned short int iAddr;
                 std::stringstream ss;
                 ss << std::hex << curAddress;
                 ss >> iAddr;
-                //rushAddress = iAddr;
+                rushAddress = iAddr;
+                rush = true;
             }
             ImGui::EndPopup();
         }
@@ -655,7 +657,7 @@ void displayMemoryWindow(mmu& theMMU,ppu& thePPU,int& baseAddress)
     ImGui::End();
 }
 
-void displayAppoWindow(ppu& thePPU, mmu& ourMMU, debugger5a22& theDebugger5a22)
+void displayAppoWindow(ppu& thePPU, mmu& ourMMU, debugger5a22& theDebugger5a22, debuggerSPC700& theDebuggerSPC)
 {
     ImGui::Begin("Appo and tests window");
     ImGui::Text("surFami emu: Super Nintendo lives");
@@ -670,6 +672,7 @@ void displayAppoWindow(ppu& thePPU, mmu& ourMMU, debugger5a22& theDebugger5a22)
     ImGui::Text(bgModeString.c_str());
 
     std::vector<debugInfoRec>* pOpcodeList = theDebugger5a22.getOpcodesList();
+    std::vector<dbgSPC700info>* pSPCOpcodeList = theDebuggerSPC.getOpcodesList();
 
     if (ImGui::Button("Patch-it!"))
     {
@@ -678,7 +681,7 @@ void displayAppoWindow(ppu& thePPU, mmu& ourMMU, debugger5a22& theDebugger5a22)
     }
     ImGui::SameLine();
 
-    if (ImGui::Button("Start test"))
+    if (ImGui::Button("Start 65816 test"))
     {
         for (auto& testCase : *pOpcodeList)
         {
@@ -694,6 +697,33 @@ void displayAppoWindow(ppu& thePPU, mmu& ourMMU, debugger5a22& theDebugger5a22)
                 std::string curOpcode = strr.str();
 
                 cpuTester.loadTest("D:\\prova\\snes\\ProcessorTests-main\\65816\\v1\\" + curOpcode + ".n.json");
+                int retVal = cpuTester.executeTest();
+
+                if (retVal != 0)
+                {
+                    ImGui::End();
+                    return;
+                }
+            }
+        }
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("Start SPC700 test"))
+    {
+        for (auto& testCase : *pSPCOpcodeList)
+        {
+            if (testCase.isValidatedTomHarte==false)
+            {
+                testMMU tstMMU;
+                apu testAPU;
+                spc700tester cpuTester(tstMMU, testAPU);
+
+                std::stringstream strr;
+                strr << std::hex << std::setw(2) << std::setfill('0') << (int)testCase.opcode;
+                std::string curOpcode = strr.str();
+
+                cpuTester.loadTest("D:\\prova\\snes\\ProcessorTests-main\\spc700\\v1\\" + curOpcode + ".json");
                 int retVal = cpuTester.executeTest();
 
                 if (retVal != 0)
@@ -1664,6 +1694,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //
 
     debugger5a22 theDebugger5a22;
+    debuggerSPC700 theDebuggerSPC700;
     cpu5a22 theCPU(&theMMU,false);
     theCPU.reset();
     theMMU.setCPU(theCPU);
@@ -1834,10 +1865,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
 
         bool rush = false;
         int rushToAddress = 0;
-        displayAppoWindow(thePPU, theMMU, theDebugger5a22);
+
+        bool rushSPC = false;
+        unsigned short int rushToSPCAddress = 0;
+
+        displayAppoWindow(thePPU, theMMU, theDebugger5a22,theDebuggerSPC700);
         displayRomLoadingLogWindow(romLoadingLog);
         displayDebugWindow(theCPU, theDebugger5a22,theMMU,isDebugWindowFocused,rush,rushToAddress,jumpToAppoBuf,totCPUCycles,emustatus,thePPU);
-        displaySPCDebugWindow(thePPU, theMMU, theCPU,theAPU, theDebuggerSPC);
+        displaySPCDebugWindow(thePPU, theMMU, theCPU,theAPU, theDebuggerSPC,rushSPC,rushToSPCAddress);
         displayRegistersWindow(theCPU,thePPU,totCPUCycles);
         displaySPCRegistersWindow(theAPU);
         displayPaletteWindow(thePPU);
@@ -1886,6 +1921,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
                 totCPUCycles+=theCPU.stepOne();
             }
         }
+
+        // rush there for SPC too
+
 
         // Rendering
         ImGui::Render();

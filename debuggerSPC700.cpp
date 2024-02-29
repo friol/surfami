@@ -3,17 +3,28 @@
 
 dbgSPC700info listOfInstrs[]
 {
-	{0xcd,"MOV X,#$param0",2,1},
-	{0xbd,"MOV SP,X",1,0},
-	{0xe8,"MOV A,#$param0",2,1},
-	{0xc6,"MOV (X),A",1,0},
-	{0x1d,"DEC X",1,0},
-	{0xd0,"BNE param0",2,1},
-	{0x8f,"MOV $param0,$#param1",3,2},
+	{0xcd,"MOV X,#$param0",2,1,true}, // validatedFC
+	{0xbd,"MOV SP,X",1,0,true}, // validatedFC
+	{0xe8,"MOV A,#$param0",2,1,true}, // validatedFC
+	{0xc6,"MOV (X),A",1,0,true}, // validatedFC
+	{0x1d,"DEC X",1,0,true}, // validatedFC
+	{0xd0,"BNE param0",2,1,true}, // validatedFC
+	{0x8f,"MOV $param0,$#param1",3,2,true}, // validatedFC
+
+
 };
 
 debuggerSPC700::debuggerSPC700()
 {
+	for (auto& instr : listOfInstrs)
+	{
+		debugInstrList.push_back(instr);
+	}
+}
+
+std::vector<dbgSPC700info>* debuggerSPC700::getOpcodesList()
+{
+	return &debugInstrList;
 }
 
 unsigned int debuggerSPC700::findOpcodeIndex(unsigned char opcode)
@@ -41,7 +52,7 @@ std::string debuggerSPC700::processDisasmTemplate(unsigned short int address, ap
 	result += strr.str() + " ";
 
 	// find template idx
-	unsigned char opcode = theAPU->read8(address);
+	unsigned char opcode = theAPU->internalRead8(address);
 	unsigned int tmplIdx = findOpcodeIndex(opcode);
 
 	if (tmplIdx == -1)
@@ -62,7 +73,7 @@ std::string debuggerSPC700::processDisasmTemplate(unsigned short int address, ap
 		{
 			if (b < curInstr.instrBytes)
 			{
-				unsigned char curByte = theAPU->read8(address + b);
+				unsigned char curByte = theAPU->internalRead8(address + b);
 				std::stringstream strr;
 				strr << std::hex << std::setw(2) << std::setfill('0') << (int)curByte;
 				result += strr.str() + " ";
@@ -83,7 +94,7 @@ std::string debuggerSPC700::processDisasmTemplate(unsigned short int address, ap
 		else if (curInstr.instrBytes == 2)
 		{
 			std::string dis = curInstr.disasm;
-			unsigned char secondByte = theAPU->read8(address + 1);
+			unsigned char secondByte = theAPU->internalRead8(address + 1);
 			std::stringstream strr;
 			strr << std::hex << std::setw(2) << std::setfill('0') << (int)secondByte;
 
@@ -93,8 +104,8 @@ std::string debuggerSPC700::processDisasmTemplate(unsigned short int address, ap
 		else if (curInstr.instrBytes == 3)
 		{
 			std::string dis = curInstr.disasm;
-			unsigned char secondByte = theAPU->read8(address + 1);
-			unsigned char thirdByte = theAPU->read8(address + 2);
+			unsigned char secondByte = theAPU->internalRead8(address + 1);
+			unsigned char thirdByte = theAPU->internalRead8(address + 2);
 
 			std::stringstream str2ndByte;
 			str2ndByte << std::hex << std::setw(2) << std::setfill('0') << (int)secondByte;

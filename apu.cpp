@@ -18,6 +18,9 @@ apu::apu()
 		spc700ram[i] = 0;
 	}
 
+	read8 = &apu::internalRead8;
+	write8 = &apu::internalWrite8;
+
 	// load ipl rom
 	std::vector<unsigned char> vec;
 	std::string bootRomName = "roms/ipl.rom";
@@ -58,6 +61,12 @@ apu::apu()
 	}
 }
 
+void apu::useTestMMU()
+{
+	read8 = &apu::testMMURead8;
+	write8 = &apu::testMMUWrite8;
+}
+
 bool apu::isBootRomLoaded()
 {
 	return bootRomLoaded;
@@ -65,13 +74,21 @@ bool apu::isBootRomLoaded()
 
 void apu::reset()
 {
-	glbTheLogger.logMsg("APU reset");
+	//glbTheLogger.logMsg("APU reset");
 
-	//regPC = 0xfffe;
 	regA = 0;
 	regX = 0;
 	regY = 0;
 	regSP = 0;
+
+	flagN = false;
+	flagV = false;
+	flagP = false;
+	flagB = false;
+	flagH = false;
+	flagI = false;
+	flagZ = false;
+	flagC = false;
 
 	unsigned char pcLow = spc700ram[0xfffe];
 	unsigned char pcHi = spc700ram[0xffff];
@@ -81,7 +98,25 @@ void apu::reset()
 	strstrdgb << std::hex << std::setw(4) << std::setfill('0') << (int)regPC;
 	std::string sInitialPC = strstrdgb.str();
 
-	glbTheLogger.logMsg("SPC700 initial PC: 0x"+ sInitialPC);
+	//glbTheLogger.logMsg("SPC700 initial PC: 0x"+ sInitialPC);
+}
+
+void apu::setState(unsigned short int initialPC, unsigned char initialA, unsigned char initialX, unsigned char initialY, unsigned short int initialSP, unsigned char initialFlags)
+{
+	regPC = initialPC;
+	regA = initialA;
+	regX = initialX;
+	regY = initialY;
+	regSP = initialSP;
+
+	if (initialFlags & 0x80) flagN = true;
+	if (initialFlags & 0x40) flagV = true;
+	if (initialFlags & 0x20) flagP = true;
+	if (initialFlags & 0x10) flagB = true;
+	if (initialFlags & 0x08) flagH = true;
+	if (initialFlags & 0x04) flagI = true;
+	if (initialFlags & 0x02) flagZ = true;
+	if (initialFlags & 0x01) flagC = true;
 }
 
 std::vector<std::string> apu::getRegisters()
@@ -137,7 +172,33 @@ std::vector<std::string> apu::getRegisters()
 	return result;
 }
 
-unsigned char apu::read8(unsigned int address)
+unsigned char apu::getPSW()
+{
+	unsigned char retval = 0;
+
+	if (flagN) retval |= 0x80;
+	if (flagV) retval |= 0x40;
+	if (flagP) retval |= 0x20;
+	if (flagB) retval |= 0x10;
+	if (flagH) retval |= 0x08;
+	if (flagI) retval |= 0x04;
+	if (flagZ) retval |= 0x02;
+	if (flagC) retval |= 0x01;
+
+	return retval;
+}
+
+unsigned char apu::testMMURead8(unsigned int addr)
+{
+	return spc700ram[addr];
+}
+
+void apu::testMMUWrite8(unsigned int addr, unsigned char val)
+{
+	spc700ram[addr] = val;
+}
+
+unsigned char apu::internalRead8(unsigned int address)
 {
 	if (address == 0x2140)
 	{
@@ -169,11 +230,9 @@ unsigned char apu::read8(unsigned int address)
 	{
 		return spc700ram[address];
 	}
-
-	return 0;
 }
 
-void apu::write8(unsigned int address, unsigned char val)
+void apu::internalWrite8(unsigned int address, unsigned char val)
 {
 	if ((address == 0x2140) || (address == 0x2141) || (address == 0x2142) || (address == 0x2143))
 	{
@@ -194,7 +253,7 @@ void apu::doFlagsNZ(unsigned char val)
 void apu::doMoveToX(pAddrModeFun fn)
 {
 	unsigned short int addr=(this->*fn)();
-	unsigned char val = read8(addr);
+	unsigned char val = (this->*read8)(addr);
 	regX = val;
 	doFlagsNZ(regX);
 }
@@ -202,7 +261,7 @@ void apu::doMoveToX(pAddrModeFun fn)
 void apu::doMoveToA(pAddrModeFun fn)
 {
 	unsigned short int addr = (this->*fn)();
-	unsigned char val = read8(addr);
+	unsigned char val = (this->*read8)(addr);
 	regA = val;
 	doFlagsNZ(regA);
 }
@@ -216,13 +275,13 @@ void apu::doDecX()
 void apu::doMoveWithRead(pAddrModeFun fn, unsigned char val)
 {
 	unsigned short int addr = (this->*fn)();
-	read8(addr);
-	write8(addr,val);
+	(this->*read8)(addr);
+	(this->*write8)(addr,val);
 }
 
 int apu::doBNE()
 {
-	signed char off = read8(regPC+1);
+	signed char off = (this->*read8)(regPC+1);
 	if (!flagZ) 
 	{
 		regPC += off+2;
@@ -242,13 +301,21 @@ unsigned short int apu::addrModePC()
 
 unsigned short int apu::addrModeX()
 {
-	unsigned short int adr = regX | flagP;
+	unsigned short int adr = regX;
+	if (flagP) adr |= 0x100;
+	return adr;
+}
+
+unsigned short int apu::addrImmediate8()
+{
+	unsigned short int adr = (this->*read8)(regPC+2);
+	if (flagP) adr |= 0x100;
 	return adr;
 }
 
 int apu::stepOne()
 {
-	unsigned char nextOpcode = read8(regPC);
+	unsigned char nextOpcode = (this->*read8)(regPC);
 	int cycles = 0;
 
 	switch (nextOpcode)
@@ -264,7 +331,7 @@ int apu::stepOne()
 		case 0xbd:
 		{
 			// MOV SP,X
-			regSP = 0x100 | regX; 
+			regSP = regX; 
 			regPC += 1;
 			cycles = 2;
 			break;
@@ -303,8 +370,10 @@ int apu::stepOne()
 		{
 			// MOV dp, #imm
 
+			unsigned char operand = (this->*read8)(regPC + 1);
+			doMoveWithRead(&apu::addrImmediate8, operand);
 
-
+			regPC += 3;
 			cycles = 5;
 			break;
 		}

@@ -64,6 +64,9 @@
     <ClCompile Include="debuggerSPC700.cpp">
       <Filter>sources</Filter>
     </ClCompile>
+    <ClCompile Include="spc700tester.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\imconfig.h">
@@ -115,6 +118,9 @@
       <Filter>sources</Filter>
     </ClInclude>
     <ClInclude Include="debuggerSPC700.h">
+      <Filter>sources</Filter>
+    </ClInclude>
+    <ClInclude Include="spc700tester.h">
       <Filter>sources</Filter>
     </ClInclude>
   </ItemGroup>
