@@ -9,7 +9,8 @@ class apu
 {
 private:
 
-	unsigned char apuChan[4] = { 0xaa,0,0,0 };
+	unsigned char portsFromCPU[4];
+	unsigned char portsFromSPC[4];
 	
 	unsigned char bootRom[64];
 	bool bootRomLoaded = false;
@@ -36,9 +37,12 @@ private:
 	void doFlagsNZ(unsigned char val);
 
 	typedef unsigned short int (apu::*pAddrModeFun)(void);
-	void doMoveToX(pAddrModeFun fn);
 	void doMoveToA(pAddrModeFun fn);
+	void doMoveToX(pAddrModeFun fn);
+	void doMoveToY(pAddrModeFun fn);
 	void doMoveWithRead(pAddrModeFun fn, unsigned char val);
+	void doCMPY(pAddrModeFun fn);
+	void doCMP(pAddrModeFun fn, unsigned char val);
 	void doDecX();
 	int doBNE();
 
@@ -46,6 +50,8 @@ private:
 	unsigned short int addrModePC();
 	unsigned short int addrModeX();
 	unsigned short int addrImmediate8();
+	unsigned short int addrIndirectY();
+	unsigned short int addrDP();
 
 	typedef unsigned char (apu::* internalMemReader)(unsigned int);
 	typedef void (apu::* internalMemWriter)(unsigned int,unsigned char);
@@ -63,6 +69,9 @@ public:
 
 	unsigned char internalRead8(unsigned int addr);
 	void internalWrite8(unsigned int addr,unsigned char val);
+
+	unsigned char externalRead8(unsigned int addr);
+	void externalWrite8(unsigned int addr, unsigned char val);
 
 	unsigned char testMMURead8(unsigned int addr);
 	void testMMUWrite8(unsigned int addr, unsigned char val);

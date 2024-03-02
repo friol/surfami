@@ -610,7 +610,7 @@ void mmu::write8(unsigned int address, unsigned char val)
 		}
 		else if ((adr == 0x2140) || (adr == 0x2141) || (adr == 0x2142) || (adr == 0x2143))
 		{
-			pAPU->internalWrite8(adr, val);
+			pAPU->externalWrite8(adr, val);
 			return;
 		}
 		else if (adr == 0x4016)
@@ -759,7 +759,7 @@ unsigned char mmu::read8(unsigned int address)
 		}
 		else if ((adr == 0x2140) || (adr == 0x2141) || (adr == 0x2142) || (adr == 0x2143))
 		{
-			return pAPU->internalRead8(adr);
+			return pAPU->externalRead8(adr);
 		}
 		else if (adr == 0x4016)
 		{

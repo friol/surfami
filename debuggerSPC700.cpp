@@ -10,7 +10,19 @@ dbgSPC700info listOfInstrs[]
 	{0x1d,"DEC X",1,0,true}, // validatedFC
 	{0xd0,"BNE param0",2,1,true}, // validatedFC
 	{0x8f,"MOV $param0,$#param1",3,2,true}, // validatedFC
-
+	{0x78,"CMP $param0,$#param1",3,2,true}, // validatedFC
+	{0x2f,"BRA $param0",2,1,true}, // validatedFC
+	{0xba,"MOVW YA,$param0",2,1,true}, // validatedFC
+	{0xda,"MOVW $param0,YA",2,1,true}, // validatedFC
+	{0xc4,"MOV $param0,A",2,1,true}, // validatedFC
+	{0xdd,"MOV A,Y",1,0,true}, // validatedFC
+	{0x5d,"MOV X,A",1,0,true}, // validatedFC
+	{0xeb,"MOV Y,$param0",2,1,true}, // validatedFC
+	{0x7e,"CMP Y,$param0",2,1,true}, // validatedFC
+	{0xe4,"MOV A,$param0",2,1,true}, // validatedFC
+	{0xcb,"MOV $param0,Y",2,1,true}, // validatedFC
+	{0xd7,"MOV [$param0]+Y,A",2,1,true}, // validatedFC
+	{0xfc,"INC Y",1,0,true}, // validatedFC
 
 };
 

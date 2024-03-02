@@ -201,7 +201,7 @@ void displaySPCRegistersWindow(apu& theAPU)
 void displaySPCDebugWindow(ppu& thePPU, mmu& theMMU, cpu5a22& pCPU, apu& pAPU, debuggerSPC700& pDbgr, bool& rush, unsigned short int& rushAddress)
 {
     unsigned int realPC = pAPU.getPC();
-    std::vector<std::string> disasmed = pDbgr.disasmOpcodes(realPC,10,&pAPU);
+    std::vector<std::string> disasmed = pDbgr.disasmOpcodes(realPC,15,&pAPU);
 
     ImGui::Begin("SPC700 Debuggah");
 
@@ -902,6 +902,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Williams Arcade's Greatest Hits (E) [!].smc"; // a1
     //std::string romName = "d:\\prova\\snes\\Super Back to the Future 2 (J).sfc";
     //std::string romName = "d:\\prova\\snes\\Unirally (E) [!].smc";
+    //std::string romName = "d:\\prova\\snes\\Super Turrican (USA).sfc";
 
     // HDMA problems
     //std::string romName = "d:\\prova\\snes\\Frogger (U).smc"; snesStandard = 1; // cars are not moving
@@ -1898,6 +1899,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
                 }
                 inst += 1;
 
+                if ((inst % 3) == 0)
+                {
+                    theAPU.stepOne();
+                }
+
                 //if ( ((theCPU.getPC()) == 0x808a5a) && thePPU.getWriteBreakpoint() )
                 //if ( ((theCPU.getPC()) == 0x808a4d) && (theCPU.getX()==0x14fb))
                 //if ( ((theCPU.getPC()&0xffff) == 0x9e3b))
@@ -1923,7 +1929,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         }
 
         // rush there for SPC too
-
+        while (rushSPC)
+        {
+            unsigned short int curPC = theAPU.getPC();
+            if (curPC == rushToSPCAddress)
+            {
+                rushSPC = false;
+            }
+            else
+            {
+                totCPUCycles += theCPU.stepOne();
+                totCPUCycles += theCPU.stepOne();
+                totCPUCycles += theCPU.stepOne();
+                theAPU.stepOne();
+            }
+        }
 
         // Rendering
         ImGui::Render();

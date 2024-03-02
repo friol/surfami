@@ -1,3 +1,4 @@
+/* our littley apu and SPC700 chip */
 
 #include "apu.h"
 #include <cstdlib> 
@@ -58,6 +59,12 @@ apu::apu()
 	for (int i = 0;i < 64;i++)
 	{
 		spc700ram[0xffc0 + i] = bootRom[i];
+	}
+
+	for (int i = 0;i < 4;i++)
+	{
+		portsFromCPU[i] = 0;
+		portsFromSPC[i] = 0;
 	}
 }
 
@@ -169,6 +176,29 @@ std::vector<std::string> apu::getRegisters()
 
 	result.push_back(flagsBitstring);
 
+	// ports f4-f5-f6-f7
+	std::string portsStr0="Port0:";
+	std::stringstream strstrP0;
+	strstrP0 << std::hex << std::setw(2) << std::setfill('0') << (int)portsFromCPU[0];
+	portsStr0+=strstrP0.str();
+	std::string portsStr1 = "Port1:";
+	std::stringstream strstrP1;
+	strstrP1 << std::hex << std::setw(2) << std::setfill('0') << (int)portsFromCPU[1];
+	portsStr1+=strstrP1.str();
+	std::string portsStr2 = "Port2:";
+	std::stringstream strstrP2;
+	strstrP2 << std::hex << std::setw(2) << std::setfill('0') << (int)portsFromCPU[2];
+	portsStr2 += strstrP2.str();
+	std::string portsStr3 = "Port3:";
+	std::stringstream strstrP3;
+	strstrP3 << std::hex << std::setw(2) << std::setfill('0') << (int)portsFromCPU[3];
+	portsStr3 += strstrP2.str();
+
+	result.push_back(portsStr0);
+	result.push_back(portsStr1);
+	result.push_back(portsStr2);
+	result.push_back(portsStr3);
+
 	return result;
 }
 
@@ -198,33 +228,30 @@ void apu::testMMUWrite8(unsigned int addr, unsigned char val)
 	spc700ram[addr] = val;
 }
 
+unsigned char apu::externalRead8(unsigned int address)
+{
+	if ((address == 0x2140) || (address == 0x2141) || (address == 0x2142) || (address == 0x2143))
+	{
+		// 2140/1/2/3h - APUI00 - Main CPU to Sound CPU Communication Port 0/1/2/3 (R / W)
+		unsigned char value = portsFromSPC[address-0x2140];
+		return value;
+	}
+}
+
+void apu::externalWrite8(unsigned int address, unsigned char val)
+{
+	if ((address == 0x2140) || (address == 0x2141) || (address == 0x2142) || (address == 0x2143))
+	{
+		// 2140/1/2/3h - APUI00 - Main CPU to Sound CPU Communication Port 0/1/2/3 (R / W)
+		portsFromCPU[address - 0x2140] = val;
+	}
+}
+
 unsigned char apu::internalRead8(unsigned int address)
 {
-	if (address == 0x2140)
+	if ((address >= 0xf4) && (address <= 0xf7))
 	{
-		// 2140h - APUI00 - Main CPU to Sound CPU Communication Port 0 (R / W)
-		unsigned char value = apuChan[address-0x2140];
-		apuChan[address - 0x2140] = 0xaa;
-		return value;
-	}
-	else if (address == 0x2141)
-	{
-		// 2141h - APUI01 - Main CPU to Sound CPU Communication Port 1 (R/W)
-		unsigned char value = apuChan[address - 0x2140];
-		apuChan[address - 0x2140] = 0xbb;
-		return value;
-	}
-	else if (address == 0x2142)
-	{
-		unsigned char value = apuChan[address - 0x2140];
-		apuChan[address - 0x2140] = 0x00;
-		return value;
-	}
-	else if (address == 0x2143)
-	{
-		unsigned char value = apuChan[address - 0x2140];
-		apuChan[address - 0x2140] = 0x00;
-		return value;
+		return portsFromCPU[address - 0xf4];
 	}
 	else
 	{
@@ -234,13 +261,13 @@ unsigned char apu::internalRead8(unsigned int address)
 
 void apu::internalWrite8(unsigned int address, unsigned char val)
 {
-	if ((address == 0x2140) || (address == 0x2141) || (address == 0x2142) || (address == 0x2143))
+	if ((address >= 0xf4) && (address <= 0xf7))
 	{
-		apuChan[address - 0x2140] = val;
+		portsFromSPC[address - 0xf4]=val;
 	}
 	else
 	{
-		spc700ram[address] = val;
+		spc700ram[address]=val;
 	}
 }
 
@@ -256,6 +283,14 @@ void apu::doMoveToX(pAddrModeFun fn)
 	unsigned char val = (this->*read8)(addr);
 	regX = val;
 	doFlagsNZ(regX);
+}
+
+void apu::doMoveToY(pAddrModeFun fn)
+{
+	unsigned short int addr = (this->*fn)();
+	unsigned char val = (this->*read8)(addr);
+	regY = val;
+	doFlagsNZ(regY);
 }
 
 void apu::doMoveToA(pAddrModeFun fn)
@@ -277,6 +312,28 @@ void apu::doMoveWithRead(pAddrModeFun fn, unsigned char val)
 	unsigned short int addr = (this->*fn)();
 	(this->*read8)(addr);
 	(this->*write8)(addr,val);
+}
+
+void apu::doCMP(pAddrModeFun fn, unsigned char val)
+{
+	unsigned short int addr = (this->*fn)();
+	unsigned char vil = (this->*read8)(addr);
+
+	val ^= 0xff;
+	int result = vil + val + 1;
+	flagC = result > 0xff;
+	doFlagsNZ((unsigned char)result);
+}
+
+void apu::doCMPY(pAddrModeFun fn)
+{
+	unsigned short int addr = (this->*fn)();
+	unsigned char vil = (this->*read8)(addr);
+
+	vil ^= 0xff;
+	int result = vil + regY + 1;
+	flagC = result > 0xff;
+	doFlagsNZ((unsigned char)result);
 }
 
 int apu::doBNE()
@@ -304,6 +361,30 @@ unsigned short int apu::addrModeX()
 	unsigned short int adr = regX;
 	if (flagP) adr |= 0x100;
 	return adr;
+}
+
+unsigned short int apu::addrDP()
+{
+	unsigned short int adr = (this->*read8)(regPC + 1);
+	if (flagP) adr |= 0x100;
+	return adr;
+}
+
+unsigned short int apu::addrIndirectY()
+{
+	unsigned char pointer = (this->*read8)(regPC + 1);
+
+	unsigned short int adr = 0;
+	unsigned short int low = pointer;
+	if (flagP) low |= 0x100;
+
+	unsigned short int high = (pointer+1)&0xff;
+	if (flagP) high |= 0x100;
+
+	adr= (this->*read8)(low);
+	adr |= (this->*read8)(high) << 8;;
+
+	return (adr + regY) & 0xffff;
 }
 
 unsigned short int apu::addrImmediate8()
@@ -369,12 +450,139 @@ int apu::stepOne()
 		case 0x8f:
 		{
 			// MOV dp, #imm
-
 			unsigned char operand = (this->*read8)(regPC + 1);
 			doMoveWithRead(&apu::addrImmediate8, operand);
-
 			regPC += 3;
 			cycles = 5;
+			break;
+		}
+		case 0x78:
+		{
+			// CMP d,#i
+			unsigned char operand = (this->*read8)(regPC + 1);
+			doCMP(&apu::addrImmediate8, operand);
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0x2f:
+		{
+			// BRA imm
+			signed char offs = (this->*read8)(regPC + 1);
+			regPC += offs+2;
+			cycles = 4;
+			break;
+		}
+		case 0xba:
+		{
+			// MOVW YA,(addr)
+			unsigned char adr = (this->*read8)(regPC + 1);
+			unsigned short int low = adr;
+			if (flagP) low |= 0x100;
+			unsigned short int high = (adr+1) & 0xff;
+			if (flagP) high |= 0x100;
+			unsigned char val1 = (this->*read8)(low);
+			unsigned short int val = val1 | ((this->*read8)(high)<<8);
+			regA = val & 0xff;
+			regY = val >> 8;
+			flagZ = val == 0;
+			flagN = val & 0x8000;
+
+			regPC += 2;
+			cycles = 5;
+			break;
+		}
+		case 0xda:
+		{
+			// MOVW dp,YA
+			unsigned char adr = (this->*read8)(regPC + 1);
+			unsigned short int low = adr;
+			if (flagP) low |= 0x100;
+			unsigned short int high = (adr + 1) & 0xff;
+			if (flagP) high |= 0x100;
+
+			(this->*read8)(low);
+			
+			(this->*write8)(low, regA);
+			(this->*write8)(high, regY);
+
+			regPC += 2;
+			cycles = 5;
+			break;
+		}
+		case 0xc4:
+		{
+			// mov d,a
+			doMoveWithRead(&apu::addrDP, regA);
+			regPC += 2;
+			cycles = 4;
+			break;
+		}
+		case 0xdd:
+		{
+			// mov a,y
+			regA = regY;
+			doFlagsNZ(regA);
+			regPC += 1;
+			cycles = 2;
+			break;
+		}
+		case 0x5d:
+		{
+			// mov x,a
+			regX = regA;
+			doFlagsNZ(regX);
+			regPC += 1;
+			cycles = 2;
+			break;
+		}
+		case 0xeb:
+		{
+			// mov y,d
+			doMoveToY(&apu::addrDP);
+			regPC += 2;
+			cycles = 3;
+			break;
+		}
+		case 0x7e:
+		{
+			// CMP y,d
+			doCMPY(&apu::addrDP);
+			regPC += 2;
+			cycles = 3;
+			break;
+		}
+		case 0xe4:
+		{
+			// mov a,d
+			doMoveToA(&apu::addrDP);
+			regPC += 2;
+			cycles = 3;
+			break;
+		}
+		case 0xcb:
+		{
+			// mov d,Y
+			doMoveWithRead(&apu::addrDP, regY);
+			regPC += 2;
+			cycles = 4;
+			break;
+		}
+		case 0xd7:
+		{
+			// mov [d]+Y,A
+			doMoveWithRead(&apu::addrIndirectY, regA);
+			regPC += 2;
+			cycles = 7;
+			break;
+		}
+		case 0xfc:
+		{
+			// inc y
+			regY += 1;
+			doFlagsNZ(regY);
+			regPC += 1;
+			cycles = 2;
 			break;
 		}
 		default:
