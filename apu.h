@@ -41,10 +41,13 @@ private:
 	void doMoveToX(pAddrModeFun fn);
 	void doMoveToY(pAddrModeFun fn);
 	void doMoveWithRead(pAddrModeFun fn, unsigned char val);
+	void doCMPX(pAddrModeFun fn);
 	void doCMPY(pAddrModeFun fn);
 	void doCMP(pAddrModeFun fn, unsigned char val);
 	void doDecX();
+	void doInc(pAddrModeFun fn);
 	int doBNE();
+	int doBranch(signed char offs, bool condition);
 
 	// addressing modes
 	unsigned short int addrModePC();
@@ -52,6 +55,8 @@ private:
 	unsigned short int addrImmediate8();
 	unsigned short int addrIndirectY();
 	unsigned short int addrDP();
+	unsigned short int addrAbs();
+	unsigned short int addrAbsX();
 
 	typedef unsigned char (apu::* internalMemReader)(unsigned int);
 	typedef void (apu::* internalMemWriter)(unsigned int,unsigned char);

@@ -23,6 +23,21 @@ dbgSPC700info listOfInstrs[]
 	{0xcb,"MOV $param0,Y",2,1,true}, // validatedFC
 	{0xd7,"MOV [$param0]+Y,A",2,1,true}, // validatedFC
 	{0xfc,"INC Y",1,0,true}, // validatedFC
+	{0xab,"INC $param0",2,1,true}, // validatedFC
+	{0x10,"BPL param0",2,1,true}, // validatedFC
+	{0x1f,"JMP [param0+X]",3,1,true}, // validatedFC
+	{0x20,"CLRP",1,0,true}, // validatedFC
+	{0xc5,"MOV $param0,A",3,1,true}, // validatedFC
+	{0xaf,"MOV (X)+,A",1,0,true}, // validatedFC
+	{0xc8,"CMP X,#param0",2,1,true}, // validatedFC
+	{0xd5,"MOV !$param0+X,A",3,1,true}, // validatedFC
+	{0x3d,"INC X",1,0,true}, // validatedFC
+	{0xf5,"MOV A,!$param0+X",3,1,true}, // validatedFC
+	{0xfd,"MOV Y,A",1,0,true}, // validatedFC
+	{0x3f,"CALL !$param0",3,1,true}, // validatedFC
+	{0xcc,"MOV !$param0,Y",3,1,true}, // validatedFC
+	{0x6f,"RET",1,0,true}, // validatedFC
+
 
 };
 
@@ -123,11 +138,17 @@ std::string debuggerSPC700::processDisasmTemplate(unsigned short int address, ap
 			str2ndByte << std::hex << std::setw(2) << std::setfill('0') << (int)secondByte;
 			std::stringstream str3rdByte;
 			str3rdByte << std::hex << std::setw(2) << std::setfill('0') << (int)thirdByte;
+			std::stringstream strWord;
+			strWord << std::hex << std::setw(4) << std::setfill('0') << (int)(secondByte|(thirdByte<<8));
 
 			if (curInstr.numParams == 2)
 			{
 				dis.replace(dis.find("param0"), sizeof("param0") - 1, str3rdByte.str());
 				dis.replace(dis.find("param1"), sizeof("param1") - 1, str2ndByte.str());
+			}
+			else if (curInstr.numParams == 1)
+			{
+				dis.replace(dis.find("param0"), sizeof("param0") - 1, strWord.str());
 			}
 			result += dis;
 		}

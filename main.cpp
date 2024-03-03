@@ -1680,7 +1680,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     {
         theMMU.write8(0x81d1, 0xea);
         theMMU.write8(0x81d2, 0xea);
-
     }
     else if (romName == "d:\\prova\\snes\\Ninjawarriors (USA).sfc")
     {

@@ -325,6 +325,17 @@ void apu::doCMP(pAddrModeFun fn, unsigned char val)
 	doFlagsNZ((unsigned char)result);
 }
 
+void apu::doCMPX(pAddrModeFun fn)
+{
+	unsigned short int addr = (this->*fn)();
+	unsigned char vil = (this->*read8)(addr);
+
+	vil ^= 0xff;
+	int result = vil + regX + 1;
+	flagC = result > 0xff;
+	doFlagsNZ((unsigned char)result);
+}
+
 void apu::doCMPY(pAddrModeFun fn)
 {
 	unsigned short int addr = (this->*fn)();
@@ -347,6 +358,29 @@ int apu::doBNE()
 
 	regPC += 2;
 	return 2;
+}
+
+void apu::doInc(pAddrModeFun fn)
+{
+	unsigned short int addr = (this->*fn)();
+	unsigned char val = (this->*read8)(addr);
+	val += 1;
+	(this->*write8)(addr, val);
+	doFlagsNZ(val);
+}
+
+int apu::doBranch(signed char offs, bool condition)
+{
+	if (condition)
+	{
+		regPC += offs+2;
+		return 4;
+	}
+	else
+	{
+		regPC += 2;
+		return 2;
+	}
 }
 
 // addressing modez
@@ -392,6 +426,23 @@ unsigned short int apu::addrImmediate8()
 	unsigned short int adr = (this->*read8)(regPC+2);
 	if (flagP) adr |= 0x100;
 	return adr;
+}
+
+unsigned short int apu::addrAbs()
+{
+	unsigned char lowaddr = (this->*read8)(regPC + 1);
+	unsigned char highaddr = (this->*read8)(regPC + 2);
+	unsigned short int addr = lowaddr | (highaddr << 8);
+	return addr;
+}
+
+unsigned short int apu::addrAbsX()
+{
+	unsigned char lowaddr = (this->*read8)(regPC + 1);
+	unsigned char highaddr = (this->*read8)(regPC + 2);
+	unsigned short int addr = lowaddr | (highaddr << 8);
+	addr = (addr + regX) & 0xffff;
+	return addr;
 }
 
 int apu::stepOne()
@@ -585,14 +636,160 @@ int apu::stepOne()
 			cycles = 2;
 			break;
 		}
+		case 0xab:
+		{
+			// inc d
+			doInc(&apu::addrDP);
+			regPC += 2;
+			cycles = 4;
+			break;
+		}
+		case 0x10:
+		{
+			// BPL offs
+			signed char offs = (this->*read8)(regPC + 1);
+			cycles=doBranch(offs,!flagN);
+			break;
+		}
+		case 0x1f:
+		{
+			// jmp [addr+x]
+			unsigned char lowaddr, highaddr;
+			lowaddr= (this->*read8)(regPC + 1);
+			highaddr= (this->*read8)(regPC + 2);
+
+			unsigned short int ptrAddr = lowaddr | (highaddr << 8);
+
+			unsigned char lownewAddr, highnewAddr;
+			lownewAddr= (this->*read8)((ptrAddr + regX)&0xffff);
+			highnewAddr= (this->*read8)((ptrAddr + regX+1)&0xffff);
+
+			regPC = lownewAddr | (highnewAddr << 8);
+
+			cycles = 6;
+			break;
+		}
+		case 0x20:
+		{
+			// clrp
+			flagP = false;
+			regPC += 1;
+			cycles = 2;
+			break;
+		}
+		case 0xc5:
+		{
+			// mov !a,A
+			doMoveWithRead(&apu::addrAbs, regA);
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0xaf:
+		{
+			// mov (x)+,a
+			unsigned short int adr = regX;
+			if (flagP) adr |= 0x100;
+			regX += 1;
+			(this->*write8)(adr, regA);
+			regPC += 1;
+			cycles = 4;
+			break;
+		}
+		case 0xc8:
+		{
+			// CMP x,imm
+			doCMPX(&apu::addrModePC);
+			regPC += 2;
+			cycles = 2;
+			break;
+		}
+		case 0xd5:
+		{
+			// MOV !a+X, A
+			doMoveWithRead(&apu::addrAbsX, regA);
+			regPC += 3;
+			cycles = 6;
+			break;
+		}
+		case 0x3d:
+		{
+			// INC X
+			regX += 1;
+			doFlagsNZ(regX);
+			regPC += 1;
+			cycles = 2;
+			break;
+		}
+		case 0xf5:
+		{
+			// MOV A,!a+X
+			unsigned short int addr = addrAbsX();
+			unsigned char val = (this->*read8)(addr);
+			regA = val;
+			doFlagsNZ(regA);
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0xfd:
+		{
+			// MOV Y,A
+			regY = regA;
+			doFlagsNZ(regY);
+			regPC += 1;
+			cycles = 2;
+			break;
+		}
+		case 0x3f:
+		{
+			// CALL !addr
+			unsigned short int dst;
+			unsigned char lowaddr, highaddr;
+			lowaddr = (this->*read8)(regPC + 1);
+			highaddr = (this->*read8)(regPC + 2);
+			dst = lowaddr | (highaddr << 8);
+
+			(this->*write8)(0x100 | regSP, (regPC+3)>>8);
+			regSP--;
+			regSP &= 0xff;
+			(this->*write8)(0x100 | regSP, (regPC+3)&0xff);
+			regSP--;
+			regSP &= 0xff;
+
+			regPC = dst;
+			cycles = 8;
+			break;
+		}
+		case 0xcc:
+		{
+			// MOV !a,Y
+			unsigned short int addr = addrAbs();
+			(this->*write8)(addr, regY);
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0x6f:
+		{
+			// RET
+			unsigned char low, high;
+			regSP++; regSP &= 0xff;
+			low=(this->*read8)(0x100 | regSP);
+			regSP++; regSP &= 0xff;
+			high = (this->*read8)(0x100 | regSP);
+			regPC = low | (high << 8);
+			cycles = 5;
+			break;
+		}
 		default:
 		{
 			// unknown opcode
 			std::stringstream strr;
 			strr << std::hex << std::setw(2) << std::setfill('0') << (int)nextOpcode;
 			std::stringstream staddr;
-			staddr << std::hex << std::setw(6) << std::setfill('0') << regPC;
-			glbTheLogger.logMsg("Unknown opcode [" + strr.str() + "] at 0x" + staddr.str());
+			staddr << std::hex << std::setw(4) << std::setfill('0') << regPC;
+			glbTheLogger.logMsg("Unknown SPC700 opcode [" + strr.str() + "] at 0x" + staddr.str());
 			return -1;
 		}
 	}
