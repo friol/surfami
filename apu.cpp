@@ -66,6 +66,16 @@ apu::apu()
 		portsFromCPU[i] = 0;
 		portsFromSPC[i] = 0;
 	}
+
+	// init timers
+	for (int i = 0; i < 3; i++) 
+	{
+		timer[i].cycles = 0;
+		timer[i].divider = 0;
+		timer[i].target = 0;
+		timer[i].counter = 0;
+		timer[i].enabled = false;
+	}
 }
 
 void apu::useTestMMU()
@@ -253,6 +263,12 @@ unsigned char apu::internalRead8(unsigned int address)
 	{
 		return portsFromCPU[address - 0xf4];
 	}
+	else if ((address==0xfd)||(address==0xfe)||(address == 0xff))
+	{
+		unsigned char ret = timer[address - 0xfd].counter;
+		timer[address - 0xfd].counter = 0;
+		return ret;
+	}
 	else
 	{
 		return spc700ram[address];
@@ -265,10 +281,87 @@ void apu::internalWrite8(unsigned int address, unsigned char val)
 	{
 		portsFromSPC[address - 0xf4]=val;
 	}
+	else if (address == 0xf1)
+	{
+		// 00F1h - CONTROL - Timer, I/O and ROM Control (W)
+		/*
+		  0-2  Timer 0-2 Enable (0=Disable, set TnOUT=0 & reload divider, 1=Enable)
+		  3    Not used
+		  4    Reset Port 00F4h/00F5h Input-Latches (0=No change, 1=Reset to 00h)
+		  5    Reset Port 00F6h/00F7h Input-Latches (0=No change, 1=Reset to 00h)
+				Note: The CPUIO inputs are latched inside of the SPC700 (at time when
+				the Main CPU writes them), above two bits allow to reset these latches.
+		  6    Not used
+		  7    ROM at FFC0h-FFFFh (0=RAM, 1=ROM) (writes do always go to RAM)		
+		*/
+		glbTheLogger.logMsg("apu::write [" + std::to_string(val) + "] to f1 (CONTROL)");
+
+		for (int i = 0; i < 3; i++) 
+		{
+			if (!timer[i].enabled && (val & (1 << i))) 
+			{
+				timer[i].divider = 0;
+				timer[i].counter = 0;
+			}
+			timer[i].enabled = val & (1 << i);
+		}
+
+		// ports
+		if (val & 0x10) 
+		{
+			portsFromSPC[0] = 0;
+			portsFromSPC[1] = 0;
+		}
+		if (val & 0x20) 
+		{
+			portsFromSPC[2] = 0;
+			portsFromSPC[3] = 0;
+		}
+
+		romReadable = val & 0x80;
+		return;
+	}
+	else if ((address==0xfa)||(address==0xfb)||(address == 0xfc))
+	{
+		// 00FAh - T0DIV - Timer 0 Divider(for 8000Hz clock source) (W)
+		// 00FBh - T1DIV - Timer 1 Divider(for 8000Hz clock source) (W)
+		// 00FCh - T2DIV - Timer 2 Divider(for 64000Hz clock source) (W)
+		timer[address - 0xfa].target = val;
+		return;
+	}
 	else
 	{
 		spc700ram[address]=val;
 	}
+}
+
+void apu::step()
+{
+	//if ((apu->cycles & 0x1f) == 0) 
+	//{
+	//	dsp_cycle(apu->dsp);
+	//}
+
+	for (int i = 0; i < 3; i++) 
+	{
+		if (timer[i].cycles == 0) 
+		{
+			timer[i].cycles = i == 2 ? 16 : 128;
+			if (timer[i].enabled) 
+			{
+				timer[i].divider++;
+				if (timer[i].divider == timer[i].target) 
+				{
+					timer[i].divider = 0;
+					timer[i].counter++;
+					timer[i].counter &= 0xf;
+				}
+			}
+		}
+		timer[i].cycles--;
+	}
+
+	apuCycles++;
 }
 
 void apu::doFlagsNZ(unsigned char val)
@@ -383,6 +476,19 @@ int apu::doBranch(signed char offs, bool condition)
 	}
 }
 
+void apu::doAdc(pAddrModeFun fn)
+{
+	unsigned short int addr = (this->*fn)();
+	unsigned char value = (this->*read8)(addr);
+	int fc = flagC ? 1 : 0;
+	int result = regA + value + fc;
+	flagV = (regA & 0x80) == (value & 0x80) && (value & 0x80) != (result & 0x80);
+	flagH = ((regA & 0xf) + (value & 0xf) + fc) > 0xf;
+	flagC = result > 0xff;
+	regA = result;
+	doFlagsNZ(regA);
+}
+
 // addressing modez
 
 unsigned short int apu::addrModePC()
@@ -443,6 +549,13 @@ unsigned short int apu::addrAbsX()
 	unsigned short int addr = lowaddr | (highaddr << 8);
 	addr = (addr + regX) & 0xffff;
 	return addr;
+}
+
+unsigned short int apu::addrDPX()
+{
+	unsigned short int adr = ((this->*read8)(regPC + 1)+regX)&0xff;
+	if (flagP) adr |= 0x100;
+	return adr;
 }
 
 int apu::stepOne()
@@ -780,6 +893,106 @@ int apu::stepOne()
 			high = (this->*read8)(0x100 | regSP);
 			regPC = low | (high << 8);
 			cycles = 5;
+			break;
+		}
+		case 0xec:
+		{
+			// MOV Y,!a
+			doMoveToY(&apu::addrAbs);
+			regPC += 3;
+			cycles = 4;
+			break;
+		}
+		case 0xf0:
+		{
+			// BEQ offs
+			signed char offs = (this->*read8)(regPC + 1);
+			cycles = doBranch(offs,flagZ);
+			break;
+		}
+		case 0x6d:
+		{
+			// PUSH Y
+			(this->*write8)(0x100|regSP, regY);
+			regSP--;
+			regSP &= 0xff;
+			regPC += 1;
+			cycles = 4;
+			break;
+		}
+		case 0xcf:
+		{
+			// MUL YA
+			unsigned short int result = regA*regY;
+			regA = result & 0xff;
+			regY = result >> 8;
+			doFlagsNZ(regY);
+			regPC += 1;
+			cycles = 9;
+			break;
+		}
+		case 0x60:
+		{
+			// CLRC
+			flagC = false;
+			regPC += 1;
+			cycles = 2;
+			break;
+		}
+		case 0x84:
+		{
+			// ADC A,dp
+			doAdc(&apu::addrDP);
+			regPC += 2;
+			cycles = 3;
+			break;
+		}
+		case 0x90:
+		{
+			// BCC offs
+			signed char offs = (this->*read8)(regPC + 1);
+			cycles= doBranch(offs, !flagC);
+			break;
+		}
+		case 0xee:
+		{
+			// POP Y 
+			regSP += 1; regSP &= 0xff;
+			regY=(this->*read8)(0x100 | regSP);
+			regPC += 1;
+			cycles = 4;
+			break;
+		}
+		case 0x30:
+		{
+			// BMI offs
+			signed char offs = (this->*read8)(regPC + 1);
+			cycles = doBranch(offs, flagN);
+			break;
+		}
+		case 0xe5:
+		{
+			// MOV A,!a
+			doMoveToA(&apu::addrAbs);
+			regPC += 3;
+			cycles = 4;
+			break;
+		}
+		case 0x7d:
+		{
+			// MOV A,X
+			regA = regX;
+			doFlagsNZ(regA);
+			regPC += 1;
+			cycles = 2;
+			break;
+		}
+		case 0xf4:
+		{
+			// MOV A,d+X
+			doMoveToA(&apu::addrDPX);
+			regPC += 2;
+			cycles = 4;
 			break;
 		}
 		default:

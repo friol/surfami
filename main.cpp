@@ -250,6 +250,7 @@ void displaySPCDebugWindow(ppu& thePPU, mmu& theMMU, cpu5a22& pCPU, apu& pAPU, d
             cpucycs += pCPU.stepOne();
             thePPU.step(cpucycs, theMMU, pCPU);
         }
+        pAPU.step();
     }
 
     ImGui::End();
@@ -1901,6 +1902,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
                 if ((inst % 3) == 0)
                 {
                     theAPU.stepOne();
+                    theAPU.step();
                 }
 
                 //if ( ((theCPU.getPC()) == 0x808a5a) && thePPU.getWriteBreakpoint() )
@@ -1941,6 +1943,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
                 totCPUCycles += theCPU.stepOne();
                 totCPUCycles += theCPU.stepOne();
                 theAPU.stepOne();
+                theAPU.step();
             }
         }
 

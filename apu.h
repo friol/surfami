@@ -5,15 +5,27 @@
 
 #include "logger.h"
 
+typedef struct spc700Timer 
+{
+	unsigned char cycles;
+	unsigned char divider;
+	unsigned char target;
+	unsigned char counter;
+	bool enabled;
+};
+
 class apu
 {
 private:
 
 	unsigned char portsFromCPU[4];
 	unsigned char portsFromSPC[4];
-	
+
+	spc700Timer timer[3];
+
 	unsigned char bootRom[64];
 	bool bootRomLoaded = false;
+	bool romReadable = true;
 
 	unsigned char* spc700ram;
 
@@ -46,6 +58,7 @@ private:
 	void doCMP(pAddrModeFun fn, unsigned char val);
 	void doDecX();
 	void doInc(pAddrModeFun fn);
+	void doAdc(pAddrModeFun fn);
 	int doBNE();
 	int doBranch(signed char offs, bool condition);
 
@@ -55,11 +68,14 @@ private:
 	unsigned short int addrImmediate8();
 	unsigned short int addrIndirectY();
 	unsigned short int addrDP();
+	unsigned short int addrDPX();
 	unsigned short int addrAbs();
 	unsigned short int addrAbsX();
 
 	typedef unsigned char (apu::* internalMemReader)(unsigned int);
 	typedef void (apu::* internalMemWriter)(unsigned int,unsigned char);
+
+	unsigned long int apuCycles = 0;
 
 public:
 
@@ -92,6 +108,9 @@ public:
 	unsigned char getX() { return regX; }
 	unsigned char getY() { return regY; }
 	unsigned char getPSW();
+
+	// advance timers, etc.
+	void step();
 
 	std::vector<std::string> getRegisters();
 };

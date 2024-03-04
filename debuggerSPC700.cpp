@@ -37,6 +37,18 @@ dbgSPC700info listOfInstrs[]
 	{0x3f,"CALL !$param0",3,1,true}, // validatedFC
 	{0xcc,"MOV !$param0,Y",3,1,true}, // validatedFC
 	{0x6f,"RET",1,0,true}, // validatedFC
+	{0xec,"MOV Y,!$param0",3,1,true}, // validatedFC
+	{0xf0,"BEQ param0",2,1,true}, // validatedFC
+	{0x6d,"PUSH Y",1,0,true}, // validatedFC
+	{0xcf,"MUL YA",1,0,true}, // validatedFC
+	{0x60,"CLRC",1,0,true}, // validatedFC
+	{0x84,"ADC A,$param0",2,1,true}, // validatedFC
+	{0x90,"BCC param0",2,1,true}, // validatedFC
+	{0xee,"POP Y",1,0,true}, // validatedFC
+	{0x30,"BMI param0",2,1,true}, // validatedFC
+	{0xe5,"MOV A,!$param0",3,1,true}, // validatedFC
+	{0x7d,"MOV A,X",1,0,true}, // validatedFC
+	{0xf4,"MOV A,$param0+X",2,1,true}, // validatedFC
 
 
 };
