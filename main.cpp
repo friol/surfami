@@ -860,7 +860,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\ctrltest_auto.sfc";
 
     //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
-    std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
+    //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc";
     //std::string romName = "d:\\prova\\snes\\Ninjawarriors (USA).sfc";
     //std::string romName = "d:\\prova\\snes\\Mario Paint (E) [!].smc";
@@ -869,7 +869,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc"; // sprites disappear
     //std::string romName = "d:\\prova\\snes\\Parodius Da! - Shinwa kara Owarai e (Japan).sfc";
     //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc";
-    //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc"; snesStandard = 1;
+    std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc"; snesStandard = 1;
     //std::string romName = "d:\\prova\\snes\\Arkanoid - Doh it Again (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc"; snesStandard = 1;
     //std::string romName = "d:\\prova\\snes\\International Superstar Soccer (U) [!].smc";
@@ -969,7 +969,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         return 1;
     }
 
-    // unfortunately, no SPC cpu is emulated at this time
+    // unfortunately, no SPC cpu is emulated at this time (sure?)
     if (romName == "d:\\prova\\snes\\Frogger (U).smc")
     {
         theMMU.write8(0x8ff1fa, 0xea);
@@ -1073,12 +1073,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     }
     else if (romName == "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc")
     {
-        theMMU.write8(0x80bb89, 0xea);
+        /*theMMU.write8(0x80bb89, 0xea);
         theMMU.write8(0x80bb8a, 0xea);
         theMMU.write8(0x80bb9d, 0xea);
         theMMU.write8(0x80bb9e, 0xea);
         theMMU.write8(0x80bb45, 0xea);
-        theMMU.write8(0x80bb46, 0xea);
+        theMMU.write8(0x80bb46, 0xea);*/
     }
     else if (romName == "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc")
     {

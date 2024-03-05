@@ -49,6 +49,13 @@ dbgSPC700info listOfInstrs[]
 	{0xe5,"MOV A,!$param0",3,1,true}, // validatedFC
 	{0x7d,"MOV A,X",1,0,true}, // validatedFC
 	{0xf4,"MOV A,$param0+X",2,1,true}, // validatedFC
+	{0x75,"CMP A,!$param0+X",3,1,true}, // validatedFC
+	{0xdb,"MOV $param0+X,Y",2,1,true}, // validatedFC
+	{0xde,"CBNE $param0+X,$param1",3,2,true}, // validatedFC
+	{0x8d,"MOV Y,#$param0",2,1,true}, // validatedFC
+	{0x68,"CMP A,#param0",2,1,true}, // validatedFC
+	{0x5e,"CMP Y,!$param0",3,1,false},
+
 
 
 };

@@ -53,6 +53,7 @@ private:
 	void doMoveToX(pAddrModeFun fn);
 	void doMoveToY(pAddrModeFun fn);
 	void doMoveWithRead(pAddrModeFun fn, unsigned char val);
+	void doCMPA(pAddrModeFun fn);
 	void doCMPX(pAddrModeFun fn);
 	void doCMPY(pAddrModeFun fn);
 	void doCMP(pAddrModeFun fn, unsigned char val);

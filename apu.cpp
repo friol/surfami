@@ -440,6 +440,17 @@ void apu::doCMPY(pAddrModeFun fn)
 	doFlagsNZ((unsigned char)result);
 }
 
+void apu::doCMPA(pAddrModeFun fn)
+{
+	unsigned short int addr = (this->*fn)();
+	unsigned char vil = (this->*read8)(addr);
+
+	vil ^= 0xff;
+	int result = vil + regA + 1;
+	flagC = result > 0xff;
+	doFlagsNZ((unsigned char)result);
+}
+
 int apu::doBNE()
 {
 	signed char off = (this->*read8)(regPC+1);
@@ -992,6 +1003,57 @@ int apu::stepOne()
 			// MOV A,d+X
 			doMoveToA(&apu::addrDPX);
 			regPC += 2;
+			cycles = 4;
+			break;
+		}
+		case 0x75:
+		{
+			// cmp a,!addr+X
+			doCMPA(&apu::addrAbsX);
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0xdb:
+		{
+			// mov d+x,y
+			doMoveWithRead(&apu::addrDPX, regY);
+			regPC += 2;
+			cycles = 5;
+			break;
+		}
+		case 0xde:
+		{
+			// CBNE d+x,offs
+			unsigned short int addr = apu::addrDPX();
+			unsigned char val = (this->*read8)(addr) ^ 0xff;
+			unsigned char result = regA + val + 1;
+			signed char offs = (this->*read8)(regPC + 2);
+			cycles = doBranch(offs, result != 0)+4;
+			regPC += 1;
+			break;
+		}
+		case 0x8d:
+		{
+			// MOV Y,#$imm
+			doMoveToY(&apu::addrModePC);
+			regPC += 2;
+			cycles = 2;
+			break;
+		}
+		case 0x68:
+		{
+			// CMP A,#imm
+			doCMPA(&apu::addrModePC);
+			regPC += 2;
+			cycles = 2;
+			break;
+		}
+		case 0x5e:
+		{
+			// cmp y,!d
+			doCMPY(&apu::addrAbs);
+			regPC += 3;
 			cycles = 4;
 			break;
 		}
