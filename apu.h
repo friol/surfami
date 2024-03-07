@@ -60,6 +60,9 @@ private:
 	void doDecX();
 	void doInc(pAddrModeFun fn);
 	void doAdc(pAddrModeFun fn);
+	void doEor(pAddrModeFun fn);
+	void doLsr(pAddrModeFun fn);
+	void doAnd(pAddrModeFun fn);
 	int doBNE();
 	int doBranch(signed char offs, bool condition);
 
@@ -70,13 +73,29 @@ private:
 	unsigned short int addrIndirectY();
 	unsigned short int addrDP();
 	unsigned short int addrDPX();
+	unsigned short int addrDPY();
 	unsigned short int addrAbs();
 	unsigned short int addrAbsX();
+	unsigned short int addrAbsY();
 
 	typedef unsigned char (apu::* internalMemReader)(unsigned int);
 	typedef void (apu::* internalMemWriter)(unsigned int,unsigned char);
 
 	unsigned long int apuCycles = 0;
+
+	// S-DSP
+
+	unsigned char dspRam[0x80];
+
+	unsigned char dspSelectedRegister = 0;
+	void writeToDSPRegister(unsigned char val);
+
+	signed char mainVolLeft = 0;
+	signed char mainVolRight = 0;
+	signed char echoVolLeft = 0;
+	signed char echoVolRight = 0;
+	unsigned char keyOn = 0;
+	unsigned char keyOff = 0;
 
 public:
 

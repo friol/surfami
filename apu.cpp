@@ -55,11 +55,10 @@ apu::apu()
 
 	bootRomLoaded = true;
 
-	// the ipl rom goes to 0xffc0-0xffff in the SPC ram
-	for (int i = 0;i < 64;i++)
+	/*for (int i = 0;i < 64;i++)
 	{
 		spc700ram[0xffc0 + i] = bootRom[i];
-	}
+	}*/
 
 	for (int i = 0;i < 4;i++)
 	{
@@ -107,8 +106,8 @@ void apu::reset()
 	flagZ = false;
 	flagC = false;
 
-	unsigned char pcLow = spc700ram[0xfffe];
-	unsigned char pcHi = spc700ram[0xffff];
+	unsigned char pcLow = internalRead8(0xfffe);
+	unsigned char pcHi = internalRead8(0xffff);
 	regPC = pcLow | (pcHi << 8);
 
 	std::stringstream strstrdgb;
@@ -228,6 +227,47 @@ unsigned char apu::getPSW()
 	return retval;
 }
 
+void apu::writeToDSPRegister(unsigned char val)
+{
+	std::stringstream strstrVal;
+	strstrVal << std::hex << std::setw(2) << std::setfill('0') << (int)val;
+
+	if (dspSelectedRegister == 0x0c)
+	{
+		glbTheLogger.logMsg("apu::dps::write [" + strstrVal.str() + "] to MVOL (L)");
+		mainVolLeft = (signed char)val;
+	}
+	else if (dspSelectedRegister == 0x1c)
+	{
+		glbTheLogger.logMsg("apu::dps::write [" + strstrVal.str() + "] to MVOL (R)");
+		mainVolRight = (signed char)val;
+	}
+	else if (dspSelectedRegister == 0x2c)
+	{
+		glbTheLogger.logMsg("apu::dps::write [" + strstrVal.str() + "] to EVOL (L)");
+		echoVolLeft = (signed char)val;
+	}
+	else if (dspSelectedRegister == 0x3c)
+	{
+		glbTheLogger.logMsg("apu::dps::write [" + strstrVal.str() + "] to EVOL (R)");
+		echoVolRight = (signed char)val;
+	}
+	else if (dspSelectedRegister == 0x4c)
+	{
+		glbTheLogger.logMsg("apu::dps::write [" + strstrVal.str() + "] to KEYON");
+		keyOn = val;
+	}
+	else if (dspSelectedRegister == 0x5c)
+	{
+		glbTheLogger.logMsg("apu::dps::write [" + strstrVal.str() + "] to KEYOFF");
+		keyOff = val;
+	}
+
+	dspRam[dspSelectedRegister] = val;
+}
+
+// 
+
 unsigned char apu::testMMURead8(unsigned int addr)
 {
 	return spc700ram[addr];
@@ -259,6 +299,9 @@ void apu::externalWrite8(unsigned int address, unsigned char val)
 
 unsigned char apu::internalRead8(unsigned int address)
 {
+	std::stringstream strstrAddr;
+	strstrAddr << std::hex << std::setw(4) << std::setfill('0') << (int)address;
+
 	if ((address >= 0xf4) && (address <= 0xf7))
 	{
 		return portsFromCPU[address - 0xf4];
@@ -269,6 +312,33 @@ unsigned char apu::internalRead8(unsigned int address)
 		timer[address - 0xfd].counter = 0;
 		return ret;
 	}
+	else if ((address == 0xf0)|| (address == 0xf1)|| (address == 0xfa)|| (address == 0xfb)|| (address == 0xfc))
+	{
+		return 0;
+	}
+	else if (address == 0xf2)
+	{
+		return dspSelectedRegister;
+	}
+	else if (address == 0xf3)
+	{
+		return dspRam[dspSelectedRegister&0x7f];
+	}
+	else if ((address >= 0xf0) && (address <= 0xff))
+	{
+		glbTheLogger.logMsg("apu::unmapped read from register "+ strstrAddr.str());
+	}
+	else if ((address >= 0xffc0) && (address <= 0xffff))
+	{
+		if (romReadable)
+		{
+			return bootRom[address - 0xffc0];
+		}
+		else
+		{
+			return spc700ram[address];
+		}
+	}
 	else
 	{
 		return spc700ram[address];
@@ -277,7 +347,13 @@ unsigned char apu::internalRead8(unsigned int address)
 
 void apu::internalWrite8(unsigned int address, unsigned char val)
 {
-	if ((address >= 0xf4) && (address <= 0xf7))
+	if (address == 0xf0)
+	{
+		// 00F0h - TEST - Testing functions (W)
+		glbTheLogger.logMsg("apu::write [" + std::to_string(val) + "] to f0 (should not happen)");
+		return;
+	}
+	else if ((address >= 0xf4) && (address <= 0xf7))
 	{
 		portsFromSPC[address - 0xf4]=val;
 	}
@@ -294,7 +370,7 @@ void apu::internalWrite8(unsigned int address, unsigned char val)
 		  6    Not used
 		  7    ROM at FFC0h-FFFFh (0=RAM, 1=ROM) (writes do always go to RAM)		
 		*/
-		glbTheLogger.logMsg("apu::write [" + std::to_string(val) + "] to f1 (CONTROL)");
+		//glbTheLogger.logMsg("apu::write [" + std::to_string(val) + "] to f1 (CONTROL)");
 
 		for (int i = 0; i < 3; i++) 
 		{
@@ -306,19 +382,47 @@ void apu::internalWrite8(unsigned int address, unsigned char val)
 			timer[i].enabled = val & (1 << i);
 		}
 
-		// ports
 		if (val & 0x10) 
 		{
-			portsFromSPC[0] = 0;
-			portsFromSPC[1] = 0;
+			portsFromCPU[0] = 0;
+			portsFromCPU[1] = 0;
 		}
 		if (val & 0x20) 
 		{
-			portsFromSPC[2] = 0;
-			portsFromSPC[3] = 0;
+			portsFromCPU[2] = 0;
+			portsFromCPU[3] = 0;
 		}
 
 		romReadable = val & 0x80;
+		//if (!(val & 0x80))
+		//{
+		//	glbTheLogger.logMsg("apu::warning ROM not readable");
+		//}
+
+		return;
+	}
+	else if (address == 0xf2)
+	{
+		// 00F2h - DSPADDR - DSP Register Index (R/W)
+		std::stringstream strstrReg;
+		strstrReg << std::hex << std::setw(2) << std::setfill('0') << (int)val;
+		glbTheLogger.logMsg("apu::write [" + strstrReg.str() + "] to f2 (DSPADDR)");
+		
+		dspSelectedRegister = val;
+		if (dspSelectedRegister == 0x4c)
+		{
+			bool brk = true;
+		}
+		
+		return;
+	}
+	else if (address == 0xf3)
+	{
+		// 00F3h - DSPDATA - DSP Register Data (R/W)
+		std::stringstream strstrReg;
+		strstrReg << std::hex << std::setw(2) << std::setfill('0') << (int)val;
+		//glbTheLogger.logMsg("apu::wrote [" + strstrReg.str() + "] to f3 (DSPDATA)");
+		if (dspSelectedRegister < 0x80) writeToDSPRegister(val);
 		return;
 	}
 	else if ((address==0xfa)||(address==0xfb)||(address == 0xfc))
@@ -500,6 +604,32 @@ void apu::doAdc(pAddrModeFun fn)
 	doFlagsNZ(regA);
 }
 
+void apu::doEor(pAddrModeFun fn)
+{
+	unsigned short int addr = (this->*fn)();
+	unsigned char value = (this->*read8)(addr);
+	regA ^= value;
+	doFlagsNZ(regA);
+}
+
+void apu::doLsr(pAddrModeFun fn)
+{
+	unsigned short int addr = (this->*fn)();
+	unsigned char val = (this->*read8)(addr);
+	flagC = val & 1;
+	val >>= 1;
+	(this->*write8)(addr, val);
+	doFlagsNZ(val);
+}
+
+void apu::doAnd(pAddrModeFun fn)
+{
+	unsigned short int addr = (this->*fn)();
+	unsigned char val = (this->*read8)(addr);
+	regA &= val;
+	doFlagsNZ(regA);
+}
+
 // addressing modez
 
 unsigned short int apu::addrModePC()
@@ -562,9 +692,25 @@ unsigned short int apu::addrAbsX()
 	return addr;
 }
 
+unsigned short int apu::addrAbsY()
+{
+	unsigned char lowaddr = (this->*read8)(regPC + 1);
+	unsigned char highaddr = (this->*read8)(regPC + 2);
+	unsigned short int addr = lowaddr | (highaddr << 8);
+	addr = (addr + regY) & 0xffff;
+	return addr;
+}
+
 unsigned short int apu::addrDPX()
 {
 	unsigned short int adr = ((this->*read8)(regPC + 1)+regX)&0xff;
+	if (flagP) adr |= 0x100;
+	return adr;
+}
+
+unsigned short int apu::addrDPY()
+{
+	unsigned short int adr = ((this->*read8)(regPC + 1) + regY) & 0xff;
 	if (flagP) adr |= 0x100;
 	return adr;
 }
@@ -1055,6 +1201,269 @@ int apu::stepOne()
 			doCMPY(&apu::addrAbs);
 			regPC += 3;
 			cycles = 4;
+			break;
+		}
+		case 0xc9:
+		{
+			// MOV !a,X
+			doMoveWithRead(&apu::addrAbs, regX);
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0x5f:
+		{
+			// JMP !a
+			unsigned short int dst;
+			unsigned char lowaddr, highaddr;
+			lowaddr = (this->*read8)(regPC + 1);
+			highaddr = (this->*read8)(regPC + 2);
+			dst = lowaddr | (highaddr << 8);
+			regPC = dst;
+			cycles = 3;
+			break;
+		}
+		case 0x80:
+		{
+			// SETC
+			flagC = true;
+			cycles = 2;
+			regPC += 1;
+			break;
+		}
+		case 0x1c:
+		{
+			// ASL A
+			flagC = regA & 0x80;
+			regA <<= 1;
+			doFlagsNZ(regA);
+			cycles = 2;
+			regPC += 1;
+			break;
+		}
+		case 0xf6:
+		{
+			// MOV A,!d+Y
+			doMoveToA(&apu::addrAbsY);
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0xd4:
+		{
+			// MOV d+X,A
+			doMoveWithRead(&apu::addrDPX, regA);
+			regPC += 2;
+			cycles = 5;
+			break;
+		}
+		case 0xd6:
+		{
+			// MOV !d+Y,A
+			doMoveWithRead(&apu::addrAbsY, regA);
+			regPC += 3;
+			cycles = 6;
+			break;
+		}
+		case 0xfe:
+		{
+			// DBNZ Y,rel
+			signed char offs = (this->*read8)(regPC + 1);
+			regY--;
+			cycles=doBranch(offs,regY != 0)+2;
+			break;
+		}
+		case 0x48:
+		{
+			// EOR a,imm
+			doEor(&apu::addrModePC);
+			regPC += 2;
+			cycles = 2;
+			break;
+		}
+		case 0x4b:
+		{
+			// LSR d
+			doLsr(&apu::addrDP);
+			regPC += 2;
+			cycles = 4;
+			break;
+		}
+		case 0x28:
+		{
+			// AND $#d
+			doAnd(&apu::addrModePC);
+			regPC += 2;
+			cycles = 2;
+			break;
+		}
+		case 0x02:
+		case 0x22:
+		case 0x42:
+		case 0x62:
+		case 0x82:
+		case 0xa2:
+		case 0xc2:
+		case 0xe2:
+		{
+			// SET1 d.b
+			unsigned short int addr = addrDP();
+			unsigned char val = (this->*read8)(addr);
+			(this->*write8)(addr, val | (1 << (nextOpcode >> 5)));
+			regPC += 2;
+			cycles = 4;
+			break;
+		}
+		case 0x6e:
+		{
+			// DBNZ d,r
+			unsigned short int addr = addrDP();
+			signed char offs = (this->*read8)(regPC + 2);
+			unsigned char val = (this->*read8)(addr);
+			val--;
+			(this->*write8)(addr, val);
+			cycles = doBranch(offs, val != 0) + 3;
+			regPC += 1;
+			break;
+		}
+		case 0xf7:
+		{
+			// MOV A, [d]+Y
+			doMoveToA(&apu::addrIndirectY);
+			regPC += 2;
+			cycles = 6;
+			break;
+		}
+		case 0x3a:
+		{
+			// INCW d
+			unsigned char adr = (this->*read8)(regPC + 1);
+			unsigned short int low = adr;
+			if (flagP) low |= 0x100;
+			unsigned short int high = (adr + 1) & 0xff;
+			if (flagP) high |= 0x100;
+			unsigned char val1 = (this->*read8)(low);
+			unsigned short int val = val1 | ((this->*read8)(high) << 8);
+
+			val += 1;
+
+			(this->*write8)(low, val & 0xff);
+			(this->*write8)(high, val>>8);
+
+			flagZ = val == 0;
+			flagN = val & 0x8000;
+
+			regPC += 2;
+			cycles = 6;
+			break;
+		}
+		case 0x2d:
+		{
+			// PUSH A
+			(this->*write8)(0x100 | regSP, regA);
+			regSP--;
+			regSP &= 0xff;
+			regPC += 1;
+			cycles = 4;
+			break;
+		}
+		case 0xae:
+		{
+			// POP A
+			regSP += 1; regSP &= 0xff;
+			regA = (this->*read8)(0x100 | regSP);
+			regPC += 1;
+			cycles = 4;
+			break;
+		}
+		case 0xdc:
+		{
+			// DEC Y
+			regY -= 1;
+			doFlagsNZ(regY);
+			regPC += 1;
+			cycles = 2;
+			break;
+		}
+		case 0xbc:
+		{
+			// INC A
+			regA += 1;
+			doFlagsNZ(regA);
+			regPC += 1;
+			cycles = 2;
+			break;
+		}
+		case 0x9c:
+		{
+			// DEC A
+			regA -= 1;
+			doFlagsNZ(regA);
+			regPC += 1;
+			cycles = 2;
+			break;
+		}
+		case 0xac:
+		{
+			// INC !a
+			unsigned short int addr = addrAbs();
+			unsigned char val = (this->*read8)(addr);
+			val += 1;
+			(this->*write8)(addr, val);
+			doFlagsNZ(val);
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0x13:
+		case 0x33:
+		case 0x53:
+		case 0x73:
+		case 0x93:
+		case 0xb3:
+		case 0xd3:
+		case 0xf3: 
+		{ 
+			// bbc dp, rel
+			unsigned short int addr = addrDP();
+			unsigned char val = (this->*read8)(addr);
+			signed char offs = (this->*read8)(regPC + 2);
+			cycles = doBranch(offs, (val & (1 << (nextOpcode >> 5))) == 0)+3;
+			regPC += 1;
+			break;
+		}
+		case 0xad:
+		{
+			// CMP Y,imm
+			doCMPY(&apu::addrModePC);
+			regPC += 2;
+			cycles = 2;
+			break;
+		}
+		case 0x7a:
+		{
+			// ADDW YA,d
+			unsigned char adr = (this->*read8)(regPC + 1);
+			unsigned short int low = adr;
+			if (flagP) low |= 0x100;
+			unsigned short int high = (adr + 1) & 0xff;
+			if (flagP) high |= 0x100;
+			unsigned char val1 = (this->*read8)(low);
+
+			unsigned short int value = val1 | ((this->*read8)(high) << 8);
+			unsigned short int ya = regA | (regY << 8);
+			
+			int result = ya + value;
+			flagV = (ya & 0x8000) == (value & 0x8000) && (value & 0x8000) != (result & 0x8000);
+			flagH = ((ya & 0xfff) + (value & 0xfff)) > 0xfff;
+			flagC = result > 0xffff;
+			flagZ = (result & 0xffff) == 0;
+			flagN = result & 0x8000;
+			regA = result & 0xff;
+			regY = result >> 8;
+			
+			regPC += 2;
+			cycles = 5;
 			break;
 		}
 		default:

@@ -807,8 +807,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     }
     theAPU.reset();
 
-    debuggerSPC700 theDebuggerSPC;
-
     mmu theMMU(thePPU,theAPU);
     std::vector<std::string> romLoadingLog;
     bool isHiRom = false;
@@ -840,6 +838,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\STR\\CPUSTR.sfc"; // 81
     //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\TRN\\CPUTRN.sfc"; 
     //std::string romName = "D:\\prova\\snes\\SNES-master\\BANK\\HiROMFastROM\\BANKHiROMFastROM.sfc"; isHiRom = true;
+    //std::string romName = "D:\\prova\\snes\\SNES-master\\SPC700\\Twinkle\\Twinkle.sfc";
 
     //std::string romName = "D:\\prova\\snes\\SNES-master\\Compress\\LZ77\\LZ77WRAMGFX\\LZ77WRAMGFX.sfc"; // mode 5
 
@@ -860,7 +859,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\ctrltest_auto.sfc";
 
     //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
-    //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
+    std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc";
     //std::string romName = "d:\\prova\\snes\\Ninjawarriors (USA).sfc";
     //std::string romName = "d:\\prova\\snes\\Mario Paint (E) [!].smc";
@@ -869,7 +868,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc"; // sprites disappear
     //std::string romName = "d:\\prova\\snes\\Parodius Da! - Shinwa kara Owarai e (Japan).sfc";
     //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc";
-    std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc"; snesStandard = 1;
+    //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc"; snesStandard = 1;
     //std::string romName = "d:\\prova\\snes\\Arkanoid - Doh it Again (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc"; snesStandard = 1;
     //std::string romName = "d:\\prova\\snes\\International Superstar Soccer (U) [!].smc";
@@ -917,6 +916,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "D:\\prova\\snes\\SNES-master\\Games\\MonsterFarmJump\\MonsterFarmJump.sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars + Super Mario World (USA).sfc"; // controls don't work
     //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars (U) [!].smc"; // no input
+    //std::string romName = "d:\\prova\\snes\\Another World (Europe).sfc"; // SPC
     //std::string romName = "d:\\prova\\snes\\Tiny Toons - Wild and Wacky Sports (U).smc"; // stuck after player select 0x2137
     //std::string romName = "d:\\prova\\snes\\Monopoly (V1.1) (U).smc"; // wrong controls, sprite at the start
     //std::string romName = "d:\\prova\\snes\\Lemmings (E).sfc"; // dma mode 7 (?), crash, 0x2137 read
@@ -969,6 +969,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         return 1;
     }
 
+    /*
     // unfortunately, no SPC cpu is emulated at this time (sure?)
     if (romName == "d:\\prova\\snes\\Frogger (U).smc")
     {
@@ -1073,12 +1074,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     }
     else if (romName == "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc")
     {
-        /*theMMU.write8(0x80bb89, 0xea);
+        theMMU.write8(0x80bb89, 0xea);
         theMMU.write8(0x80bb8a, 0xea);
         theMMU.write8(0x80bb9d, 0xea);
         theMMU.write8(0x80bb9e, 0xea);
         theMMU.write8(0x80bb45, 0xea);
-        theMMU.write8(0x80bb46, 0xea);*/
+        theMMU.write8(0x80bb46, 0xea);
     }
     else if (romName == "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc")
     {
@@ -1557,7 +1558,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     }
     else if (romName == "d:\\prova\\snes\\Super Mario All-Stars + Super Mario World (USA).sfc")
     {
-        /*theMMU.write8(0x8850, 0xea);
+        theMMU.write8(0x8850, 0xea);
         theMMU.write8(0x8851, 0xea);
         theMMU.write8(0x886b, 0xea);
         theMMU.write8(0x886c, 0xea);
@@ -1574,7 +1575,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0x8839, 0xea);
         theMMU.write8(0x884a, 0xea);
         theMMU.write8(0x884b, 0xea);
-        theMMU.write8(0x884c, 0xea);*/
+        theMMU.write8(0x884c, 0xea);
     }
     else if (romName == "d:\\prova\\snes\\Out of This World (U).smc")
     {
@@ -1690,7 +1691,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0xc864, 0xea);
 
     }
-    
+    */
 
     //
 
@@ -1873,7 +1874,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         displayAppoWindow(thePPU, theMMU, theDebugger5a22,theDebuggerSPC700);
         displayRomLoadingLogWindow(romLoadingLog);
         displayDebugWindow(theCPU, theDebugger5a22,theMMU,isDebugWindowFocused,rush,rushToAddress,jumpToAppoBuf,totCPUCycles,emustatus,thePPU);
-        displaySPCDebugWindow(thePPU, theMMU, theCPU,theAPU, theDebuggerSPC,rushSPC,rushToSPCAddress);
+        displaySPCDebugWindow(thePPU, theMMU, theCPU,theAPU, theDebuggerSPC700,rushSPC,rushToSPCAddress);
         displayRegistersWindow(theCPU,thePPU,totCPUCycles);
         displaySPCRegistersWindow(theAPU);
         displayPaletteWindow(thePPU);

@@ -70,11 +70,11 @@ void mmu::DMAstart(unsigned char val)
 
 			if (dma_dir == 0)
 			{
-				glbTheLogger.logMsg("Data will be written to:" + sDMATargetAddr2 + " DMA bytes to move:" + std::to_string(byteCount)+ " DMA mode: "+std::to_string(dma_mode));
+				//glbTheLogger.logMsg("Data will be written to:" + sDMATargetAddr2 + " DMA bytes to move:" + std::to_string(byteCount)+ " DMA mode: "+std::to_string(dma_mode));
 			}
 			else
 			{
-				glbTheLogger.logMsg("DMA will be written to:" + sDMATargetAddr + " DMA bytes to move:" + std::to_string(byteCount) + " DMA mode: " + std::to_string(dma_mode));
+				//glbTheLogger.logMsg("DMA will be written to:" + sDMATargetAddr + " DMA bytes to move:" + std::to_string(byteCount) + " DMA mode: " + std::to_string(dma_mode));
 			}
 
 			if (dma_mode == 0)

@@ -1,5 +1,9 @@
 
+#include"logger.h"
 #include "debuggerSPC700.h"
+
+extern logger glbTheLogger;
+
 
 dbgSPC700info listOfInstrs[]
 {
@@ -54,8 +58,45 @@ dbgSPC700info listOfInstrs[]
 	{0xde,"CBNE $param0+X,$param1",3,2,true}, // validatedFC
 	{0x8d,"MOV Y,#$param0",2,1,true}, // validatedFC
 	{0x68,"CMP A,#param0",2,1,true}, // validatedFC
-	{0x5e,"CMP Y,!$param0",3,1,false},
-
+	{0x5e,"CMP Y,!$param0",3,1,true}, //validatedFC
+	{0xc9,"MOV !$param0,X",3,1,true}, // validatedFC
+	{0x5f,"JMP !$param0",3,1,true}, // validatedFC
+	{0x80,"SETC",1,0,true}, // validatedFC
+	{0x1c,"ASL A",1,0,true}, // validatedFC
+	{0xf6,"MOV A,!$param0+Y",3,1,true}, // validatedFC
+	{0xd4,"MOV #param0+X,A",2,1,true}, // validatedFC
+	{0xd6,"MOV !$param0+Y,A",3,1,true}, // validatedFC
+	{0xfe,"DBNZ Y,$param0",2,1,true}, // validatedFC
+	{0x48,"EOR A,#$param0",2,1,true}, // validatedFC
+	{0x4b,"LSR $param0",2,1,true}, // validatedFC
+	{0x28,"AND A,#$param0",2,1,true}, // validatedFC
+	{0x02,"SET1 $param0.0",2,1,true}, // validatedFC
+	{0x22,"SET1 $param0.1",2,1,true}, // validatedFC
+	{0x42,"SET1 $param0.2",2,1,true}, // validatedFC
+	{0x62,"SET1 $param0.3",2,1,true}, // validatedFC
+	{0x82,"SET1 $param0.4",2,1,true}, // validatedFC
+	{0xa2,"SET1 $param0.5",2,1,true}, // validatedFC
+	{0xc2,"SET1 $param0.6",2,1,true}, // validatedFC
+	{0xe2,"SET1 $param0.7",2,1,true}, // validatedFC
+	{0x6e,"DBNZ $param0,$param1",3,2,true}, // validatedFC
+	{0xf7,"MOV A,[$param0]+Y",2,1,true}, // validatedFC
+	{0x3a,"INCW $param0",2,1,true}, // validatedFC
+	{0x2d,"PUSH A",1,0,true}, // validatedFC
+	{0xae,"POP A",1,0,true}, // validatedFC
+	{0xdc,"DEC Y",1,0,true}, // validatedFC
+	{0xbc,"INC A",1,0,true}, // validatedFC
+	{0x9c,"DEC A",1,0,true}, // validatedFC
+	{0xac,"INC !$param0",3,1,true}, // validatedFC
+	{0x13,"BBC $param0.0,$param1",3,2,true}, // fck
+	{0x33,"BBC $param0.1,$param1",3,2,true}, // fck
+	{0x53,"BBC $param0.2,$param1",3,2,true}, // fck
+	{0x73,"BBC $param0.3,$param1",3,2,true}, // fck
+	{0x93,"BBC $param0.4,$param1",3,2,true}, // fck
+	{0xb3,"BBC $param0.5,$param1",3,2,true}, // fck
+	{0xd3,"BBC $param0.6,$param1",3,2,true}, // fck
+	{0xf3,"BBC $param0.7,$param1",3,2,true}, // fck
+	{0xad,"CMP Y,#$param0",2,1,true}, // validatedFC
+	{0x7a,"ADDW YA,#$param0",2,1,true}, // validatedFC
 
 
 };
@@ -66,6 +107,8 @@ debuggerSPC700::debuggerSPC700()
 	{
 		debugInstrList.push_back(instr);
 	}
+
+	glbTheLogger.logMsg("Opcodes added to debugger: " + std::to_string(debugInstrList.size()));
 }
 
 std::vector<dbgSPC700info>* debuggerSPC700::getOpcodesList()
