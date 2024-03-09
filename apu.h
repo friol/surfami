@@ -14,6 +14,16 @@ typedef struct spc700Timer
 	bool enabled;
 };
 
+typedef struct spc700channel
+{
+	signed char leftVol;
+	signed char RightVol;
+	int samplePitch;
+	unsigned char sampleSourceEntry;
+	bool keyOn;
+	bool keyOff;
+};
+
 class apu
 {
 private:
@@ -22,6 +32,7 @@ private:
 	unsigned char portsFromSPC[4];
 
 	spc700Timer timer[3];
+	spc700channel channels[8];
 
 	unsigned char bootRom[64];
 	bool bootRomLoaded = false;
@@ -66,10 +77,12 @@ private:
 	int doBNE();
 	int doBranch(signed char offs, bool condition);
 
+
 	// addressing modes
 	unsigned short int addrModePC();
 	unsigned short int addrModeX();
 	unsigned short int addrImmediate8();
+	unsigned short int addrIndirectX();
 	unsigned short int addrIndirectY();
 	unsigned short int addrDP();
 	unsigned short int addrDPX();

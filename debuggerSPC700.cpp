@@ -97,6 +97,29 @@ dbgSPC700info listOfInstrs[]
 	{0xf3,"BBC $param0.7,$param1",3,2,true}, // fck
 	{0xad,"CMP Y,#$param0",2,1,true}, // validatedFC
 	{0x7a,"ADDW YA,#$param0",2,1,true}, // validatedFC
+	{0xe7,"MOV A,[$param0+X]",2,1,true}, // validatedFC
+	{0xb0,"BCS param0",2,1,true}, // validatedFC
+	{0x09,"OR $param0,$param1",3,2,true}, // validatedFC
+	{0xa8,"SBC param0",2,1,true}, // validatedFC
+	{0x4d,"PUSH X",1,0,true}, // validatedFC
+	{0x9e,"DIV YA,X",1,0,true}, // validatedFC
+	{0x7c,"ROR A",1,0,true}, // validatedFC
+	{0xce,"POP X",1,0,true}, // validatedFC
+	{0x9a,"SUBW YA,$param0",2,1,true}, // validatedFC
+	{0x9f,"XCN A",1,0,true}, // validatedFC
+	{0x5c,"LSR A",1,0,true}, // validatedFC
+	{0x08,"OR A,#$param0",2,1,true}, // validatedFC
+	{0x24,"AND A,$param0",2,1,true}, // validatedFC
+	{0x12,"CLR1 $param0.0",2,1,true}, // validatedFC
+	{0x32,"CLR1 $param0.1",2,1,true}, // validatedFC
+	{0x52,"CLR1 $param0.2",2,1,true}, // validatedFC
+	{0x72,"CLR1 $param0.3",2,1,true}, // validatedFC
+	{0x92,"CLR1 $param0.4",2,1,true}, // validatedFC
+	{0xb2,"CLR1 $param0.5",2,1,true}, // validatedFC
+	{0xd2,"CLR1 $param0.6",2,1,true}, // validatedFC
+	{0xf2,"CLR1 $param0.7",2,1,true}, // validatedFC
+	{0x65,"CMP A,!$param0",3,1,true}, // validatedFC
+	{0x8c,"DEC !$param0",3,1,true}, // validatedFC
 
 
 };

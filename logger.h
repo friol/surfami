@@ -3,10 +3,13 @@
 
 #include <string>
 #include <vector>
+#include <cstdio>
 
 class logger
 {
 private:
+
+	FILE* logFile;
 
 	const int maxQueueDim = 100;
 	std::vector<std::string> msgQueue;
@@ -19,7 +22,5 @@ public:
 	~logger();
 
 };
-
-
 
 #endif

@@ -1900,7 +1900,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
                 }
                 inst += 1;
 
-                if ((inst % 3) == 0)
+                if ((inst % 2) == 0)
                 {
                     theAPU.stepOne();
                     theAPU.step();

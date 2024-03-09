@@ -1,4 +1,4 @@
-/* our littley apu and SPC700 chip */
+/* our littley apu, dsp and SPC700 chip, all together */
 
 #include "apu.h"
 #include <cstdlib> 
@@ -55,11 +55,6 @@ apu::apu()
 
 	bootRomLoaded = true;
 
-	/*for (int i = 0;i < 64;i++)
-	{
-		spc700ram[0xffc0 + i] = bootRom[i];
-	}*/
-
 	for (int i = 0;i < 4;i++)
 	{
 		portsFromCPU[i] = 0;
@@ -74,6 +69,17 @@ apu::apu()
 		timer[i].target = 0;
 		timer[i].counter = 0;
 		timer[i].enabled = false;
+	}
+
+	// init DSP channels
+	for (int i = 0;i < 8;i++)
+	{
+		channels[i].keyOn = false;
+		channels[i].keyOff= true;
+		channels[i].leftVol = 0;
+		channels[i].RightVol = 0;
+		channels[i].samplePitch = 0;
+		channels[i].sampleSourceEntry = 0;
 	}
 }
 
@@ -232,35 +238,54 @@ void apu::writeToDSPRegister(unsigned char val)
 	std::stringstream strstrVal;
 	strstrVal << std::hex << std::setw(2) << std::setfill('0') << (int)val;
 
+	std::stringstream sDspReg;
+	sDspReg << std::hex << std::setw(2) << std::setfill('0') << (int)dspSelectedRegister;
+
 	if (dspSelectedRegister == 0x0c)
 	{
-		glbTheLogger.logMsg("apu::dps::write [" + strstrVal.str() + "] to MVOL (L)");
+		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to MVOL (L)");
 		mainVolLeft = (signed char)val;
 	}
 	else if (dspSelectedRegister == 0x1c)
 	{
-		glbTheLogger.logMsg("apu::dps::write [" + strstrVal.str() + "] to MVOL (R)");
+		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to MVOL (R)");
 		mainVolRight = (signed char)val;
 	}
 	else if (dspSelectedRegister == 0x2c)
 	{
-		glbTheLogger.logMsg("apu::dps::write [" + strstrVal.str() + "] to EVOL (L)");
+		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to EVOL (L)");
 		echoVolLeft = (signed char)val;
 	}
 	else if (dspSelectedRegister == 0x3c)
 	{
-		glbTheLogger.logMsg("apu::dps::write [" + strstrVal.str() + "] to EVOL (R)");
+		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to EVOL (R)");
 		echoVolRight = (signed char)val;
 	}
 	else if (dspSelectedRegister == 0x4c)
 	{
-		glbTheLogger.logMsg("apu::dps::write [" + strstrVal.str() + "] to KEYON");
+		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to KEYON");
 		keyOn = val;
 	}
 	else if (dspSelectedRegister == 0x5c)
 	{
-		glbTheLogger.logMsg("apu::dps::write [" + strstrVal.str() + "] to KEYOFF");
+		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to KEYOFF");
 		keyOff = val;
+	}
+	else if (dspSelectedRegister == 0x5d)
+	{
+		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to DIR 5d sample source directory page");
+	}
+	else if (dspSelectedRegister == 0x6d)
+	{
+		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to ESA 6d start echo mem reg");
+	}
+	else if (dspSelectedRegister == 0x7d)
+	{
+		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to 7d echo delay time");
+	}
+	else
+	{
+		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to unmapped register "+ sDspReg.str());
 	}
 
 	dspRam[dspSelectedRegister] = val;
@@ -406,7 +431,7 @@ void apu::internalWrite8(unsigned int address, unsigned char val)
 		// 00F2h - DSPADDR - DSP Register Index (R/W)
 		std::stringstream strstrReg;
 		strstrReg << std::hex << std::setw(2) << std::setfill('0') << (int)val;
-		glbTheLogger.logMsg("apu::write [" + strstrReg.str() + "] to f2 (DSPADDR)");
+		//glbTheLogger.logMsg("apu::write [" + strstrReg.str() + "] to f2 (DSPADDR)");
 		
 		dspSelectedRegister = val;
 		if (dspSelectedRegister == 0x4c)
@@ -432,6 +457,10 @@ void apu::internalWrite8(unsigned int address, unsigned char val)
 		// 00FCh - T2DIV - Timer 2 Divider(for 64000Hz clock source) (W)
 		timer[address - 0xfa].target = val;
 		return;
+	}
+	else if ((address >= 0xf0) && (address <= 0xff))
+	{
+		glbTheLogger.logMsg("apu::unmapped write to register " + std::to_string(address));
 	}
 	else
 	{
@@ -646,9 +675,26 @@ unsigned short int apu::addrModeX()
 
 unsigned short int apu::addrDP()
 {
-	unsigned short int adr = (this->*read8)(regPC + 1);
+	unsigned short int adr = (this->*read8)((regPC + 1)&0xffff);
 	if (flagP) adr |= 0x100;
 	return adr;
+}
+
+unsigned short int apu::addrIndirectX()
+{
+	unsigned char pointer = (this->*read8)(regPC + 1);
+
+	unsigned short int adr = 0;
+	unsigned short int low = (pointer+regX)&0xff;
+	if (flagP) low |= 0x100;
+
+	unsigned short int high = (pointer + regX+1) & 0xff;
+	if (flagP) high |= 0x100;
+
+	adr = (this->*read8)(low);
+	adr |= (this->*read8)(high) << 8;;
+
+	return adr&0xffff;
 }
 
 unsigned short int apu::addrIndirectY()
@@ -1463,6 +1509,214 @@ int apu::stepOne()
 			regY = result >> 8;
 			
 			regPC += 2;
+			cycles = 5;
+			break;
+		}
+		case 0xe7:
+		{
+			// mov a,[d+X]
+			doMoveToA(&apu::addrIndirectX);
+			doFlagsNZ(regA);
+			regPC += 2;
+			cycles = 6;
+			break;
+		}
+		case 0xb0:
+		{
+			// BCS offs
+			signed char offs = (this->*read8)(regPC + 1);
+			cycles = doBranch(offs, flagC);
+			break;
+		}
+		case 0x09:
+		{
+			// or dd,ds
+			unsigned short int adr0 = (this->*read8)(regPC + 1);
+			if (flagP) adr0 |= 0x100;
+			unsigned short int adr1 = (this->*read8)(regPC + 2);
+			if (flagP) adr1 |= 0x100;
+
+			unsigned char val0 = (this->*read8)(adr0);
+			unsigned char val1 = (this->*read8)(adr1);
+
+			unsigned char result = val0 | val1;
+			(this->*write8)(adr1,result);
+			doFlagsNZ(result);
+
+			regPC += 3;
+			cycles = 6;
+			break;
+		}
+		case 0xa8:
+		{
+			// sbc a,#i
+			unsigned short int addr = addrModePC();
+
+			unsigned char value = (this->*read8)(addr) ^ 0xff;
+			int result = regA + value + (flagC?1:0);
+			flagV = (regA & 0x80) == (value & 0x80) && (value & 0x80) != (result & 0x80);
+			flagH = ((regA & 0xf) + (value & 0xf) + (flagC?1:0)) > 0xf;
+			flagC = result > 0xff;
+			regA = result;
+			doFlagsNZ(regA);
+
+			regPC += 2;
+			cycles = 2;
+			break;
+		}
+		case 0x4d:
+		{
+			// PUSH X
+			(this->*write8)(0x100 | regSP, regX);
+			regSP--;
+			regSP &= 0xff;
+			regPC += 1;
+			cycles = 4;
+			break;
+		}
+		case 0x9e:
+		{
+			// DIV YA,X
+
+			flagH = (regX & 0xf) <= (regY & 0xf);
+			int yva = (regY << 8) | regA;
+			int x = regX << 9;
+			for (int i = 0; i < 9; i++) 
+			{
+				yva <<= 1;
+				yva |= (yva & 0x20000) ? 1 : 0;
+				yva &= 0x1ffff;
+				if (yva >= x) yva ^= 1;
+				if (yva & 1) yva -= x;
+				yva &= 0x1ffff;
+			}
+			regY = yva >> 9;
+			flagV = yva & 0x100;
+			regA = yva & 0xff;
+			doFlagsNZ(regA);
+
+			regPC += 1;
+			cycles = 12;
+			break;
+		}
+		case 0x7c:
+		{
+			// ROR A
+			bool newC = regA & 1;
+			regA = (regA >> 1) | ((flagC?1:0) << 7);
+			flagC = newC;
+			doFlagsNZ(regA);
+			regPC += 1;
+			cycles = 2;
+			break;
+		}
+		case 0xce:
+		{
+			// POP X 
+			regSP += 1; regSP &= 0xff;
+			regX = (this->*read8)(0x100 | regSP);
+			regPC += 1;
+			cycles = 4;
+			break;
+		}
+		case 0x9a:
+		{
+			// SUBW YA,d
+			unsigned char adr = (this->*read8)(regPC + 1);
+			unsigned short int low = adr;
+			if (flagP) low |= 0x100;
+			unsigned short int high = (adr + 1) & 0xff;
+			if (flagP) high |= 0x100;
+			unsigned char vall = (this->*read8)(low);
+
+			unsigned short int value = (vall | ((this->*read8)(high) << 8)) ^ 0xffff;
+			unsigned short int ya = regA | (regY << 8);
+			int result = ya + value + 1;
+
+			flagV = (ya & 0x8000) == (value & 0x8000) && (value & 0x8000) != (result & 0x8000);
+			flagH = ((ya & 0xfff) + (value & 0xfff) + 1) > 0xfff;
+			flagC = result > 0xffff;
+			flagZ = (result & 0xffff) == 0;
+			flagN = result & 0x8000;
+			regA = result & 0xff;
+			regY = result >> 8;
+
+			regPC += 2;
+			cycles = 5;
+			break;
+		}
+		case 0x9f:
+		{
+			// XCN A
+			regA = (regA >> 4) | (regA << 4);
+			doFlagsNZ(regA);
+			regPC += 1;
+			cycles = 5;
+			break;
+		}
+		case 0x5c:
+		{
+			// LSR A
+			flagC = regA & 1;
+			regA >>= 1;
+			doFlagsNZ(regA);
+			regPC += 1;
+			cycles = 2;
+			break;
+		}
+		case 0x08:
+		{
+			// OR A,#imm
+			unsigned short int addr = addrModePC();
+			regA |= (this->*read8)(addr);
+			doFlagsNZ(regA);
+			regPC += 2;
+			cycles = 2;
+			break;
+		}
+		case 0x24:
+		{
+			// AND A,d
+			doAnd(&apu::addrDP);
+			regPC += 2;
+			cycles = 3;
+			break;
+		}
+		case 0x12:
+		case 0x32:
+		case 0x52:
+		case 0x72:
+		case 0x92:
+		case 0xb2:
+		case 0xd2:
+		case 0xf2:
+		{
+			// CLR1 d.n
+			unsigned short int addr = addrDP();
+			unsigned char val=(this->*read8)(addr);
+			val = val & ~(1 << (nextOpcode >> 5));
+			(this->*write8)(addr, val);
+			regPC += 2;
+			cycles = 4;
+			break;
+		}
+		case 0x65:
+		{
+			// CMP A,!$d
+			doCMPA(&apu::addrAbs);
+			regPC += 3;
+			cycles = 4;
+			break;
+		}
+		case 0x8c:
+		{
+			// DEC !d
+			unsigned short int addr = addrAbs();
+			unsigned char val = (this->*read8)(addr);
+			val--;
+			(this->*write8)(addr, val);
+			doFlagsNZ(val);
+			regPC += 3;
 			cycles = 5;
 			break;
 		}
