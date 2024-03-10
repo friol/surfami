@@ -120,6 +120,39 @@ dbgSPC700info listOfInstrs[]
 	{0xf2,"CLR1 $param0.7",2,1,true}, // validatedFC
 	{0x65,"CMP A,!$param0",3,1,true}, // validatedFC
 	{0x8c,"DEC !$param0",3,1,true}, // validatedFC
+	{0xc0,"DI",1,0,true}, // validatedFC
+	{0x8e,"POP PSW",1,0,true}, // validatedFC
+	{0x04,"OR A,$param0",2,1,true}, // validatedFC
+	{0x64,"CMP A,$param0",2,1,true}, // validatedFC
+	{0xf8,"MOV X,$param0",2,1,true}, // validatedFC
+	{0x3e,"CMP X,$param0",2,1,true}, // validatedFC
+	{0x29,"AND param0,param1",3,2,true}, // validatedFC
+	{0xfa,"MOV param0,param1",3,2,true}, // validatedFC
+	{0xd8,"MOV $param0,X",2,1,true}, // validatedFC
+	{0x88,"ADC A,#param0",2,1,true}, // validatedFC
+	{0x9b,"DEC $param0+X",2,1,true}, // validatedFC
+	{0xbb,"INC $param0+X",2,1,true}, // validatedFC
+	{0x85,"ADC A,!$param0",3,1,true}, // validatedFC
+	{0x0b,"ASL $param0",2,1,true}, // validatedFC
+	{0xb6,"SBC A,!$param0+Y",3,1,true}, // validatedFC
+	{0x96,"ADC A,!$param0+Y",3,1,true}, // validatedFC
+	{0x03,"BBS $param0.0,$param1",3,2,true }, // validatedFC
+	{0x23,"BBS $param0.1,$param1",3,2,true }, // validatedFC
+	{0x43,"BBS $param0.2,$param1",3,2,true }, // validatedFC
+	{0x63,"BBS $param0.3,$param1",3,2,true }, // validatedFC
+	{0x83,"BBS $param0.4,$param1",3,2,true }, // validatedFC
+	{0xa3,"BBS $param0.5,$param1",3,2,true }, // validatedFC
+	{0xc3,"BBS $param0.6,$param1",3,2,true }, // validatedFC
+	{0xe3,"BBS $param0.7,$param1",3,2,true }, // validatedFC
+	{0x40,"SETP",1,0,true}, // validatedFC
+	{0x74,"CMP A,$param0+x",2,1,true}, // validatedFC
+	{0xfb,"MOV Y,$param0+x",2,1,true}, // validatedFC
+	{0x95,"ADC A,!$param0+X",3,1,true}, // validatedFC
+	{0xb5,"SBC A,!$param0+X",3,1,true}, // validatedFC
+	{0xc7,"MOV $param0+X,A",2,1,true}, // validatedFC
+	{0x98,"ADC $param0,#param1",3,2,true}, // validatedFC
+	{0x2e,"CBNE $param0,#param1",3,2,true}, // validatedFC
+	{0x97,"ADC A,[$param0]+Y",2,1,true}, // validatedFC
 
 
 };

@@ -17,11 +17,13 @@ typedef struct spc700Timer
 typedef struct spc700channel
 {
 	signed char leftVol;
-	signed char RightVol;
+	signed char rightVol;
 	int samplePitch;
-	unsigned char sampleSourceEntry;
 	bool keyOn;
 	bool keyOff;
+	unsigned char sampleSourceEntry;
+	unsigned short int BRRSampleStart;
+	unsigned short int BRRLoopStart;
 };
 
 class apu
@@ -32,7 +34,6 @@ private:
 	unsigned char portsFromSPC[4];
 
 	spc700Timer timer[3];
-	spc700channel channels[8];
 
 	unsigned char bootRom[64];
 	bool bootRomLoaded = false;
@@ -102,13 +103,16 @@ private:
 
 	unsigned char dspSelectedRegister = 0;
 	void writeToDSPRegister(unsigned char val);
+	void calcBRRSampleStart(int voiceNum);
 
 	signed char mainVolLeft = 0;
 	signed char mainVolRight = 0;
 	signed char echoVolLeft = 0;
 	signed char echoVolRight = 0;
-	unsigned char keyOn = 0;
-	unsigned char keyOff = 0;
+
+	spc700channel channels[8];
+	unsigned char dspFlagReg = 0;
+	unsigned char dspDIR = 0;
 
 public:
 

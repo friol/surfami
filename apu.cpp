@@ -77,7 +77,7 @@ apu::apu()
 		channels[i].keyOn = false;
 		channels[i].keyOff= true;
 		channels[i].leftVol = 0;
-		channels[i].RightVol = 0;
+		channels[i].rightVol = 0;
 		channels[i].samplePitch = 0;
 		channels[i].sampleSourceEntry = 0;
 	}
@@ -233,6 +233,38 @@ unsigned char apu::getPSW()
 	return retval;
 }
 
+void apu::calcBRRSampleStart(int voiceNum)
+{
+	unsigned short int dirAddress = dspDIR << 8;
+	unsigned short int BRRSampleStart = 0;
+	unsigned short int BRRLoopStart = 0;
+
+	dirAddress += (channels[voiceNum].sampleSourceEntry)*4;
+
+	int low = spc700ram[dirAddress];
+	int high = spc700ram[dirAddress+1];
+
+	BRRSampleStart = low | (high << 8);
+
+	std::stringstream strstrSS;
+	strstrSS << std::hex << std::setw(4) << std::setfill('0') << (int)BRRSampleStart;
+
+	glbTheLogger.logMsg("apu::dsp BRR sample block starts at address [" + strstrSS.str()+"]");
+
+	channels[voiceNum].BRRSampleStart = BRRSampleStart;
+
+	low = spc700ram[dirAddress+2];
+	high = spc700ram[dirAddress + 3];
+	BRRLoopStart = low | (high << 8);
+
+	std::stringstream strstrLS;
+	strstrLS << std::hex << std::setw(4) << std::setfill('0') << (int)BRRLoopStart;
+
+	glbTheLogger.logMsg("apu::dsp BRR loop starts at address [" + strstrLS.str() + "]");
+
+	channels[voiceNum].BRRLoopStart = BRRLoopStart;
+}
+
 void apu::writeToDSPRegister(unsigned char val)
 {
 	std::stringstream strstrVal;
@@ -264,16 +296,34 @@ void apu::writeToDSPRegister(unsigned char val)
 	else if (dspSelectedRegister == 0x4c)
 	{
 		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to KEYON");
-		keyOn = val;
+		for (int b = 0;b < 8;b++)
+		{
+			if (val & (1 << b))
+			{
+				channels[b].keyOn = true;
+			}
+		}
 	}
 	else if (dspSelectedRegister == 0x5c)
 	{
 		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to KEYOFF");
-		keyOff = val;
+		for (int b = 0;b < 8;b++)
+		{
+			if (val & (1 << b))
+			{
+				channels[b].keyOff = true;
+			}
+		}
+	}
+	else if (dspSelectedRegister == 0x6c)
+	{
+		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to FLAGREG");
+		dspFlagReg= val;
 	}
 	else if (dspSelectedRegister == 0x5d)
 	{
 		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to DIR 5d sample source directory page");
+		dspDIR = val;
 	}
 	else if (dspSelectedRegister == 0x6d)
 	{
@@ -282,6 +332,42 @@ void apu::writeToDSPRegister(unsigned char val)
 	else if (dspSelectedRegister == 0x7d)
 	{
 		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to 7d echo delay time");
+	}
+	else if ((dspSelectedRegister & 0x0f) == 0)
+	{
+		// left channel volume for voice
+		int voiceNum = (dspSelectedRegister & 0xf0) >> 4;
+		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] VOL (L) voice "+std::to_string(voiceNum));
+		channels[voiceNum].leftVol = (signed char)val;
+	}
+	else if ((dspSelectedRegister & 0x0f) == 1)
+	{
+		// right channel volume for voice
+		int voiceNum = (dspSelectedRegister & 0xf0) >> 4;
+		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] VOL (R) voice " + std::to_string(voiceNum));
+		channels[voiceNum].rightVol = (signed char)val;
+	}
+	else if ((dspSelectedRegister & 0x0f) == 2)
+	{
+		// low 8 bits of sample pitch
+		int voiceNum = (dspSelectedRegister & 0xf0) >> 4;
+		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] PITCH (L) voice " + std::to_string(voiceNum));
+		channels[voiceNum].samplePitch |= val;
+	}
+	else if ((dspSelectedRegister & 0x0f) == 3)
+	{
+		// high 6 bits of sample pitch
+		int voiceNum = (dspSelectedRegister & 0xf0) >> 4;
+		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] PITCH (H) voice " + std::to_string(voiceNum));
+		channels[voiceNum].samplePitch |= (val<<8);
+	}
+	else if ((dspSelectedRegister & 0x0f) == 4)
+	{
+		// sample source entry from DIR
+		int voiceNum = (dspSelectedRegister & 0xf0) >> 4;
+		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] SCRN voice " + std::to_string(voiceNum));
+		channels[voiceNum].sampleSourceEntry = val;
+		calcBRRSampleStart(voiceNum);
 	}
 	else
 	{
@@ -1720,14 +1806,329 @@ int apu::stepOne()
 			cycles = 5;
 			break;
 		}
+		case 0xc0:
+		{
+			// DI
+			flagI = false;
+			regPC += 1;
+			cycles = 3;
+			break;
+		}
+		case 0x8e:
+		{
+			// POP PSW
+			regSP += 1; regSP &= 0xff;
+			unsigned char poppedFlags = (this->*read8)(0x100 | regSP);
+
+			flagN = poppedFlags & 0x80;
+			flagV = poppedFlags & 0x40;
+			flagP = poppedFlags & 0x20;
+			flagB = poppedFlags & 0x10;
+			flagH = poppedFlags & 8;
+			flagI = poppedFlags & 4;
+			flagZ = poppedFlags & 2;
+			flagC = poppedFlags & 1;
+
+			regPC += 1;
+			cycles = 4;
+			break;
+		}
+		case 0x04:
+		{
+			// OR A,dp
+			unsigned short int addr = addrDP();
+			unsigned char val = (this->*read8)(addr);
+			regA |= val;
+			doFlagsNZ(regA);
+			cycles = 3;
+			regPC += 2;
+			break;
+		}
+		case 0x64:
+		{
+			// CMP A,d
+			doCMPA(&apu::addrDP);
+			regPC += 2;
+			cycles = 3;
+			break;
+		}
+		case 0xf8:
+		{
+			// MOV X,d
+			doMoveToX(&apu::addrDP);
+			regPC += 2;
+			cycles = 3;
+			break;
+		}
+		case 0x3e:
+		{
+			// CMP X,dp
+			doCMPX(&apu::addrDP);
+			regPC += 2;
+			cycles = 3;
+			break;
+		}
+		case 0x29:
+		{
+			// AND dp,dp
+
+			unsigned short int adr0 = (this->*read8)(regPC + 1);
+			if (flagP) adr0 |= 0x100;
+			unsigned short int adr1 = (this->*read8)(regPC + 2);
+			if (flagP) adr1 |= 0x100;
+
+			unsigned char val0 = (this->*read8)(adr0);
+			unsigned char val1 = (this->*read8)(adr1);
+
+			unsigned char result = val0 & val1;
+			(this->*write8)(adr1, result);
+			doFlagsNZ(result);
+
+			regPC += 3;
+			cycles = 6;
+			break;
+		}
+		case 0xfa:
+		{
+			// mov dd,ds
+			unsigned short int adr0 = (this->*read8)(regPC + 1);
+			if (flagP) adr0 |= 0x100;
+			unsigned short int adr1 = (this->*read8)(regPC + 2);
+			if (flagP) adr1 |= 0x100;
+
+			unsigned char val1 = (this->*read8)(adr0);
+			(this->*write8)(adr1,val1);
+
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0xd8:
+		{
+			// mov d,x
+			unsigned short int adr0 = (this->*read8)(regPC + 1);
+			if (flagP) adr0 |= 0x100;
+
+			(this->*write8)(adr0, regX);
+
+			regPC += 2;
+			cycles = 4;
+			break;
+		}
+		case 0x88:
+		{
+			// ADC A,imm
+			unsigned short int addr = addrModePC();
+			unsigned char value = (this->*read8)(addr);
+			int result = regA + value + (flagC?1:0);
+			flagV = (regA & 0x80) == (value & 0x80) && (value & 0x80) != (result & 0x80);
+			flagH = ((regA & 0xf) + (value & 0xf) + (flagC ? 1 : 0)) > 0xf;
+			flagC = result > 0xff;
+			regA = result;
+			doFlagsNZ(regA);
+			regPC += 2;
+			cycles = 2;
+			break;
+		}
+		case 0x9b:
+		{
+			// dec d+X
+			unsigned short int addr = addrDPX();
+			unsigned char value = (this->*read8)(addr);
+			value--;
+			(this->*write8)(addr, value);
+			doFlagsNZ(value);
+			regPC += 2;
+			cycles = 5;
+			break;
+		}
+		case 0xbb:
+		{
+			// inc d+X
+			unsigned short int addr = addrDPX();
+			unsigned char value = (this->*read8)(addr);
+			value++;
+			(this->*write8)(addr, value);
+			doFlagsNZ(value);
+			regPC += 2;
+			cycles = 5;
+			break;
+		}
+		case 0x85:
+		{
+			// ADC a,!d
+			unsigned short int addr = addrAbs();
+			unsigned char value = (this->*read8)(addr);
+			int result = regA + value + (flagC ? 1 : 0);
+			flagV = (regA & 0x80) == (value & 0x80) && (value & 0x80) != (result & 0x80);
+			flagH = ((regA & 0xf) + (value & 0xf) + (flagC ? 1 : 0)) > 0xf;
+			flagC = result > 0xff;
+			regA = result;
+			doFlagsNZ(regA);
+			regPC += 3;
+			cycles = 4;
+			break;
+		}
+		case 0x0b:
+		{
+			// ASL d
+			unsigned short int addr = addrDP();
+			unsigned char value = (this->*read8)(addr);
+			flagC = value & 0x80;
+			value <<= 1;
+			doFlagsNZ(value);
+			(this->*write8)(addr, value);
+			regPC += 2;
+			cycles = 4;
+			break;
+		}
+		case 0xb6:
+		{
+			// SBC a,!a+y
+			unsigned short int addr = addrAbsY();
+
+			unsigned char value = (this->*read8)(addr) ^ 0xff;
+			int result = regA + value + (flagC ? 1 : 0);
+			flagV = (regA & 0x80) == (value & 0x80) && (value & 0x80) != (result & 0x80);
+			flagH = ((regA & 0xf) + (value & 0xf) + (flagC ? 1 : 0)) > 0xf;
+			flagC = result > 0xff;
+			regA = result;
+			doFlagsNZ(regA);
+
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0x96:
+		{
+			// ADC a,!a+y
+			doAdc(&apu::addrAbsY);
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0x03:
+		case 0x23:
+		case 0x43:
+		case 0x63:
+		case 0x83:
+		case 0xa3:
+		case 0xc3:
+		case 0xe3:
+		{
+			// BBS d.n,r
+			unsigned short int addr = addrDP();
+			unsigned char val = (this->*read8)(addr);
+			signed char offs = (this->*read8)(regPC + 2);
+			cycles = doBranch(offs, (val & (1 << (nextOpcode >> 5))) != 0) + 3;
+			regPC += 1;
+			break;
+		}
+		case 0x40:
+		{
+			// setp
+			flagP = true;
+			cycles = 2;
+			regPC += 1;
+			break;
+		}
+		case 0x74:
+		{
+			// cmp a,d+x
+			doCMPA(&apu::addrDPX);
+			regPC += 2;
+			cycles = 4;
+			break;
+		}
+		case 0xfb:
+		{
+			// mov y,d+x
+			doMoveToY(&apu::addrDPX);
+			regPC += 2;
+			cycles = 4;
+			break;
+		}
+		case 0x95:
+		{
+			// ADC a,!a+x
+			doAdc(&apu::addrAbsX);
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0xb5:
+		{
+			// SBC a,!a+x
+			unsigned short int addr = addrAbsX();
+
+			unsigned char value = (this->*read8)(addr) ^ 0xff;
+			int result = regA + value + (flagC ? 1 : 0);
+			flagV = (regA & 0x80) == (value & 0x80) && (value & 0x80) != (result & 0x80);
+			flagH = ((regA & 0xf) + (value & 0xf) + (flagC ? 1 : 0)) > 0xf;
+			flagC = result > 0xff;
+			regA = result;
+			doFlagsNZ(regA);
+
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0xc7:
+		{
+			// mov [d+X],A
+			doMoveWithRead(&apu::addrIndirectX, regA);
+			regPC += 2;
+			cycles = 7;
+			break;
+		}
+		case 0x98:
+		{
+			// ADC d,#i
+			unsigned char value = (this->*read8)(regPC + 1);
+			unsigned short int adrDst = (this->*read8)(regPC + 2);
+			if (flagP) adrDst |= 0x100;
+
+			int fc = flagC ? 1 : 0;
+			unsigned char applyOn = (this->*read8)(adrDst);
+			int result = applyOn + value + fc;
+			flagV = (applyOn & 0x80) == (value & 0x80) && (value & 0x80) != (result & 0x80);
+			flagH = ((applyOn & 0xf) + (value & 0xf) + fc) > 0xf;
+			flagC = result > 0xff;
+
+			(this->*write8)(adrDst,result);
+			doFlagsNZ(result);
+
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0x2e:
+		{
+			// CBNE d,offs
+			unsigned short int addr = apu::addrDP();
+			unsigned char val = (this->*read8)(addr) ^ 0xff;
+			unsigned char result = regA + val + 1;
+			signed char offs = (this->*read8)(regPC + 2);
+			cycles = doBranch(offs, result != 0) + 3;
+			regPC += 1;
+			break;
+		}
+		case 0x97:
+		{
+			// ADC a,[dp]+x
+			doAdc(&apu::addrIndirectY);
+			regPC += 2;
+			cycles = 6;
+			break;
+		}
 		default:
 		{
 			// unknown opcode
-			std::stringstream strr;
-			strr << std::hex << std::setw(2) << std::setfill('0') << (int)nextOpcode;
-			std::stringstream staddr;
-			staddr << std::hex << std::setw(4) << std::setfill('0') << regPC;
-			glbTheLogger.logMsg("Unknown SPC700 opcode [" + strr.str() + "] at 0x" + staddr.str());
+			//std::stringstream strr;
+			//strr << std::hex << std::setw(2) << std::setfill('0') << (int)nextOpcode;
+			//std::stringstream staddr;
+			//staddr << std::hex << std::setw(4) << std::setfill('0') << regPC;
+			//glbTheLogger.logMsg("Unknown SPC700 opcode [" + strr.str() + "] at 0x" + staddr.str());
 			return -1;
 		}
 	}
