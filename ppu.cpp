@@ -51,11 +51,6 @@ void ppu::writeM7VOFS(unsigned char val)
 
 void ppu::writeM7Matrix(int mtxparm, unsigned char val)
 {
-	if (mtxparm >= 8)
-	{
-		int err = 1;
-	}
-
 	if (mtxparm < 4)
 	{
 		m7matrix[mtxparm] = (signed short int)((val << 8) | m7prev);
@@ -103,11 +98,6 @@ void ppu::writeSubscreenFixedColor(unsigned char val)
 
 void ppu::writeBgScrollX(int bgId,unsigned char val)
 {
-	if (bgId >= 4)
-	{
-		int err = 1;
-	}
-
 	bgScrollX[bgId] = (val << 8) | (BGSCROLL_L1 & ~7) | ((bgScrollX[bgId] >> 8) & 7);
 	BGSCROLL_L1 = val;
 }
@@ -133,7 +123,6 @@ void ppu::writeOAM(unsigned char val)
 		if (address >= 0x220)
 		{
 			// TODO: why does this happen?
-			int err = 1;
 			return;
 		}
 
@@ -141,11 +130,6 @@ void ppu::writeOAM(unsigned char val)
 	}
 	else if (latch_bit == 1)
 	{
-		if ((address & ~1) >= 0x220)
-		{
-			int err = 1;
-		}
-
 		OAM[(address & ~1) + 1] = val;
 		OAM[(address & ~1)] = OAM_Lsb;
 	}
@@ -436,9 +420,9 @@ void ppu::tileViewerRenderTile4bpp(int px, int py, int tileAddr)
 		int green = (palcol >> 5) & 0x1f; green <<= 3;
 		int blue = (palcol >> 10) & 0x1f; blue <<= 3;
 
-		palArr[(col * 3) + 0] = red;
-		palArr[(col * 3) + 1] = green;
-		palArr[(col * 3) + 2] = blue;
+		palArr[(col * 3) + 0] = (unsigned char)red;
+		palArr[(col * 3) + 1] = (unsigned char)green;
+		palArr[(col * 3) + 2] = (unsigned char)blue;
 
 		colidx += 2;
 	}
@@ -484,9 +468,9 @@ void ppu::tileViewerRenderTile8bpp(int px, int py, int tileAddr)
 		int green = (palcol >> 5) & 0x1f; green <<= 3;
 		int blue = (palcol >> 10) & 0x1f; blue <<= 3;
 
-		palArr[(col * 3) + 0] = red;
-		palArr[(col * 3) + 1] = green;
-		palArr[(col * 3) + 2] = blue;
+		palArr[(col * 3) + 0] = (unsigned char)red;
+		palArr[(col * 3) + 1] = (unsigned char)green;
+		palArr[(col * 3) + 2] = (unsigned char)blue;
 
 		colidx += 2;
 	}
@@ -495,7 +479,7 @@ void ppu::tileViewerRenderTile8bpp(int px, int py, int tileAddr)
 	//tileAddr += ((bgTileBaseAddress >> (4 * bgnum)) & 0x0f) * 1024 * 4;
 	//tileAddr &= 0x7fff;
 
-	int ybase = 0; int yend = 8; int yinc = 1; int tileAddrInc = 1;
+	int ybase = 0; int yend = 8; int yinc = 1; //int tileAddrInc = 1;
 
 	for (int y = ybase;y != yend;y += yinc)
 	{
@@ -1107,11 +1091,6 @@ void ppu::renderBGScanline(int bgnum, int bpp, int scanlinenum)
 
 				int realx = x + (xscroll / tileDim);
 				int realy = y + (yscroll / tileDim);
-
-				if ((x == 9) && (y == 6))
-				{
-					bool stopped = true;
-				}
 
 				if (((yscroll % tileDim) + (scanlinenum % tileDim)) > (tileDim-1))
 				{

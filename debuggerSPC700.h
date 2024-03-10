@@ -22,8 +22,8 @@ private:
 
 	std::vector<dbgSPC700info> debugInstrList;
 
-	unsigned int findOpcodeIndex(unsigned char opcode);
-	std::string processDisasmTemplate(unsigned short int address, apu* theAPU,unsigned int& readBytes);
+	int findOpcodeIndex(unsigned char opcode);
+	std::string processDisasmTemplate(unsigned short int address, apu* theAPU,unsigned short int& readBytes);
 
 public:
 

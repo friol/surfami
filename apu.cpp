@@ -244,7 +244,7 @@ void apu::calcBRRSampleStart(int voiceNum)
 	int low = spc700ram[dirAddress];
 	int high = spc700ram[dirAddress+1];
 
-	BRRSampleStart = low | (high << 8);
+	BRRSampleStart = (unsigned short int)(low | (high << 8));
 
 	std::stringstream strstrSS;
 	strstrSS << std::hex << std::setw(4) << std::setfill('0') << (int)BRRSampleStart;
@@ -255,7 +255,7 @@ void apu::calcBRRSampleStart(int voiceNum)
 
 	low = spc700ram[dirAddress+2];
 	high = spc700ram[dirAddress + 3];
-	BRRLoopStart = low | (high << 8);
+	BRRLoopStart = (unsigned short int)(low | (high << 8));
 
 	std::stringstream strstrLS;
 	strstrLS << std::hex << std::setw(4) << std::setfill('0') << (int)BRRLoopStart;
@@ -397,6 +397,8 @@ unsigned char apu::externalRead8(unsigned int address)
 		unsigned char value = portsFromSPC[address-0x2140];
 		return value;
 	}
+
+	return 0;
 }
 
 void apu::externalWrite8(unsigned int address, unsigned char val)
@@ -454,6 +456,8 @@ unsigned char apu::internalRead8(unsigned int address)
 	{
 		return spc700ram[address];
 	}
+
+	return 0;
 }
 
 void apu::internalWrite8(unsigned int address, unsigned char val)
@@ -520,10 +524,6 @@ void apu::internalWrite8(unsigned int address, unsigned char val)
 		//glbTheLogger.logMsg("apu::write [" + strstrReg.str() + "] to f2 (DSPADDR)");
 		
 		dspSelectedRegister = val;
-		if (dspSelectedRegister == 0x4c)
-		{
-			bool brk = true;
-		}
 		
 		return;
 	}
@@ -715,7 +715,7 @@ void apu::doAdc(pAddrModeFun fn)
 	flagV = (regA & 0x80) == (value & 0x80) && (value & 0x80) != (result & 0x80);
 	flagH = ((regA & 0xf) + (value & 0xf) + fc) > 0xf;
 	flagC = result > 0xff;
-	regA = result;
+	regA = (unsigned char)result;
 	doFlagsNZ(regA);
 }
 
@@ -1592,7 +1592,7 @@ int apu::stepOne()
 			flagZ = (result & 0xffff) == 0;
 			flagN = result & 0x8000;
 			regA = result & 0xff;
-			regY = result >> 8;
+			regY = (unsigned char)(result >> 8);
 			
 			regPC += 2;
 			cycles = 5;
@@ -1643,7 +1643,7 @@ int apu::stepOne()
 			flagV = (regA & 0x80) == (value & 0x80) && (value & 0x80) != (result & 0x80);
 			flagH = ((regA & 0xf) + (value & 0xf) + (flagC?1:0)) > 0xf;
 			flagC = result > 0xff;
-			regA = result;
+			regA = (unsigned char)result;
 			doFlagsNZ(regA);
 
 			regPC += 2;
@@ -1676,7 +1676,7 @@ int apu::stepOne()
 				if (yva & 1) yva -= x;
 				yva &= 0x1ffff;
 			}
-			regY = yva >> 9;
+			regY = (unsigned char)(yva >> 9);
 			flagV = yva & 0x100;
 			regA = yva & 0xff;
 			doFlagsNZ(regA);
@@ -1725,7 +1725,7 @@ int apu::stepOne()
 			flagZ = (result & 0xffff) == 0;
 			flagN = result & 0x8000;
 			regA = result & 0xff;
-			regY = result >> 8;
+			regY = (unsigned char)(result >> 8);
 
 			regPC += 2;
 			cycles = 5;
@@ -1924,7 +1924,7 @@ int apu::stepOne()
 			flagV = (regA & 0x80) == (value & 0x80) && (value & 0x80) != (result & 0x80);
 			flagH = ((regA & 0xf) + (value & 0xf) + (flagC ? 1 : 0)) > 0xf;
 			flagC = result > 0xff;
-			regA = result;
+			regA = (unsigned char)result;
 			doFlagsNZ(regA);
 			regPC += 2;
 			cycles = 2;
@@ -1963,7 +1963,7 @@ int apu::stepOne()
 			flagV = (regA & 0x80) == (value & 0x80) && (value & 0x80) != (result & 0x80);
 			flagH = ((regA & 0xf) + (value & 0xf) + (flagC ? 1 : 0)) > 0xf;
 			flagC = result > 0xff;
-			regA = result;
+			regA = (unsigned char)result;
 			doFlagsNZ(regA);
 			regPC += 3;
 			cycles = 4;
@@ -1992,7 +1992,7 @@ int apu::stepOne()
 			flagV = (regA & 0x80) == (value & 0x80) && (value & 0x80) != (result & 0x80);
 			flagH = ((regA & 0xf) + (value & 0xf) + (flagC ? 1 : 0)) > 0xf;
 			flagC = result > 0xff;
-			regA = result;
+			regA = (unsigned char)result;
 			doFlagsNZ(regA);
 
 			regPC += 3;
@@ -2066,7 +2066,7 @@ int apu::stepOne()
 			flagV = (regA & 0x80) == (value & 0x80) && (value & 0x80) != (result & 0x80);
 			flagH = ((regA & 0xf) + (value & 0xf) + (flagC ? 1 : 0)) > 0xf;
 			flagC = result > 0xff;
-			regA = result;
+			regA = (unsigned char)result;
 			doFlagsNZ(regA);
 
 			regPC += 3;
@@ -2095,8 +2095,8 @@ int apu::stepOne()
 			flagH = ((applyOn & 0xf) + (value & 0xf) + fc) > 0xf;
 			flagC = result > 0xff;
 
-			(this->*write8)(adrDst,result);
-			doFlagsNZ(result);
+			(this->*write8)(adrDst, (unsigned char)result);
+			doFlagsNZ((unsigned char)result);
 
 			regPC += 3;
 			cycles = 5;
@@ -2119,6 +2119,23 @@ int apu::stepOne()
 			doAdc(&apu::addrIndirectY);
 			regPC += 2;
 			cycles = 6;
+			break;
+		}
+		case 0xa4:
+		{
+			// sbc a,dp
+			unsigned short int addr = addrDP();
+
+			unsigned char value = (this->*read8)(addr) ^ 0xff;
+			int result = regA + value + (flagC ? 1 : 0);
+			flagV = (regA & 0x80) == (value & 0x80) && (value & 0x80) != (result & 0x80);
+			flagH = ((regA & 0xf) + (value & 0xf) + (flagC ? 1 : 0)) > 0xf;
+			flagC = result > 0xff;
+			regA = (unsigned char)result;
+			doFlagsNZ(regA);
+
+			regPC += 2;
+			cycles = 3;
 			break;
 		}
 		default:

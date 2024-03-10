@@ -198,43 +198,47 @@ void displaySPCRegistersWindow(apu& theAPU)
     ImGui::End();
 }
 
-void displaySPCDebugWindow(ppu& thePPU, mmu& theMMU, cpu5a22& pCPU, apu& pAPU, debuggerSPC700& pDbgr, bool& rush, unsigned short int& rushAddress)
+void displaySPCDebugWindow(ppu& thePPU, mmu& theMMU, cpu5a22& pCPU, apu& pAPU, debuggerSPC700& pDbgr, bool& rush, unsigned short int& rushAddress,int& emustatus)
 {
-    unsigned int realPC = pAPU.getPC();
+    unsigned short int realPC = pAPU.getPC();
     std::vector<std::string> disasmed = pDbgr.disasmOpcodes(realPC,15,&pAPU);
 
     ImGui::Begin("SPC700 Debuggah");
 
-    int iidx = 0;
-    for (auto& instr : disasmed)
+    if (emustatus == 0)
     {
-        if (iidx == 0)
+        int iidx = 0;
+        for (auto& instr : disasmed)
         {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
-            ImGui::Selectable(disasmed[iidx].c_str(), true);
-            ImGui::PopStyleColor();
-        }
-        else ImGui::Selectable(disasmed[iidx].c_str(), false);
-
-        std::string curAddress = disasmed[iidx].substr(0,4);
-        std::string cmd = "Run to address:" + curAddress;
-
-        std::string curElement = "CtxMenu" + std::to_string(iidx);
-        if (ImGui::BeginPopupContextItem(curElement.c_str()))
-        {
-            if (ImGui::Selectable(cmd.c_str()))
+            instr = instr;
+            if (iidx == 0)
             {
-                unsigned short int iAddr;
-                std::stringstream ss;
-                ss << std::hex << curAddress;
-                ss >> iAddr;
-                rushAddress = iAddr;
-                rush = true;
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
+                ImGui::Selectable(disasmed[iidx].c_str(), true);
+                ImGui::PopStyleColor();
             }
-            ImGui::EndPopup();
-        }
+            else ImGui::Selectable(disasmed[iidx].c_str(), false);
 
-        iidx += 1;
+            std::string curAddress = disasmed[iidx].substr(0, 4);
+            std::string cmd = "Run to address:" + curAddress;
+
+            std::string curElement = "CtxMenu" + std::to_string(iidx);
+            if (ImGui::BeginPopupContextItem(curElement.c_str()))
+            {
+                if (ImGui::Selectable(cmd.c_str()))
+                {
+                    unsigned short int iAddr;
+                    std::stringstream ss;
+                    ss << std::hex << curAddress;
+                    ss >> iAddr;
+                    rushAddress = iAddr;
+                    rush = true;
+                }
+                ImGui::EndPopup();
+            }
+
+            iidx += 1;
+        }
     }
 
     // step button
@@ -269,37 +273,40 @@ void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& the
     }
     else isDebugWindowFocused = false;
 
-    int iidx = 0;
-    for (auto& instr : disasmed)
+    if (emustatus == 0)
     {
-        if (iidx==0)
+        int iidx = 0;
+        for (auto& instr : disasmed)
         {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
-            ImGui::Selectable(instr.disasmed.c_str(), true);
-            ImGui::PopStyleColor();
-        }
-        else ImGui::Selectable(instr.disasmed.c_str(), false);
-
-        std::string curAddress = instr.disasmed.substr(0, 6);
-        std::string cmd = "Run to address:" + curAddress;
-
-        std::string curElement = "CtxMenu" + std::to_string(iidx);
-        if (ImGui::BeginPopupContextItem(curElement.c_str()))
-        {
-            if (ImGui::Selectable(cmd.c_str()))
+            if (iidx == 0)
             {
-                rush = true;
-                
-                int iAddr;
-                std::stringstream ss;
-                ss << std::hex << curAddress;
-                ss >> iAddr;
-                rushAddress = iAddr;
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
+                ImGui::Selectable(instr.disasmed.c_str(), true);
+                ImGui::PopStyleColor();
             }
-            ImGui::EndPopup();
-        }
+            else ImGui::Selectable(instr.disasmed.c_str(), false);
 
-        iidx += 1;
+            std::string curAddress = instr.disasmed.substr(0, 6);
+            std::string cmd = "Run to address:" + curAddress;
+
+            std::string curElement = "CtxMenu" + std::to_string(iidx);
+            if (ImGui::BeginPopupContextItem(curElement.c_str()))
+            {
+                if (ImGui::Selectable(cmd.c_str()))
+                {
+                    rush = true;
+
+                    int iAddr;
+                    std::stringstream ss;
+                    ss << std::hex << curAddress;
+                    ss >> iAddr;
+                    rushAddress = iAddr;
+                }
+                ImGui::EndPopup();
+            }
+
+            iidx += 1;
+        }
     }
 
     ImGui::Text(" ");
@@ -969,7 +976,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         return 1;
     }
 
-    /*
+    
     // unfortunately, no SPC cpu is emulated at this time (sure?)
     if (romName == "d:\\prova\\snes\\Frogger (U).smc")
     {
@@ -1691,7 +1698,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         theMMU.write8(0xc864, 0xea);
 
     }
-    */
+    
 
     //
 
@@ -1874,7 +1881,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         displayAppoWindow(thePPU, theMMU, theDebugger5a22,theDebuggerSPC700);
         displayRomLoadingLogWindow(romLoadingLog);
         displayDebugWindow(theCPU, theDebugger5a22,theMMU,isDebugWindowFocused,rush,rushToAddress,jumpToAppoBuf,totCPUCycles,emustatus,thePPU);
-        displaySPCDebugWindow(thePPU, theMMU, theCPU,theAPU, theDebuggerSPC700,rushSPC,rushToSPCAddress);
+        displaySPCDebugWindow(thePPU, theMMU, theCPU,theAPU, theDebuggerSPC700,rushSPC,rushToSPCAddress,emustatus);
         displayRegistersWindow(theCPU,thePPU,totCPUCycles);
         displaySPCRegistersWindow(theAPU);
         displayPaletteWindow(thePPU);

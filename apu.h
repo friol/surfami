@@ -5,7 +5,7 @@
 
 #include "logger.h"
 
-typedef struct spc700Timer 
+struct spc700Timer 
 {
 	unsigned char cycles;
 	unsigned char divider;
@@ -14,7 +14,7 @@ typedef struct spc700Timer
 	bool enabled;
 };
 
-typedef struct spc700channel
+struct spc700channel
 {
 	signed char leftVol;
 	signed char rightVol;

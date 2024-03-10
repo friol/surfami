@@ -125,10 +125,10 @@ public:
 	void setCGWSEL(unsigned char val) 
 	{ 
 		cgwSel = val; 
-		if (cgwSel & 0x01)
-		{
-			bool directMode = 1;
-		}
+		//if (cgwSel & 0x01)
+		//{
+		//	bool directMode = 1;
+		//}
 	}
 
 	void writeOAMAddressLow(unsigned char val) 

@@ -332,15 +332,15 @@ void mmu::executeHDMA()
 					if (HDMAS[i].addressing_mode == 1)
 					{
 						dma_transferByte(
-							HDMAS[i].size++, HDMAS[i].indBank,
-							HDMAS[i].bAdr + bAdrOffsets[HDMAS[i].dma_mode][j], HDMAS[i].fromB
+							(unsigned short int)(HDMAS[i].size++), HDMAS[i].indBank,
+							(unsigned char)(HDMAS[i].bAdr + bAdrOffsets[HDMAS[i].dma_mode][j]), HDMAS[i].fromB
 						);
 					}
 					else 
 					{
 						dma_transferByte(
-							HDMAS[i].address++, HDMAS[i].aBank,
-							HDMAS[i].bAdr + bAdrOffsets[HDMAS[i].dma_mode][j], HDMAS[i].fromB
+							(unsigned short int)(HDMAS[i].address++), HDMAS[i].aBank,
+							(unsigned char)(HDMAS[i].bAdr + bAdrOffsets[HDMAS[i].dma_mode][j]), HDMAS[i].fromB
 						);
 					}
 				}
@@ -751,7 +751,7 @@ unsigned char mmu::read8(unsigned int address)
 		{
 			// 213Dh - OPVCT - Vertical Counter Latch (R)
 			// TODO
-			return pPPU->getCurrentScanline();
+			return (unsigned char)pPPU->getCurrentScanline();
 		}
 		else if (adr == 0x213f)
 		{
@@ -931,7 +931,7 @@ mmu::~mmu()
 	if (hasSRAM)
 	{
 		std::fstream fout(sramFileName, std::fstream::out | std::fstream::binary);
-		for (int b = 0;b < sramSize;b++)
+		for (unsigned int b = 0;b < sramSize;b++)
 		{
 			unsigned char theByte = read8(0x700000 + b);
 			fout.write(reinterpret_cast<char*>(&theByte), 1);
