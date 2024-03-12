@@ -1524,14 +1524,14 @@ void ppu::renderScanline(int scanlinenum)
 			{
 				unsigned int backdropColor;
 				
-				//if (((subScreenDesignation & 0x1f) & (1 << 1)))
-				//{
-				//	backdropColor = coldataColor;
-				//}
-				//else
-				//{
+				if (((subScreenDesignation & 0x1f) & (1 << 1)))
+				{
+					backdropColor = coldataColor;
+				}
+				else
+				{
 					backdropColor= (((int)(cgram[1] & 0x7f)) << 8) | cgram[0];
-				//}
+				}
 				
 				unsigned char red = backdropColor & 0x1f; red <<= 3;
 				unsigned char green = (backdropColor >> 5) & 0x1f; green <<= 3;

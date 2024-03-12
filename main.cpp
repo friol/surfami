@@ -21,6 +21,7 @@
 #include <iomanip>
 #include <sstream>
 
+#include "audioSystem.h"
 #include "romLoader.h"
 #include "mmu.h"
 #include "ppu.h"
@@ -198,14 +199,16 @@ void displaySPCRegistersWindow(apu& theAPU)
     ImGui::End();
 }
 
-void displaySPCDebugWindow(ppu& thePPU, mmu& theMMU, cpu5a22& pCPU, apu& pAPU, debuggerSPC700& pDbgr, bool& rush, unsigned short int& rushAddress,int& emustatus)
+void displaySPCDebugWindow(ppu& thePPU, mmu& theMMU, cpu5a22& pCPU, apu& pAPU, debuggerSPC700& pDbgr, bool& rush, unsigned short int& rushAddress,int& emustatus,audioSystem& theAudioSys)
 {
+    emustatus = emustatus;
+
     unsigned short int realPC = pAPU.getPC();
     std::vector<std::string> disasmed = pDbgr.disasmOpcodes(realPC,15,&pAPU);
 
     ImGui::Begin("SPC700 Debuggah");
 
-    if (emustatus == 0)
+    //if (emustatus == 0)
     {
         int iidx = 0;
         for (auto& instr : disasmed)
@@ -254,7 +257,7 @@ void displaySPCDebugWindow(ppu& thePPU, mmu& theMMU, cpu5a22& pCPU, apu& pAPU, d
             cpucycs += pCPU.stepOne();
             thePPU.step(cpucycs, theMMU, pCPU);
         }
-        pAPU.step();
+        pAPU.step(theAudioSys);
     }
 
     ImGui::End();
@@ -273,7 +276,7 @@ void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& the
     }
     else isDebugWindowFocused = false;
 
-    if (emustatus == 0)
+    //if (emustatus == 0)
     {
         int iidx = 0;
         for (auto& instr : disasmed)
@@ -1708,6 +1711,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     theCPU.reset();
     theMMU.setCPU(theCPU);
 
+    audioSystem theAudioSys;
+    if (!theAudioSys.audioSystemInited)
+    {
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplWin32_Shutdown();
+        ImGui::DestroyContext();
+
+        CleanupDeviceWGL(hwnd, &g_MainWindow);
+        wglDeleteContext(g_hRC);
+        ::DestroyWindow(hwnd);
+        ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
+
+        return 1;
+    }
+
     //
 
     GLuint vramRenderTexture;
@@ -1881,7 +1899,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         displayAppoWindow(thePPU, theMMU, theDebugger5a22,theDebuggerSPC700);
         displayRomLoadingLogWindow(romLoadingLog);
         displayDebugWindow(theCPU, theDebugger5a22,theMMU,isDebugWindowFocused,rush,rushToAddress,jumpToAppoBuf,totCPUCycles,emustatus,thePPU);
-        displaySPCDebugWindow(thePPU, theMMU, theCPU,theAPU, theDebuggerSPC700,rushSPC,rushToSPCAddress,emustatus);
+        displaySPCDebugWindow(thePPU, theMMU, theCPU,theAPU, theDebuggerSPC700,rushSPC,rushToSPCAddress,emustatus,theAudioSys);
         displayRegistersWindow(theCPU,thePPU,totCPUCycles);
         displaySPCRegistersWindow(theAPU);
         displayPaletteWindow(thePPU);
@@ -1910,15 +1928,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
                 if ((inst % 2) == 0)
                 {
                     theAPU.stepOne();
-                    theAPU.step();
-                }
-
-                //if ( ((theCPU.getPC()) == 0x808a5a) && thePPU.getWriteBreakpoint() )
-                //if ( ((theCPU.getPC()) == 0x808a4d) && (theCPU.getX()==0x14fb))
-                //if ( ((theCPU.getPC()&0xffff) == 0x9e3b))
-                if ( ((theCPU.getPC()&0xffff) == 0x8865))
-                {
-                    //emustatus = 0;
+                    theAPU.step(theAudioSys);
+                    theAPU.step(theAudioSys);
                 }
             }
         }
@@ -1951,7 +1962,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
                 totCPUCycles += theCPU.stepOne();
                 totCPUCycles += theCPU.stepOne();
                 theAPU.stepOne();
-                theAPU.step();
+                theAPU.step(theAudioSys);
             }
         }
 

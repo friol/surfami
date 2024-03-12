@@ -4,6 +4,9 @@
 // APU+SPC700
 
 #include "logger.h"
+#include "audioSystem.h"
+
+class audioSystem;
 
 struct spc700Timer 
 {
@@ -24,6 +27,7 @@ struct spc700channel
 	unsigned char sampleSourceEntry;
 	unsigned short int BRRSampleStart;
 	unsigned short int BRRLoopStart;
+	float playingPos = 0.0;
 };
 
 class apu
@@ -110,7 +114,6 @@ private:
 	signed char echoVolLeft = 0;
 	signed char echoVolRight = 0;
 
-	spc700channel channels[8];
 	unsigned char dspFlagReg = 0;
 	unsigned char dspDIR = 0;
 
@@ -119,6 +122,8 @@ public:
 	apu();
 	void reset();
 	~apu();
+
+	spc700channel channels[8];
 
 	bool isBootRomLoaded();
 
@@ -147,7 +152,7 @@ public:
 	unsigned char getPSW();
 
 	// advance timers, etc.
-	void step();
+	void step(audioSystem& theAudioSys);
 
 	std::vector<std::string> getRegisters();
 };

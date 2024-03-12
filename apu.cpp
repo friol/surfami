@@ -80,6 +80,7 @@ apu::apu()
 		channels[i].rightVol = 0;
 		channels[i].samplePitch = 0;
 		channels[i].sampleSourceEntry = 0;
+		channels[i].playingPos = 0;
 	}
 }
 
@@ -296,23 +297,21 @@ void apu::writeToDSPRegister(unsigned char val)
 	else if (dspSelectedRegister == 0x4c)
 	{
 		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to KEYON");
-		for (int b = 0;b < 8;b++)
+		for (int i = 0; i < 8; i++)
 		{
-			if (val & (1 << b))
+			if (val & (1 << i))
 			{
-				channels[b].keyOn = true;
+				channels[i].keyOn = true;
+				channels[i].playingPos = 0;
 			}
 		}
 	}
 	else if (dspSelectedRegister == 0x5c)
 	{
 		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to KEYOFF");
-		for (int b = 0;b < 8;b++)
+		for (int i = 0; i < 8; i++) 
 		{
-			if (val & (1 << b))
-			{
-				channels[b].keyOff = true;
-			}
+			channels[i].keyOff = val & (1 << i);
 		}
 	}
 	else if (dspSelectedRegister == 0x6c)
@@ -352,14 +351,16 @@ void apu::writeToDSPRegister(unsigned char val)
 		// low 8 bits of sample pitch
 		int voiceNum = (dspSelectedRegister & 0xf0) >> 4;
 		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] PITCH (L) voice " + std::to_string(voiceNum));
-		channels[voiceNum].samplePitch |= val;
+		//channels[voiceNum].samplePitch |= val;
+		channels[voiceNum].samplePitch= (channels[voiceNum].samplePitch & 0x3f00) | val;;
 	}
 	else if ((dspSelectedRegister & 0x0f) == 3)
 	{
 		// high 6 bits of sample pitch
 		int voiceNum = (dspSelectedRegister & 0xf0) >> 4;
 		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] PITCH (H) voice " + std::to_string(voiceNum));
-		channels[voiceNum].samplePitch |= (val<<8);
+		//channels[voiceNum].samplePitch |= (val<<8);
+		channels[voiceNum].samplePitch= ((channels[voiceNum].samplePitch & 0x00ff) | (val << 8)) & 0x3fff;
 	}
 	else if ((dspSelectedRegister & 0x0f) == 4)
 	{
@@ -554,12 +555,12 @@ void apu::internalWrite8(unsigned int address, unsigned char val)
 	}
 }
 
-void apu::step()
+void apu::step(audioSystem& theAudioSys)
 {
-	//if ((apu->cycles & 0x1f) == 0) 
-	//{
-	//	dsp_cycle(apu->dsp);
-	//}
+	if ((apuCycles%32) == 0) 
+	{
+		theAudioSys.updateStream(*this);
+	}
 
 	for (int i = 0; i < 3; i++) 
 	{
