@@ -153,7 +153,16 @@ dbgSPC700info listOfInstrs[]
 	{0x98,"ADC $param0,#param1",3,2,true}, // validatedFC
 	{0x2e,"CBNE $param0,#param1",3,2,true}, // validatedFC
 	{0x97,"ADC A,[$param0]+Y",2,1,true}, // validatedFC
-	{0xa4,"SBC A,$param0",3,1,false}, // validatedFC
+	{0xa4,"SBC A,$param0",3,1,true}, // validatedFC
+	{0x8b,"DEC $param0",2,1,true}, // validatedFC
+	{0x1a,"DECW $param0",2,1,true}, // validatedFC
+	{0x5a,"CMPW YA,$param0",2,1,true}, // validatedFC
+	{0x94,"ADC A,$param0+X",2,1,true}, // validatedFC
+	{0xe6,"MOV A,(X)",1,0,true}, // validatedFC
+	{0x00,"NOP",1,0,true}, // validatedFC
+	{0x69,"CMP $param0,#param1",3,2,true}, // validatedFC
+	{0x3c,"ROL A",1,0,true}, // validatedFC
+	{0x76,"CMP A,!$param0+X",3,1,true}, // validatedFC
 
 
 };

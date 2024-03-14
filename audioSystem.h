@@ -23,7 +23,14 @@ class audioSystem
 private:
 
 	unsigned int bufPos = 0;
-	float audioBuf[1024];
+	
+	const unsigned int audioBufLen = 1024;
+	float audioBuf[1024*2];
+	
+	float* outwavbuf;
+	signed long int outwavpos = 0;
+	const unsigned long int outwavdim = 65536*2;
+	
 	std::vector<float> audioStream;
 
 	spcInstrument insArray[0x14];
@@ -36,6 +43,7 @@ public:
 
 	audioSystem();
 	void updateStream(apu& theAPU);
+	void feedAudiobuf(float l, float r);
 	~audioSystem();
 };
 

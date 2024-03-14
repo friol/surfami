@@ -27,6 +27,25 @@ struct spc700channel
 	unsigned char sampleSourceEntry;
 	unsigned short int BRRSampleStart;
 	unsigned short int BRRLoopStart;
+	unsigned char brrHeader;
+	unsigned short int decodeOffset;
+	int startDelay;
+	unsigned char blockOffset; // offset within brr block
+	unsigned char bufferOffset;
+	unsigned short int pitchCounter;
+	unsigned char adsrState; // 0: attack, 1: decay, 2: sustain, 3: release
+	unsigned short int gain;
+	bool useGain;
+	unsigned char adsrRates[4]; // attack, decay, sustain, gain
+	unsigned char sustainLevel;
+	unsigned char gainSustainLevel;
+	unsigned char gainMode;
+	bool directGain;
+	unsigned short int gainValue; // for direct gain
+	unsigned short int preclampGain; // for bent increase
+
+	signed short int decodeBuffer[12];
+
 	float playingPos = 0.0;
 };
 
@@ -108,6 +127,11 @@ private:
 	unsigned char dspSelectedRegister = 0;
 	void writeToDSPRegister(unsigned char val);
 	void calcBRRSampleStart(int voiceNum);
+	void dspCycle(signed short int& sampleOutL, signed short int& sampleOutR);
+	signed short int dspGetSample(int ch);
+	void dspDecodeBrr(int ch);
+	void dspHandleGain(int ch);
+	bool dspCheckCounter(int rate);
 
 	signed char mainVolLeft = 0;
 	signed char mainVolRight = 0;
@@ -115,7 +139,14 @@ private:
 	signed char echoVolRight = 0;
 
 	unsigned char dspFlagReg = 0;
-	unsigned char dspDIR = 0;
+	unsigned short int dspDIR = 0;
+	bool evenCycle;
+	bool dspReset;
+	bool mute;
+	bool echoWrites;
+	unsigned char noiseRate;
+
+	unsigned short int counter=0;
 
 public:
 

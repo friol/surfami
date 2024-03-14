@@ -71,16 +71,43 @@ apu::apu()
 		timer[i].enabled = false;
 	}
 
+	counter = 0;
+	dspDIR = 0;
+	evenCycle = true;
+
+	dspReset=false;
+	mute=false;
+	echoWrites=false;
+	noiseRate=0;
+
 	// init DSP channels
 	for (int i = 0;i < 8;i++)
 	{
 		channels[i].keyOn = false;
-		channels[i].keyOff= true;
+		channels[i].keyOff= false;
 		channels[i].leftVol = 0;
 		channels[i].rightVol = 0;
 		channels[i].samplePitch = 0;
 		channels[i].sampleSourceEntry = 0;
 		channels[i].playingPos = 0;
+		channels[i].startDelay = 0;
+		channels[i].adsrState = 0;
+		channels[i].brrHeader = 0;
+		channels[i].blockOffset = 0;
+		channels[i].decodeOffset = 0;
+		channels[i].bufferOffset = 0;
+		channels[i].gain = 0;
+
+		memset(channels[i].adsrRates, 0, sizeof(channels[i].adsrRates));
+		channels[i].sustainLevel = 0;
+		channels[i].gainSustainLevel = 0;
+		channels[i].useGain = false;
+		channels[i].gainMode = 0;
+		channels[i].directGain = false;
+		channels[i].gainValue = 0;
+		channels[i].preclampGain = 0;
+
+		memset(channels[i].decodeBuffer, 0, sizeof(channels[i].decodeBuffer));
 	}
 }
 
@@ -301,8 +328,7 @@ void apu::writeToDSPRegister(unsigned char val)
 		{
 			if (val & (1 << i))
 			{
-				channels[i].keyOn = true;
-				channels[i].playingPos = 0;
+				channels[i].keyOn = val & (1 << i);
 			}
 		}
 	}
@@ -322,7 +348,7 @@ void apu::writeToDSPRegister(unsigned char val)
 	else if (dspSelectedRegister == 0x5d)
 	{
 		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to DIR 5d sample source directory page");
-		dspDIR = val;
+		dspDIR = val<<8;
 	}
 	else if (dspSelectedRegister == 0x6d)
 	{
@@ -337,14 +363,14 @@ void apu::writeToDSPRegister(unsigned char val)
 		// left channel volume for voice
 		int voiceNum = (dspSelectedRegister & 0xf0) >> 4;
 		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] VOL (L) voice "+std::to_string(voiceNum));
-		channels[voiceNum].leftVol = (signed char)val;
+		channels[voiceNum].leftVol = val;
 	}
 	else if ((dspSelectedRegister & 0x0f) == 1)
 	{
 		// right channel volume for voice
 		int voiceNum = (dspSelectedRegister & 0xf0) >> 4;
 		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] VOL (R) voice " + std::to_string(voiceNum));
-		channels[voiceNum].rightVol = (signed char)val;
+		channels[voiceNum].rightVol = val;
 	}
 	else if ((dspSelectedRegister & 0x0f) == 2)
 	{
@@ -370,9 +396,44 @@ void apu::writeToDSPRegister(unsigned char val)
 		channels[voiceNum].sampleSourceEntry = val;
 		calcBRRSampleStart(voiceNum);
 	}
+	else if (dspSelectedRegister==0x6c) 
+	{
+		dspReset = val & 0x80;
+		mute = val & 0x40;
+		echoWrites = (val & 0x20) == 0;
+		noiseRate = val & 0x1f;
+	}
 	else
 	{
 		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to unmapped register "+ sDspReg.str());
+	}
+
+	int ch = dspSelectedRegister >> 4;
+	switch (dspSelectedRegister)
+	{
+		case 0x05: case 0x15: case 0x25: case 0x35: case 0x45: case 0x55: case 0x65: case 0x75: {
+			channels[ch].adsrRates[0] = (val & 0xf) * 2 + 1;
+			channels[ch].adsrRates[1] = ((val & 0x70) >> 4) * 2 + 16;
+			channels[ch].useGain = (val & 0x80) == 0;
+			break;
+		}
+		case 0x06: case 0x16: case 0x26: case 0x36: case 0x46: case 0x56: case 0x66: case 0x76: {
+			channels[ch].adsrRates[2] = val & 0x1f;
+			channels[ch].sustainLevel = (val & 0xe0) >> 5;
+			break;
+		}
+		case 0x07: case 0x17: case 0x27: case 0x37: case 0x47: case 0x57: case 0x67: case 0x77: {
+			channels[ch].directGain = (val & 0x80) == 0;
+			channels[ch].gainMode = (val & 0x60) >> 5;
+			channels[ch].adsrRates[3] = val & 0x1f;
+			channels[ch].gainValue = (val & 0x7f) * 16;
+			channels[ch].gainSustainLevel = (val & 0xe0) >> 5;
+			break;
+		}
+		default:
+		{
+			break;
+		}
 	}
 
 	dspRam[dspSelectedRegister] = val;
@@ -555,34 +616,367 @@ void apu::internalWrite8(unsigned int address, unsigned char val)
 	}
 }
 
-void apu::step(audioSystem& theAudioSys)
+static const int gaussValues[512] = {
+  0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000,
+  0x001, 0x001, 0x001, 0x001, 0x001, 0x001, 0x001, 0x001, 0x001, 0x001, 0x001, 0x002, 0x002, 0x002, 0x002, 0x002,
+  0x002, 0x002, 0x003, 0x003, 0x003, 0x003, 0x003, 0x004, 0x004, 0x004, 0x004, 0x004, 0x005, 0x005, 0x005, 0x005,
+  0x006, 0x006, 0x006, 0x006, 0x007, 0x007, 0x007, 0x008, 0x008, 0x008, 0x009, 0x009, 0x009, 0x00a, 0x00a, 0x00a,
+  0x00b, 0x00b, 0x00b, 0x00c, 0x00c, 0x00d, 0x00d, 0x00e, 0x00e, 0x00f, 0x00f, 0x00f, 0x010, 0x010, 0x011, 0x011,
+  0x012, 0x013, 0x013, 0x014, 0x014, 0x015, 0x015, 0x016, 0x017, 0x017, 0x018, 0x018, 0x019, 0x01a, 0x01b, 0x01b,
+  0x01c, 0x01d, 0x01d, 0x01e, 0x01f, 0x020, 0x020, 0x021, 0x022, 0x023, 0x024, 0x024, 0x025, 0x026, 0x027, 0x028,
+  0x029, 0x02a, 0x02b, 0x02c, 0x02d, 0x02e, 0x02f, 0x030, 0x031, 0x032, 0x033, 0x034, 0x035, 0x036, 0x037, 0x038,
+  0x03a, 0x03b, 0x03c, 0x03d, 0x03e, 0x040, 0x041, 0x042, 0x043, 0x045, 0x046, 0x047, 0x049, 0x04a, 0x04c, 0x04d,
+  0x04e, 0x050, 0x051, 0x053, 0x054, 0x056, 0x057, 0x059, 0x05a, 0x05c, 0x05e, 0x05f, 0x061, 0x063, 0x064, 0x066,
+  0x068, 0x06a, 0x06b, 0x06d, 0x06f, 0x071, 0x073, 0x075, 0x076, 0x078, 0x07a, 0x07c, 0x07e, 0x080, 0x082, 0x084,
+  0x086, 0x089, 0x08b, 0x08d, 0x08f, 0x091, 0x093, 0x096, 0x098, 0x09a, 0x09c, 0x09f, 0x0a1, 0x0a3, 0x0a6, 0x0a8,
+  0x0ab, 0x0ad, 0x0af, 0x0b2, 0x0b4, 0x0b7, 0x0ba, 0x0bc, 0x0bf, 0x0c1, 0x0c4, 0x0c7, 0x0c9, 0x0cc, 0x0cf, 0x0d2,
+  0x0d4, 0x0d7, 0x0da, 0x0dd, 0x0e0, 0x0e3, 0x0e6, 0x0e9, 0x0ec, 0x0ef, 0x0f2, 0x0f5, 0x0f8, 0x0fb, 0x0fe, 0x101,
+  0x104, 0x107, 0x10b, 0x10e, 0x111, 0x114, 0x118, 0x11b, 0x11e, 0x122, 0x125, 0x129, 0x12c, 0x130, 0x133, 0x137,
+  0x13a, 0x13e, 0x141, 0x145, 0x148, 0x14c, 0x150, 0x153, 0x157, 0x15b, 0x15f, 0x162, 0x166, 0x16a, 0x16e, 0x172,
+  0x176, 0x17a, 0x17d, 0x181, 0x185, 0x189, 0x18d, 0x191, 0x195, 0x19a, 0x19e, 0x1a2, 0x1a6, 0x1aa, 0x1ae, 0x1b2,
+  0x1b7, 0x1bb, 0x1bf, 0x1c3, 0x1c8, 0x1cc, 0x1d0, 0x1d5, 0x1d9, 0x1dd, 0x1e2, 0x1e6, 0x1eb, 0x1ef, 0x1f3, 0x1f8,
+  0x1fc, 0x201, 0x205, 0x20a, 0x20f, 0x213, 0x218, 0x21c, 0x221, 0x226, 0x22a, 0x22f, 0x233, 0x238, 0x23d, 0x241,
+  0x246, 0x24b, 0x250, 0x254, 0x259, 0x25e, 0x263, 0x267, 0x26c, 0x271, 0x276, 0x27b, 0x280, 0x284, 0x289, 0x28e,
+  0x293, 0x298, 0x29d, 0x2a2, 0x2a6, 0x2ab, 0x2b0, 0x2b5, 0x2ba, 0x2bf, 0x2c4, 0x2c9, 0x2ce, 0x2d3, 0x2d8, 0x2dc,
+  0x2e1, 0x2e6, 0x2eb, 0x2f0, 0x2f5, 0x2fa, 0x2ff, 0x304, 0x309, 0x30e, 0x313, 0x318, 0x31d, 0x322, 0x326, 0x32b,
+  0x330, 0x335, 0x33a, 0x33f, 0x344, 0x349, 0x34e, 0x353, 0x357, 0x35c, 0x361, 0x366, 0x36b, 0x370, 0x374, 0x379,
+  0x37e, 0x383, 0x388, 0x38c, 0x391, 0x396, 0x39b, 0x39f, 0x3a4, 0x3a9, 0x3ad, 0x3b2, 0x3b7, 0x3bb, 0x3c0, 0x3c5,
+  0x3c9, 0x3ce, 0x3d2, 0x3d7, 0x3dc, 0x3e0, 0x3e5, 0x3e9, 0x3ed, 0x3f2, 0x3f6, 0x3fb, 0x3ff, 0x403, 0x408, 0x40c,
+  0x410, 0x415, 0x419, 0x41d, 0x421, 0x425, 0x42a, 0x42e, 0x432, 0x436, 0x43a, 0x43e, 0x442, 0x446, 0x44a, 0x44e,
+  0x452, 0x455, 0x459, 0x45d, 0x461, 0x465, 0x468, 0x46c, 0x470, 0x473, 0x477, 0x47a, 0x47e, 0x481, 0x485, 0x488,
+  0x48c, 0x48f, 0x492, 0x496, 0x499, 0x49c, 0x49f, 0x4a2, 0x4a6, 0x4a9, 0x4ac, 0x4af, 0x4b2, 0x4b5, 0x4b7, 0x4ba,
+  0x4bd, 0x4c0, 0x4c3, 0x4c5, 0x4c8, 0x4cb, 0x4cd, 0x4d0, 0x4d2, 0x4d5, 0x4d7, 0x4d9, 0x4dc, 0x4de, 0x4e0, 0x4e3,
+  0x4e5, 0x4e7, 0x4e9, 0x4eb, 0x4ed, 0x4ef, 0x4f1, 0x4f3, 0x4f5, 0x4f6, 0x4f8, 0x4fa, 0x4fb, 0x4fd, 0x4ff, 0x500,
+  0x502, 0x503, 0x504, 0x506, 0x507, 0x508, 0x50a, 0x50b, 0x50c, 0x50d, 0x50e, 0x50f, 0x510, 0x511, 0x511, 0x512,
+  0x513, 0x514, 0x514, 0x515, 0x516, 0x516, 0x517, 0x517, 0x517, 0x518, 0x518, 0x518, 0x518, 0x518, 0x519, 0x519
+};
+
+static int clamp16(int val) 
 {
-	if ((apuCycles%32) == 0) 
-	{
-		theAudioSys.updateStream(*this);
+	return val < -0x8000 ? -0x8000 : (val > 0x7fff ? 0x7fff : val);
+}
+
+static int clip16(int val) 
+{
+	return (signed short int)(val & 0xffff);
+}
+
+signed short int apu::dspGetSample(int ch)
+{
+	int pos = (channels[ch].pitchCounter >> 12) + channels[ch].bufferOffset;
+	int offset = (channels[ch].pitchCounter >> 4) & 0xff;
+	signed short int news = channels[ch].decodeBuffer[(pos + 3) % 12];
+	signed short int olds = channels[ch].decodeBuffer[(pos + 2) % 12];
+	signed short int olders = channels[ch].decodeBuffer[(pos + 1) % 12];
+	signed short int oldests = channels[ch].decodeBuffer[pos % 12];
+	int out = (gaussValues[0xff - offset] * oldests) >> 11;
+	out += (gaussValues[0x1ff - offset] * olders) >> 11;
+	out += (gaussValues[0x100 + offset] * olds) >> 11;
+	out = clip16(out) + ((gaussValues[offset] * news) >> 11);
+	return clamp16(out) & ~1;
+}
+
+void apu::dspDecodeBrr(int ch)
+{
+	int shift = channels[ch].brrHeader >> 4;
+	int filter = (channels[ch].brrHeader & 0xc) >> 2;
+	int bOff = channels[ch].bufferOffset;
+	int old = channels[ch].decodeBuffer[bOff == 0 ? 11 : bOff - 1] >> 1;
+	int older = channels[ch].decodeBuffer[bOff == 0 ? 10 : bOff - 2] >> 1;
+	unsigned char curByte = 0;
+	for (int i = 0; i < 4; i++) {
+		int s = 0;
+		if (i & 1) 
+		{
+			s = curByte & 0xf;
+		}
+		else 
+		{
+			curByte = spc700ram[(channels[ch].decodeOffset + channels[ch].blockOffset + (i >> 1)) & 0xffff];
+			s = curByte >> 4;
+		}
+		if (s > 7) s -= 16;
+		if (shift <= 0xc) 
+		{
+			s = (s << shift) >> 1;
+		}
+		else 
+		{
+			s = (s >> 3) << 12;
+		}
+		switch (filter) 
+		{
+			case 1: s += old + (-old >> 4); break;
+			case 2: s += 2 * old + ((3 * -old) >> 5) - older + (older >> 4); break;
+			case 3: s += 2 * old + ((13 * -old) >> 6) - older + ((3 * older) >> 4); break;
+		}
+
+		channels[ch].decodeBuffer[bOff + i] = clamp16(s) * 2;
+		older = old;
+		old = channels[ch].decodeBuffer[bOff + i] >> 1;
 	}
 
-	for (int i = 0; i < 3; i++) 
+	channels[ch].bufferOffset += 4;
+	if (channels[ch].bufferOffset >= 12) channels[ch].bufferOffset = 0;
+}
+
+void apu::dspHandleGain(int ch)
+{
+	int newGain = channels[ch].gain;
+	int rate = 0;
+
+	// handle gain mode
+	if (channels[ch].adsrState == 3) 
+	{ 
+		// release
+		rate = 31;
+		newGain -= 8;
+	}
+	else 
 	{
-		if (timer[i].cycles == 0) 
+		if (!channels[ch].useGain) 
 		{
-			timer[i].cycles = i == 2 ? 16 : 128;
-			if (timer[i].enabled) 
+			rate = channels[ch].adsrRates[channels[ch].adsrState];
+
+			switch (channels[ch].adsrState) 
 			{
-				timer[i].divider++;
-				if (timer[i].divider == timer[i].target) 
-				{
-					timer[i].divider = 0;
-					timer[i].counter++;
-					timer[i].counter &= 0xf;
-				}
+				case 0: newGain += rate == 31 ? 1024 : 32; break; // attack
+				case 1: newGain -= ((newGain - 1) >> 8) + 1; break; // decay
+				case 2: newGain -= ((newGain - 1) >> 8) + 1; break; // sustain
 			}
 		}
-		timer[i].cycles--;
+		else 
+		{
+			if (!channels[ch].directGain) 
+			{
+				rate = channels[ch].adsrRates[3];
+				switch (channels[ch].gainMode) 
+				{
+					case 0: newGain -= 32; break; // linear decrease
+					case 1: newGain -= ((newGain - 1) >> 8) + 1; break; // exponential decrease
+					case 2: newGain += 32; break; // linear increase
+					case 3: newGain += (channels[ch].preclampGain < 0x600) ? 32 : 8; break; // bent increase
+				}
+			}
+			else 
+			{ 
+				// direct gain
+				rate = 31;
+				newGain = channels[ch].gainValue;
+			}
+		}
+	}
+	
+	// use sustain level according to mode
+	int sustainLevel = channels[ch].useGain ? channels[ch].gainSustainLevel : channels[ch].sustainLevel;
+	if (channels[ch].adsrState == 1 && (newGain >> 8) == sustainLevel) 
+	{
+		channels[ch].adsrState = 2; // go to sustain
+	}
+	
+	// store pre-clamped gain (for bent increase)
+	channels[ch].preclampGain = newGain & 0xffff;
+	// clamp gain
+	if (newGain < 0 || newGain > 0x7ff) {
+		newGain = newGain < 0 ? 0 : 0x7ff;
+		if (channels[ch].adsrState == 0) 
+		{
+			channels[ch].adsrState = 1; // go to decay
+		}
+	}
+	
+	// store new value
+	if (dspCheckCounter(rate)) channels[ch].gain = newGain;
+}
+
+static const int rateValues[32] = {
+  0, 2048, 1536, 1280, 1024, 768, 640, 512,
+  384, 320, 256, 192, 160, 128, 96, 80,
+  64, 48, 40, 32, 24, 20, 16, 12,
+  10, 8, 6, 5, 4, 3, 2, 1
+};
+
+static const int rateOffsets[32] = {
+  0, 0, 1040, 536, 0, 1040, 536, 0, 1040, 536, 0, 1040, 536, 0, 1040, 536,
+  0, 1040, 536, 0, 1040, 536, 0, 1040, 536, 0, 1040, 536, 0, 1040, 536, 0
+};
+
+bool apu::dspCheckCounter(int rate)
+{
+	if (rate == 0) return false;
+	return ((counter + rateOffsets[rate]) % rateValues[rate]) == 0;
+}
+
+void apu::dspCycle(signed short int& sampleOutL, signed short int& sampleOutR)
+{
+	for (unsigned int ch = 0;ch < 8;ch++)
+	{
+		// handle pitch counter
+
+		int pitch = channels[ch].samplePitch;
+
+		//if (ch > 0 && dsp->channel[ch].pitchModulation) {
+		//	pitch += ((dsp->channel[ch - 1].sampleOut >> 5) * pitch) >> 10;
+		//}
+
+		unsigned short int samplePointer = dspDIR + 4 * channels[ch].sampleSourceEntry;
+		if (channels[ch].startDelay == 0) samplePointer += 2;
+		
+		unsigned short int sampleAdr = spc700ram[samplePointer] | (spc700ram[(samplePointer + 1) & 0xffff] << 8);
+		channels[ch].brrHeader = spc700ram[channels[ch].decodeOffset];
+		
+		// handle starting of sample
+		if (channels[ch].startDelay > 0) {
+			if (channels[ch].startDelay == 5) 
+			{
+				// first keyed on
+				channels[ch].decodeOffset = sampleAdr;
+				channels[ch].blockOffset = 1;
+				channels[ch].bufferOffset = 0;
+				channels[ch].brrHeader = 0;
+				//ram[0x7c] &= ~(1 << ch); // clear ENDx
+			}
+			channels[ch].gain = 0;
+			channels[ch].startDelay--;
+			channels[ch].pitchCounter = 0;
+			if (channels[ch].startDelay > 0 && channels[ch].startDelay < 4) 
+			{
+				channels[ch].pitchCounter = 0x4000;
+			}
+			pitch = 0;
+		}
+
+		// get sample
+		int sample = 0;
+		//if (dsp->channel[ch].useNoise) {
+		//	sample = clip16(dsp->noiseSample * 2);
+		//}
+		//else {
+			sample = dspGetSample(ch);
+		//}
+
+		sample = ((sample * channels[ch].gain) >> 11) & ~1;
+		
+		// handle reset and release
+		if (dspReset || (channels[ch].brrHeader & 0x03) == 1) 
+		{
+			channels[ch].adsrState = 3; // go to release
+			channels[ch].gain = 0;
+		}
+		
+		// handle keyon/keyoff
+		if (evenCycle) 
+		{
+			if (channels[ch].keyOff) 
+			{
+				channels[ch].adsrState = 3; // go to release
+			}
+			if (channels[ch].keyOn) 
+			{
+				channels[ch].startDelay = 5;
+				channels[ch].adsrState = 0; // go to attack
+				channels[ch].keyOn = false;
+			}
+		}
+		
+		// handle envelope
+		if (channels[ch].startDelay == 0) 
+		{
+			dspHandleGain(ch);
+		}
+		
+		// decode new brr samples if needed and update offsets
+		if (channels[ch].pitchCounter >= 0x4000) 
+		{
+			dspDecodeBrr(ch);
+			if (channels[ch].blockOffset >= 7) 
+			{
+				if (channels[ch].brrHeader & 0x1) 
+				{
+					channels[ch].decodeOffset = sampleAdr;
+					//dsp->ram[0x7c] |= 1 << ch; // set ENDx
+				}
+				else 
+				{
+					channels[ch].decodeOffset += 9;
+				}
+				channels[ch].blockOffset = 1;
+			}
+			else 
+			{
+				channels[ch].blockOffset += 2;
+			}
+		}
+
+		// update pitch counter
+		channels[ch].pitchCounter &= 0x3fff;
+		channels[ch].pitchCounter += pitch;
+		if (channels[ch].pitchCounter > 0x7fff) channels[ch].pitchCounter = 0x7fff;
+		
+		// set outputs
+		//dsp->ram[(ch << 4) | 8] = dsp->channel[ch].gain >> 4;
+		//dsp->ram[(ch << 4) | 9] = sample >> 8;
+		
+		sampleOutL = clamp16(sampleOutL + ((sample * channels[ch].leftVol) >> 7));
+		sampleOutR = clamp16(sampleOutR + ((sample * channels[ch].rightVol) >> 7));
+		
+		//if (dsp->channel[ch].echoEnable) {
+		//	dsp->echoOutL = clamp16(dsp->echoOutL + ((sample * dsp->channel[ch].volumeL) >> 7));
+		//	dsp->echoOutR = clamp16(dsp->echoOutR + ((sample * dsp->channel[ch].volumeR) >> 7));
+		//}
+	}
+
+	if (mute) 
+	{
+		sampleOutL = 0;
+		sampleOutR = 0;
+	}
+
+	evenCycle = !evenCycle;
+	counter = counter == 0 ? 30720 : counter - 1;
+}
+
+void apu::step(audioSystem& theAudioSys)
+{
+	if ((apuCycles%8) == 0) 
+	{
+		signed short int l = 0;
+		signed short int r = 0;
+		
+		dspCycle(l, r);
+
+		float lf = (float)l / (0x8000);
+		float rf = (float)r / (0x8000);
+
+		theAudioSys.feedAudiobuf(lf, rf);
+	}
+
+	for (int k = 0;k < 2;k++)
+	{
+		for (int i = 0; i < 3; i++)
+		{
+			if (timer[i].cycles == 0)
+			{
+				timer[i].cycles = i == 2 ? 16 : 128;
+				if (timer[i].enabled)
+				{
+					timer[i].divider++;
+					if (timer[i].divider == timer[i].target)
+					{
+						timer[i].divider = 0;
+						timer[i].counter++;
+						timer[i].counter &= 0xf;
+					}
+				}
+			}
+			timer[i].cycles--;
+		}
 	}
 
 	apuCycles++;
 }
+
+// SPC700
 
 void apu::doFlagsNZ(unsigned char val)
 {
@@ -2137,6 +2531,128 @@ int apu::stepOne()
 
 			regPC += 2;
 			cycles = 3;
+			break;
+		}
+		case 0x8b:
+		{
+			// DEC dp
+			unsigned short int addr = addrDP();
+			unsigned char val = (this->*read8)(addr);
+			val--;
+			(this->*write8)(addr, val);
+			doFlagsNZ(val);
+			regPC += 2;
+			cycles = 4;
+			break;
+		}
+		case 0x1a:
+		{
+			// DECW dp
+			unsigned char adr = (this->*read8)(regPC + 1);
+			unsigned short int low = adr;
+			if (flagP) low |= 0x100;
+			unsigned short int high = (adr + 1) & 0xff;
+			if (flagP) high |= 0x100;
+			unsigned char val1 = (this->*read8)(low);
+			unsigned short int val = val1 | ((this->*read8)(high) << 8);
+
+			val -= 1;
+
+			(this->*write8)(low, val & 0xff);
+			(this->*write8)(high, val >> 8);
+
+			flagZ = val == 0;
+			flagN = val & 0x8000;
+
+			regPC += 2;
+			cycles = 6;
+			break;
+		}
+		case 0x5a:
+		{
+			// CMPW YA,dp
+
+			unsigned char adr = (this->*read8)(regPC + 1);
+			unsigned short int low = adr;
+			if (flagP) low |= 0x100;
+			unsigned short int high = (adr + 1) & 0xff;
+			if (flagP) high |= 0x100;
+			unsigned char val1 = (this->*read8)(low);
+			unsigned short int val = val1 | ((this->*read8)(high) << 8);
+
+			unsigned short int value = val ^ 0xffff;
+			unsigned short int ya = regA | (regY << 8);
+			int result = ya + value + 1;
+			
+			flagC = result > 0xffff;
+			flagZ = (result & 0xffff) == 0;
+			flagN = result & 0x8000;
+
+			regPC += 2;
+			cycles = 4;
+			break;
+		}
+		case 0x94:
+		{
+			// ADC A,d+x
+			doAdc(&apu::addrDPX);
+			regPC += 2;
+			cycles = 4;
+			break;
+		}
+		case 0xe6:
+		{
+			// MOV A,(X)
+			doMoveToA(&apu::addrModeX);
+			regPC += 1;
+			cycles = 3;
+			break;
+		}
+		case 0x69:
+		{
+			// CMP dp,dp
+
+			unsigned short int adr0 = (this->*read8)(regPC + 1);
+			if (flagP) adr0 |= 0x100;
+			unsigned short int adr1 = (this->*read8)(regPC + 2);
+			if (flagP) adr1 |= 0x100;
+
+			unsigned char val0 = (this->*read8)(adr0);
+			unsigned char val1 = (this->*read8)(adr1);
+
+			val0 ^= 0xff;
+			int result = val1 + val0 + 1;
+			flagC = result > 0xff;
+			doFlagsNZ(result);
+
+			regPC += 3;
+			cycles = 6;
+			break;
+		}
+		case 0x00:
+		{
+			// NOPPy
+			regPC += 1;
+			cycles = 2;
+			break;
+		}
+		case 0x3c:
+		{
+			// ROL A
+			bool newC = regA & 0x80;
+			regA = (regA << 1) | (flagC?1:0);
+			flagC = newC;
+			doFlagsNZ(regA);
+			regPC += 1;
+			cycles = 2;
+			break;
+		}
+		case 0x76:
+		{
+			// CMP A,!a+X
+			doCMPA(&apu::addrAbsY);
+			regPC += 3;
+			cycles = 5;
 			break;
 		}
 		default:
