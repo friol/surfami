@@ -162,7 +162,17 @@ dbgSPC700info listOfInstrs[]
 	{0x00,"NOP",1,0,true}, // validatedFC
 	{0x69,"CMP $param0,#param1",3,2,true}, // validatedFC
 	{0x3c,"ROL A",1,0,true}, // validatedFC
-	{0x76,"CMP A,!$param0+X",3,1,true}, // validatedFC
+	{0x76,"CMP A,!$param0+Y",3,1,true}, // validatedFC
+	{0x0e,"TSET1 !$param0",3,1,true}, // validatedFC
+	{0x44,"EOR A,$param0",2,1,true}, // validatedFC
+	{0xed,"NOTC",1,0,true}, // validatedFC
+	{0x6b,"ROR $param0",2,1,true}, // validatedFC
+	{0x05,"OR A,!$param0",3,1,true}, // validatedFC
+	{0x16,"OR A,!$param0+Y",3,1,true}, // validatedFC
+	{0xe9,"MOV X,!$param0",3,1,true}, // validatedFC
+	{0x15,"OR A,!$param0+X",3,1,true}, // validatedFC
+	{0x0d,"PUSH PSW",1,0,true}, // validatedFC
+	{0x36,"AND A,!$param0+Y",3,1,false}, // validatedFC
 
 
 };

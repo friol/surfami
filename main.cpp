@@ -868,12 +868,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\Mode7\\Perspective\\Perspective.sfc";
     //std::string romName = "d:\\prova\\snes\\ctrltest_auto.sfc";
 
-    //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
-    std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
+    //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc"; // SPC stuck
+    //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc";
-    //std::string romName = "d:\\prova\\snes\\Ninjawarriors (USA).sfc";
-    //std::string romName = "d:\\prova\\snes\\Mario Paint (E) [!].smc";
-    //std::string romName = "d:\\prova\\snes\\Mickey Mania (E).smc";
+    //std::string romName = "d:\\prova\\snes\\Ninjawarriors (USA).sfc"; // SPC stuck
+    //std::string romName = "d:\\prova\\snes\\Mario Paint (E) [!].smc"; // SPC 4e
+    //std::string romName = "d:\\prova\\snes\\Mickey Mania (E).smc"; // stuck waiting SPC
     //std::string romName = "d:\\prova\\snes\\Gradius III (U) [!].smc"; // SPC E9
     //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc"; // sprites disappear, SPC ED
     //std::string romName = "d:\\prova\\snes\\Parodius Da! - Shinwa kara Owarai e (Japan).sfc";
@@ -916,7 +916,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
 
     // HDMA problems
     //std::string romName = "d:\\prova\\snes\\Frogger (U).smc"; snesStandard = 1; // cars are not moving
-    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // mode4, HDMA not working
+    std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // mode4, HDMA not working, SPC 36
     //std::string romName = "d:\\prova\\snes\\Street Fighter II - The World Warrior (U).smc"; // background problems if HDMA enabled
     //std::string romName = "d:\\prova\\snes\\Super Ghouls 'N Ghosts (E).sfc"; // gameplay garbage, HDMA problems
 

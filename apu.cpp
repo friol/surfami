@@ -2649,8 +2649,123 @@ int apu::stepOne()
 		}
 		case 0x76:
 		{
-			// CMP A,!a+X
+			// CMP A,!a+Y
 			doCMPA(&apu::addrAbsY);
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0x0e:
+		{
+			// TSET1 !a
+			unsigned short int adr = addrAbs();
+			unsigned char val = (this->*read8)(adr);
+
+			unsigned char result = regA + (val ^ 0xff) + 1;
+			doFlagsNZ(result);
+
+			(this->*write8)(adr, val | regA);
+
+			regPC += 3;
+			cycles = 6;
+			break;
+		}
+		case 0x44:
+		{
+			// EOR A,d
+			doEor(&apu::addrDP);
+			regPC += 2;
+			cycles = 3;
+			break;
+		}
+		case 0xed:
+		{
+			// NOTC
+			flagC = !flagC;
+			regPC += 1;
+			cycles = 3;
+			break;
+		}
+		case 0x6b:
+		{
+			// ROR d
+			unsigned short int addr = addrDP();
+			unsigned char val = (this->*read8)(addr);
+			bool newC = val & 1;
+			val = (val >> 1) | ((flagC?1:0) << 7);
+			flagC = newC;
+			(this->*write8)(addr, val);
+			doFlagsNZ(val);
+			regPC += 2;
+			cycles = 4;
+			break;
+		}
+		case 0x05:
+		{
+			// OR A,!a
+			unsigned short int addr = addrAbs();
+			unsigned char val = (this->*read8)(addr);
+			regA |= val;
+			doFlagsNZ(regA);
+			regPC += 3;
+			cycles = 4;
+			break;
+		}
+		case 0x016:
+		{
+			// OR A,!a+Y
+			unsigned short int addr = addrAbsY();
+			unsigned char val = (this->*read8)(addr);
+			regA |= val;
+			doFlagsNZ(regA);
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0xe9:
+		{
+			// MOV X,!a
+			doMoveToX(&apu::addrAbs);
+			regPC += 3;
+			cycles = 4;
+			break;
+		}
+		case 0x15:
+		{
+			// OR A,!a+X
+			unsigned short int addr = addrAbsX();
+			regA |= (this->*read8)(addr);
+			doFlagsNZ(regA);
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0x0d:
+		{
+			// PUSH PSW
+			unsigned char flagz= (flagN?1:0) << 7;
+			flagz |= (flagV ? 1 : 0) << 6;
+			flagz |= (flagP ? 1 : 0) << 5;
+			flagz |= (flagB ? 1 : 0) << 4;
+			flagz |= (flagH ? 1 : 0) << 3;
+			flagz |= (flagI ? 1 : 0) << 2;
+			flagz |= (flagZ ? 1 : 0) << 1;
+			flagz |= (flagC ? 1 : 0);
+
+			(this->*write8)(0x100 | regSP, flagz);
+			regSP--;
+			regSP &= 0xff;
+
+			regPC += 1;
+			cycles = 4;
+			break;
+		}
+		case 0x36:
+		{
+			// AND A,!a+Y
+			unsigned short int addr = addrAbsY();
+			regA &= (this->*read8)(addr);
+			doFlagsNZ(regA);
 			regPC += 3;
 			cycles = 5;
 			break;
