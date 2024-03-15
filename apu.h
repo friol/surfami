@@ -115,6 +115,7 @@ private:
 	unsigned short int addrAbsX();
 	unsigned short int addrAbsY();
 	unsigned short int addrIndP();
+	unsigned char addrAbsBit(unsigned short int* adr);
 
 	typedef unsigned char (apu::* internalMemReader)(unsigned int);
 	typedef void (apu::* internalMemWriter)(unsigned int,unsigned char);

@@ -1252,6 +1252,15 @@ unsigned short int apu::addrDPY()
 	return adr;
 }
 
+unsigned char apu::addrAbsBit(unsigned short int* adr)
+{
+	unsigned char lowaddr = (this->*read8)(regPC + 1);
+	unsigned char highaddr = (this->*read8)(regPC + 2);
+	unsigned short int adrBit = lowaddr | (highaddr << 8);
+	*adr = adrBit & 0x1fff;
+	return adrBit >> 13;
+}
+
 int apu::stepOne()
 {
 	unsigned char nextOpcode = (this->*read8)(regPC);
@@ -3026,6 +3035,87 @@ int apu::stepOne()
 			doCMPA(&apu::addrIndirectY);
 			regPC += 2;
 			cycles = 6;
+			break;
+		}
+		case 0xb7:
+		{
+			// SBC A,[d]+Y
+			unsigned short int addr = addrIndirectY();
+
+			unsigned char value = (this->*read8)(addr) ^ 0xff;
+			int result = regA + value + (flagC ? 1 : 0);
+			flagV = (regA & 0x80) == (value & 0x80) && (value & 0x80) != (result & 0x80);
+			flagH = ((regA & 0xf) + (value & 0xf) + (flagC ? 1 : 0)) > 0xf;
+			flagC = result > 0xff;
+			regA = (unsigned char)result;
+
+			doFlagsNZ(regA);
+			regPC += 2;
+			cycles = 6;
+			break;
+		}
+		case 0x49:
+		{
+			// EOR dd,ds
+			unsigned short int adr0 = (this->*read8)(regPC + 1);
+			if (flagP) adr0 |= 0x100;
+			unsigned short int adr1 = (this->*read8)(regPC + 2);
+			if (flagP) adr1 |= 0x100;
+
+			unsigned char val0 = (this->*read8)(adr0);
+			unsigned char val1 = (this->*read8)(adr1);
+
+			unsigned char result = val0 ^ val1;
+			(this->*write8)(adr1, result);
+			doFlagsNZ(result);
+
+			regPC += 3;
+			cycles = 6;
+			break;
+		}
+		case 0x70:
+		{
+			// BVS offs
+			signed char offs = (this->*read8)(regPC + 1);
+			cycles = doBranch(offs, flagV);
+			break;
+		}
+		case 0x17:
+		{
+			// OR A,[d]+Y
+			unsigned short int addr = addrIndirectY();
+			unsigned char value = (this->*read8)(addr);
+
+			regA |= value;
+			doFlagsNZ(regA);
+
+			regPC += 2;
+			cycles = 6;
+			break;
+		}
+		case 0x1b:
+		{
+			// ASL a+X
+			unsigned short int addr = addrDPX();
+			unsigned char value = (this->*read8)(addr);
+			flagC = value & 0x80;
+			value <<= 1;
+			doFlagsNZ(value);
+			(this->*write8)(addr, value);
+
+			regPC += 2;
+			cycles = 5;
+			break;
+		}
+		case 0xaa:
+		{
+			// MOV1 abs.bit
+			unsigned short int adr = 0;
+			unsigned char bit = addrAbsBit(&adr);
+			flagC = ((this->*read8)(adr) >> bit) & 1;
+
+			regPC += 3;
+			cycles = 4;
 			break;
 		}
 		default:

@@ -868,7 +868,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\Mode7\\Perspective\\Perspective.sfc";
     //std::string romName = "d:\\prova\\snes\\ctrltest_auto.sfc";
 
-    //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc"; // SPC b7
+    //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
     //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc";
     //std::string romName = "d:\\prova\\snes\\Ninjawarriors (USA).sfc"; // SPC b4
@@ -877,13 +877,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Gradius III (U) [!].smc"; // SPC E9
     //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc"; // sprites disappear
     //std::string romName = "d:\\prova\\snes\\Parodius Da! - Shinwa kara Owarai e (Japan).sfc";
-    //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc"; // SPC 05
+    //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc"; // very slow
     //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc"; snesStandard = 1;
     //std::string romName = "d:\\prova\\snes\\Arkanoid - Doh it Again (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc"; snesStandard = 1;
     //std::string romName = "d:\\prova\\snes\\International Superstar Soccer (U) [!].smc";
-    //std::string romName = "d:\\prova\\snes\\Kick Off (E).smc"; // SPC 17
-    //std::string romName = "d:\\prova\\snes\\Tetris Attack (E).smc"; snesStandard = 1; // SPC AA
+    //std::string romName = "d:\\prova\\snes\\Kick Off (E).smc"; 
+    //std::string romName = "d:\\prova\\snes\\Tetris Attack (E).smc"; snesStandard = 1; // slow
     //std::string romName = "d:\\prova\\snes\\Prince of Persia (E) [!].smc";
     //std::string romName = "d:\\prova\\snes\\James Pond's Crazy Sports (E).smc";
     //std::string romName = "d:\\prova\\snes\\Yoshi's Cookie (E).smc"; // SPC 35
@@ -893,11 +893,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Gun Force (E).smc"; snesStandard = 1;
     //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc"; // SPC a0
     //std::string romName = "d:\\prova\\snes\\Lawnmower Man, The (E).smc"; // SPC e9
-    //std::string romName = "D:\\prova\\snes\\HiRom\\Earthworm Jim (U).smc"; isHiRom = true; // SPC b7
+    //std::string romName = "D:\\prova\\snes\\HiRom\\Earthworm Jim (U).smc"; isHiRom = true;
     //std::string romName = "d:\\prova\\snes\\Final Fight (U).smc"; // SPC 57
-    //std::string romName = "D:\\prova\\snes\\HiRom\\Super Bomberman (U).smc"; isHiRom = true; // SPC 05
+    //std::string romName = "D:\\prova\\snes\\HiRom\\Super Bomberman (U).smc"; isHiRom = true;
     //std::string romName = "D:\\prova\\snes\\HiRom\\Wolfenstein 3D (U).smc"; isHiRom = true;
-    //std::string romName = "d:\\prova\\snes\\F-Zero (U).smc"; snesStandard = 1; // SPC AA
+    std::string romName = "d:\\prova\\snes\\F-Zero (U).smc"; snesStandard = 1; // SPC 8a
     //std::string romName = "d:\\prova\\snes\\Micro Machines (U).smc"; // SPC 17
     //std::string romName = "d:\\prova\\snes\\Robocop 3 (U).smc";
     //std::string romName = "d:\\prova\\snes\\Race Drivin' (U).smc"; // SPC 49
@@ -942,7 +942,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc"; // stuck, SPC 06
     //std::string romName = "d:\\prova\\snes\\Spanky's Quest (E).smc"; // sub mode 1,stuck
     //std::string romName = "d:\\prova\\snes\\petsciirobotsdemo.sfc"; // stuck
-    std::string romName = "d:\\prova\\snes\\Out of This World (U).smc"; // jumps to nowhere after introduction of VIRQ, SPC b4
+    //std::string romName = "d:\\prova\\snes\\Out of This World (U).smc"; // jumps to nowhere after introduction of VIRQ
     //std::string romName = "d:\\prova\\snes\\Sensible Soccer - International Edition (E).smc"; // blank screen, stuck
 
     // hiroms
