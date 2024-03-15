@@ -924,6 +924,9 @@ void apu::dspCycle(signed short int& sampleOutL, signed short int& sampleOutR)
 		//	dsp->echoOutL = clamp16(dsp->echoOutL + ((sample * dsp->channel[ch].volumeL) >> 7));
 		//	dsp->echoOutR = clamp16(dsp->echoOutR + ((sample * dsp->channel[ch].volumeR) >> 7));
 		//}
+
+		//sampleOutL *= mainVolLeft; sampleOutL >>= 7; sampleOutL = clamp16(sampleOutL);
+		//sampleOutR *= mainVolRight; sampleOutR >>= 7; sampleOutR = clamp16(sampleOutR);
 	}
 
 	if (mute) 
@@ -1211,8 +1214,8 @@ unsigned short int apu::addrImmediate8()
 
 unsigned short int apu::addrAbs()
 {
-	unsigned char lowaddr = (this->*read8)(regPC + 1);
-	unsigned char highaddr = (this->*read8)(regPC + 2);
+	unsigned char lowaddr = (this->*read8)((regPC + 1)&0xffff);
+	unsigned char highaddr = (this->*read8)((regPC + 2)&0xffff);
 	unsigned short int addr = lowaddr | (highaddr << 8);
 	return addr;
 }
@@ -2889,6 +2892,139 @@ int apu::stepOne()
 			doFlagsNZ(result);
 
 			regPC += 3;
+			cycles = 6;
+			break;
+		}
+		case 0x14:
+		{
+			// OR A,d+X
+			unsigned short int addr = addrDPX();
+			unsigned char val = (this->*read8)(addr);
+			regA |= val;
+			doFlagsNZ(regA);
+			regPC += 2;
+			cycles = 4;
+			break;
+		}
+		case 0x25:
+		{
+			// AND A,!a
+			unsigned short int addr = addrAbs();
+			unsigned char val = (this->*read8)(addr);
+			regA &= val;
+			doFlagsNZ(regA);
+			regPC += 3;
+			cycles = 4;
+			break;
+		}
+		case 0x4c:
+		{
+			// LSR !a
+			doLsr(&apu::addrAbs);
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0x26:
+		{
+			// AND A,(X)
+			unsigned short int addr = addrModeX();
+			unsigned char val = (this->*read8)(addr);
+			regA &= val;
+			doFlagsNZ(regA);
+			regPC += 1;
+			cycles = 3;
+			break;
+		}
+		case 0x0c:
+		{
+			// ASL !a
+			unsigned short int addr = addrAbs();
+			unsigned char val = (this->*read8)(addr);
+
+			flagC = val & 0x80;
+			val <<= 1;
+			doFlagsNZ(val);
+
+			(this->*write8)(addr, val);
+
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0xa5:
+		{
+			// SBC A,!a
+			unsigned short int addr = addrAbs();
+
+			unsigned char value = (this->*read8)(addr) ^ 0xff;
+			int result = regA + value + (flagC ? 1 : 0);
+			flagV = (regA & 0x80) == (value & 0x80) && (value & 0x80) != (result & 0x80);
+			flagH = ((regA & 0xf) + (value & 0xf) + (flagC ? 1 : 0)) > 0xf;
+			flagC = result > 0xff;
+			regA = (unsigned char)result;
+			doFlagsNZ(regA);
+
+			regPC += 3;
+			cycles = 4;
+			break;
+		}
+		case 0x34:
+		{
+			// AND A,!a+X
+			unsigned short int addr = addrDPX();
+			unsigned char val = (this->*read8)(addr);
+			regA &= val;
+			doFlagsNZ(regA);
+			regPC += 2;
+			cycles = 4;
+			break;
+		}
+		case 0x58:
+		{
+			// EOR d,#i
+			unsigned char value = (this->*read8)(regPC + 1);
+			unsigned short int addrdst = addrImmediate8();
+
+			unsigned char result = (this->*read8)(addrdst) ^ value;
+
+			(this->*write8)(addrdst, result);
+			doFlagsNZ(result);
+
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0x1e:
+		{
+			// CMP X,!a
+			doCMPX(&apu::addrAbs);
+			regPC += 3;
+			cycles = 4;
+			break;
+		}
+		case 0xb4:
+		{
+			// SBC A,!a+X
+			unsigned short int addr = addrDPX();
+			
+			unsigned char value = (this->*read8)(addr) ^ 0xff;
+			int result = regA + value + (flagC ? 1 : 0);
+			flagV = (regA & 0x80) == (value & 0x80) && (value & 0x80) != (result & 0x80);
+			flagH = ((regA & 0xf) + (value & 0xf) + (flagC ? 1 : 0)) > 0xf;
+			flagC = result > 0xff;
+			regA = (unsigned char)result;
+
+			doFlagsNZ(regA);
+			regPC += 2;
+			cycles = 4;
+			break;
+		}
+		case 0x77:
+		{
+			// CMP A,[d]+Y
+			doCMPA(&apu::addrIndirectY);
+			regPC += 2;
 			cycles = 6;
 			break;
 		}

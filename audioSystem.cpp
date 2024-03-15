@@ -57,7 +57,7 @@ audioSystem::audioSystem()
 	BASS_GetInfo(&info);
 
 	stream = BASS_StreamCreate(info.freq, 2, BASS_SAMPLE_FLOAT, (STREAMPROC*)StreamProc, (void*)audioBuf);
-	BASS_ChannelSetAttribute(stream, BASS_ATTRIB_BUFFER, 0.1);
+	BASS_ChannelSetAttribute(stream, BASS_ATTRIB_BUFFER, 0.25);
 	BASS_ChannelPlay(stream, FALSE);
 
 	//loadTestSamples();

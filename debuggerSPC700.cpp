@@ -180,6 +180,17 @@ dbgSPC700info listOfInstrs[]
 	{0xbf,"MOV A,(X)+",1,0,true}, // validatedFC
 	{0xb8,"SBC !$param0,#$param1",3,2,true}, // validatedFC
 	{0x89,"ADC $param0,$param1",3,2,true}, // validatedFC
+	{0x14,"OR A,!$param0+X",2,1,true}, // validatedFC
+	{0x25,"AND A,!$param0",3,1,true}, // validatedFC
+	{0x4c,"LSR !$param0",2,1,true}, // validatedFC
+	{0x26,"AND A,(X)",1,0,true}, // validatedFC
+	{0x0c,"ASL !$param0",3,1,true}, // validatedFC
+	{0xa5,"SBC A,!$param0",3,1,true}, // validatedFC
+	{0x34,"AND A,$param0+X",2,1,true}, // validatedFC
+	{0x58,"EOR $param0,$param1",3,2,true}, // validatedFC
+	{0x1e,"CMP X,!$param0",3,1,true}, // validatedFC
+	{0xb4,"SBC A,$param0+X",2,1,true}, // validatedFC
+	{0x77,"CMP A,[$param0]+Y",2,1,true}, // validatedFC
 
 
 };
