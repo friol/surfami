@@ -348,7 +348,7 @@ void apu::writeToDSPRegister(unsigned char val)
 	else if (dspSelectedRegister == 0x5d)
 	{
 		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to DIR 5d sample source directory page");
-		dspDIR = val<<8;
+		dspDIR = (int)val<<8;
 	}
 	else if (dspSelectedRegister == 0x6d)
 	{
@@ -819,7 +819,7 @@ void apu::dspCycle(signed short int& sampleOutL, signed short int& sampleOutR)
 		//	pitch += ((dsp->channel[ch - 1].sampleOut >> 5) * pitch) >> 10;
 		//}
 
-		unsigned short int samplePointer = dspDIR + 4 * channels[ch].sampleSourceEntry;
+		unsigned short int samplePointer = dspDIR + (4 * channels[ch].sampleSourceEntry);
 		if (channels[ch].startDelay == 0) samplePointer += 2;
 		
 		unsigned short int sampleAdr = spc700ram[samplePointer] | (spc700ram[(samplePointer + 1) & 0xffff] << 8);
@@ -919,7 +919,7 @@ void apu::dspCycle(signed short int& sampleOutL, signed short int& sampleOutR)
 		
 		sampleOutL = clamp16(sampleOutL + ((sample * channels[ch].leftVol) >> 7));
 		sampleOutR = clamp16(sampleOutR + ((sample * channels[ch].rightVol) >> 7));
-		
+
 		//if (dsp->channel[ch].echoEnable) {
 		//	dsp->echoOutL = clamp16(dsp->echoOutL + ((sample * dsp->channel[ch].volumeL) >> 7));
 		//	dsp->echoOutR = clamp16(dsp->echoOutR + ((sample * dsp->channel[ch].volumeR) >> 7));
@@ -976,7 +976,9 @@ void apu::step(audioSystem& theAudioSys)
 	apuCycles++;
 }
 
+//
 // SPC700
+//
 
 void apu::doFlagsNZ(unsigned char val)
 {
@@ -1159,6 +1161,11 @@ unsigned short int apu::addrDP()
 	unsigned short int adr = (this->*read8)((regPC + 1)&0xffff);
 	if (flagP) adr |= 0x100;
 	return adr;
+}
+
+unsigned short int apu::addrIndP()
+{
+	return regX++ | ((flagP ? 1 : 0) << 8);
 }
 
 unsigned short int apu::addrIndirectX()
@@ -2768,6 +2775,121 @@ int apu::stepOne()
 			doFlagsNZ(regA);
 			regPC += 3;
 			cycles = 5;
+			break;
+		}
+		case 0x38:
+		{
+			// AND d,#i
+			unsigned char value = (this->*read8)(regPC + 1);
+			unsigned short int addrdst = addrImmediate8();
+
+			unsigned char result = (this->*read8)(addrdst) & value;
+			(this->*write8)(addrdst,result);
+			doFlagsNZ(result);
+
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0x18:
+		{
+			// OR d,#i
+			unsigned char value = (this->*read8)(regPC + 1);
+			unsigned short int addrdst = addrImmediate8();
+
+			unsigned char result = (this->*read8)(addrdst) | value;
+			(this->*write8)(addrdst, result);
+			doFlagsNZ(result);
+
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0x2b:
+		{
+			// ROL d
+			unsigned short int addr = addrDP();
+			unsigned char val = (this->*read8)(addr);
+
+			bool newC = val & 0x80;
+			val = (val << 1) | (flagC ? 1 : 0);
+			flagC = newC;
+			doFlagsNZ(val);
+
+			(this->*write8)(addr, val);
+
+			regPC += 2;
+			cycles = 4;
+			break;
+		}
+		case 0x4e:
+		{
+			// TCLR1 !a
+			unsigned short int adr = addrAbs();
+			unsigned char val = (this->*read8)(adr);
+
+			unsigned char result = regA + (val ^ 0xff) + 1;
+			doFlagsNZ(result);
+
+			(this->*write8)(adr, val & ~regA);
+
+			regPC += 3;
+			cycles = 6;
+			break;
+		}
+		case 0xbf:
+		{
+			// MOV A,(X)+
+			unsigned short int addr = addrIndP();
+			regA = (this->*read8)(addr);
+			doFlagsNZ(regA);
+
+			regPC += 1;
+			cycles = 4;
+			break;
+		}
+		case 0xb8:
+		{
+			// SBC d,#imm
+			unsigned char value = (this->*read8)(regPC + 1);
+			unsigned short int adrDst = (this->*read8)(regPC + 2);
+			if (flagP) adrDst |= 0x100;
+
+			int fc = flagC ? 1 : 0;
+			value ^= 0xff;
+			unsigned char applyOn = (this->*read8)(adrDst);
+			int result = applyOn + value + fc;
+			flagV = (applyOn & 0x80) == (value & 0x80) && (value & 0x80) != (result & 0x80);
+			flagH = ((applyOn & 0xf) + (value & 0xf) + fc) > 0xf;
+			flagC = result > 0xff;
+			(this->*write8)(adrDst, (unsigned char)result);
+			doFlagsNZ((unsigned char)result);
+
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0x89:
+		{
+			// ADC dd,ds
+			unsigned short int adr0 = (this->*read8)(regPC + 1);
+			if (flagP) adr0 |= 0x100;
+			unsigned short int adr1 = (this->*read8)(regPC + 2);
+			if (flagP) adr1 |= 0x100;
+
+			unsigned char val0 = (this->*read8)(adr0);
+			unsigned char val1 = (this->*read8)(adr1);
+
+			unsigned char applyOn = (this->*read8)(adr1);
+			int result = applyOn + val0 + (flagC?1:0);
+			flagV = (applyOn & 0x80) == (val0 & 0x80) && (val0 & 0x80) != (result & 0x80);
+			flagH = ((applyOn & 0xf) + (val0 & 0xf) + (flagC ? 1 : 0)) > 0xf;
+			flagC = result > 0xff;
+			(this->*write8)(adr1,result);
+			doFlagsNZ(result);
+
+			regPC += 3;
+			cycles = 6;
 			break;
 		}
 		default:

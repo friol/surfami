@@ -21,7 +21,7 @@ struct spc700channel
 {
 	signed char leftVol;
 	signed char rightVol;
-	int samplePitch;
+	unsigned short int samplePitch;
 	bool keyOn;
 	bool keyOff;
 	unsigned char sampleSourceEntry;
@@ -114,6 +114,7 @@ private:
 	unsigned short int addrAbs();
 	unsigned short int addrAbsX();
 	unsigned short int addrAbsY();
+	unsigned short int addrIndP();
 
 	typedef unsigned char (apu::* internalMemReader)(unsigned int);
 	typedef void (apu::* internalMemWriter)(unsigned int,unsigned char);

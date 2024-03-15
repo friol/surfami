@@ -172,7 +172,14 @@ dbgSPC700info listOfInstrs[]
 	{0xe9,"MOV X,!$param0",3,1,true}, // validatedFC
 	{0x15,"OR A,!$param0+X",3,1,true}, // validatedFC
 	{0x0d,"PUSH PSW",1,0,true}, // validatedFC
-	{0x36,"AND A,!$param0+Y",3,1,false}, // validatedFC
+	{0x36,"AND A,!$param0+Y",3,1,true}, // validatedFC
+	{0x38,"AND !$param0,#$param1",3,2,true}, // validatedFC
+	{0x18,"OR !$param0,#$param1",3,2,true}, // validatedFC
+	{0x2b,"ROL $param0",2,1,true}, // validatedFC
+	{0x4e,"TCLR1 !$param0",3,1,true}, // validatedFC
+	{0xbf,"MOV A,(X)+",1,0,true}, // validatedFC
+	{0xb8,"SBC !$param0,#$param1",3,2,true}, // validatedFC
+	{0x89,"ADC $param0,$param1",3,2,true}, // validatedFC
 
 
 };
