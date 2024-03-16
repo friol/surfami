@@ -3118,6 +3118,17 @@ int apu::stepOne()
 			cycles = 4;
 			break;
 		}
+		case 0x8a:
+		{
+			// EOR1 abs.bit
+			unsigned short int adr = 0;
+			unsigned char bit = addrAbsBit(&adr);
+			flagC = flagC ^ (((this->*read8)(adr) >> bit) & 1);
+
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
 		default:
 		{
 			// unknown opcode

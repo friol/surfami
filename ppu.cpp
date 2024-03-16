@@ -35,6 +35,19 @@ ppu::ppu()
 	{
 		vramViewerBitmap[pos] = 0;
 	}
+
+	brightnessLookup = new unsigned char[256 * 16];
+	for (unsigned int col = 0;col <256;col++)
+	{
+		for (unsigned int level = 0;level < 16;level++)
+		{
+			int val;
+			val = col;
+			val *= level;
+			val >>= 4;
+			brightnessLookup[(col * 16) + level] = (unsigned char)val;
+		}
+	}
 }
 
 void ppu::writeM7HOFS(unsigned char val)
@@ -834,11 +847,6 @@ void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, in
 					{
 						if ((((curCol % 4) != 0) && ((theX >= 0) && (theX < (signed int)ppuResolutionX))))
 						{
-							//*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
-							//*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
-							//*pBuf = palArr[(curCol * 3) + 2]; pBuf++;
-							//*pBuf = 0xff; pBuf++;
-
 							*pBgColorAppo = palArr[(curCol * 3) + 0]; pBgColorAppo++;
 							*pBgColorAppo = palArr[(curCol * 3) + 1]; pBgColorAppo++;
 							*pBgColorAppo = palArr[(curCol * 3) + 2]; pBgColorAppo++;
@@ -858,11 +866,6 @@ void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, in
 					{
 						if ((((curCol % 16) != 0) && ((theX >= 0) && (theX < (signed int)ppuResolutionX))))
 						{
-							//*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
-							//*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
-							//*pBuf = palArr[(curCol * 3) + 2]; pBuf++;
-							//*pBuf = 0xff; pBuf++;
-
 							*pBgColorAppo = palArr[(curCol * 3) + 0]; pBgColorAppo++;
 							*pBgColorAppo = palArr[(curCol * 3) + 1]; pBgColorAppo++;
 							*pBgColorAppo = palArr[(curCol * 3) + 2]; pBgColorAppo++;
@@ -880,13 +883,6 @@ void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, in
 					}
 					else
 					{
-						/*unsigned char r = curCol;
-						unsigned char g = curCol;
-						unsigned char b = curCol;
-						*pBgColorAppo = r; pBgColorAppo++;
-						*pBgColorAppo = g; pBgColorAppo++;
-						*pBgColorAppo = b; pBgColorAppo++;*/
-
 						*pBgColorAppo = palArr[(curCol * 3) + 0]; pBgColorAppo++;
 						*pBgColorAppo = palArr[(curCol * 3) + 1]; pBgColorAppo++;
 						*pBgColorAppo = palArr[(curCol * 3) + 2]; pBgColorAppo++;
@@ -1210,7 +1206,6 @@ void ppu::renderSpritesScanline(int scanlinenum)
 			colidx += 2;
 		}
 
-		//const unsigned int OAMBase = (obSel & 0x03) * 0x2000;
 		const unsigned int OAMBase = (obSel & 0x07)<<13;
 
 		int ybase = 0; int yend = spriteDimY; int yinc = 1;
@@ -1424,7 +1419,6 @@ void ppu::renderScanline(int scanlinenum)
 	int screenMode = (bgMode & 0x07);
 
 	resetAppoBuffers();
-	//screenMode = 7;
 
 	if (screenMode == 0)
 	{
@@ -1743,26 +1737,16 @@ void ppu::renderScanline(int scanlinenum)
 
 	if (brightness != 15)
 	{
-		unsigned int pos = scanlinenum * ppuResolutionX * 4;
+		const unsigned int pos = scanlinenum * ppuResolutionX * 4;
+		unsigned char* pFrameBuf = &screenFramebuffer[pos];
 		for (unsigned int x=0;x<ppuResolutionX;x++)
 		{
-			int val;
-			val = screenFramebuffer[pos + 0];
-			val *= brightness;
-			val >>= 4;
-			screenFramebuffer[pos + 0] = (unsigned char)val;
-
-			val = screenFramebuffer[pos + 1];
-			val *= brightness;
-			val >>= 4;
-			screenFramebuffer[pos + 1] = (unsigned char)val;
-
-			val = screenFramebuffer[pos + 2];
-			val *= brightness;
-			val >>= 4;
-			screenFramebuffer[pos + 2] = (unsigned char)val;
-
-			pos += 4;
+			*pFrameBuf = brightnessLookup[((*pFrameBuf)*16) + brightness];
+			pFrameBuf++;
+			*pFrameBuf = brightnessLookup[((*pFrameBuf) * 16) + brightness];
+			pFrameBuf++;
+			*pFrameBuf = brightnessLookup[((*pFrameBuf) * 16) + brightness];
+			pFrameBuf+=2;
 		}
 	}
 }
@@ -1817,4 +1801,5 @@ ppu::~ppu()
 {
 	delete(screenFramebuffer);
 	delete(vramViewerBitmap);
+	delete(brightnessLookup);
 }

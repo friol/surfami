@@ -197,6 +197,7 @@ dbgSPC700info listOfInstrs[]
 	{0x17,"OR A,[$param0]+Y",2,1,true}, // validatedFC
 	{0x1b,"ASL $param0+X",2,1,true}, // validatedFC
 	{0xaa,"MOV1 $param0.$param1",3,2,true}, // validatedFC
+	{0x8a,"EOR1 $param0.$param1",3,2,true}, // validatedFC
 
 
 };

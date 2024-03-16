@@ -14,6 +14,8 @@ private:
 	unsigned int ppuResolutionX = 256;
 	unsigned int ppuResolutionY = 224;
 
+	unsigned char* brightnessLookup;
+
 	int standard = 0; // 0 NTSC, 1 PAL
 	int cgramIdx = 0;
 	unsigned char cgram[512];
