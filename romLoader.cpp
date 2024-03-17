@@ -23,7 +23,8 @@ std::vector<unsigned char> romLoader::readFile(std::string& filename,int& error)
 	file.seekg(0, std::ios::end);
 	fileSize = file.tellg();
 
-	if (strstr(filename.c_str(), ".smc"))
+	if ((fileSize%1024)!=0)
+	//if (strstr(filename.c_str(), ".smc"))
 	{
 		file.seekg(512, std::ios::beg);
 	}
@@ -39,7 +40,74 @@ std::vector<unsigned char> romLoader::readFile(std::string& filename,int& error)
 	return vec;
 }
 
-int romLoader::loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>& loadLog,bool isHirom)
+/*
+Country (also implies PAL/NTSC) (FFD9h)
+  00h -  International (eg. SGB)  (any)
+  00h J  Japan                    (NTSC)
+  01h E  USA and Canada           (NTSC)
+  02h P  Europe, Oceania, Asia    (PAL)
+  03h W  Sweden/Scandinavia       (PAL)
+  04h -  Finland                  (PAL)
+  05h -  Denmark                  (PAL)
+  06h F  France                   (SECAM, PAL-like 50Hz)
+  07h H  Holland                  (PAL)
+  08h S  Spain                    (PAL)
+  09h D  Germany, Austria, Switz  (PAL)
+  0Ah I  Italy                    (PAL)
+  0Bh C  China, Hong Kong         (PAL)
+  0Ch -  Indonesia                (PAL)
+  0Dh K  South Korea              (NTSC) (North Korea would be PAL)
+  0Eh A  Common (?)               (?)
+  0Fh N  Canada                   (NTSC)
+  10h B  Brazil                   (PAL-M, NTSC-like 60Hz)
+  11h U  Australia                (PAL)
+*/
+
+void romLoader::checkRomType(std::vector<unsigned char>* romContents, bool& isHirom, int& standard, std::vector<std::string>& loadLog)
+{
+	int romAdder = 0;
+	const int listOfPALCountries[] = {2,3,4,5,7,8,9,0x0a,0x0b,0x0c}; //?
+
+	// check header with sophisticated heuristics
+	std::string romnameFromHeader;
+	int numAlnumLorom = 0, numAlnumHirom = 0;
+	for (unsigned int rampos = 0;rampos < 21;rampos++)
+	{
+		unsigned char charHi=(*romContents)[0xffc0 + rampos];
+		unsigned char charLo=(*romContents)[0xffc0-0x8000 + rampos];
+		if (std::isalnum(charHi)) numAlnumHirom += 1;
+		if (std::isalnum(charLo)) numAlnumLorom += 1;
+	}
+
+	if (numAlnumHirom > numAlnumLorom) 
+	{
+		loadLog.push_back("ROM seems HiRom");
+		isHirom = true;
+	}
+	else
+	{
+		loadLog.push_back("ROM seems LoRom");
+		romAdder = -0x8000;
+	}
+
+	// 0 lorom, 1 hirom
+	unsigned char speedMemMap = (*romContents)[0xffd5+ romAdder];
+	loadLog.push_back("Map mode:" + (speedMemMap & 0x0f)==0?"LoROM":"HiROM");
+
+	// rom country
+	unsigned char romCountry = (*romContents)[0xffd9+ romAdder];
+	loadLog.push_back("Standard/Country:" + std::to_string(romCountry));
+
+	for (auto ccode: listOfPALCountries)
+	{
+		if (romCountry == ccode)
+		{
+			standard = 1;
+		}
+	}
+}
+
+int romLoader::loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>& loadLog,bool& isHirom,int& videoStandard)
 {
 	std::vector<unsigned char> romContents;
 
@@ -54,6 +122,10 @@ int romLoader::loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>
 	}
 
 	loadLog.push_back("ROM was read correctly. Size is " + std::to_string(romContents.size()/1024) + "kb. HiRom: "+std::to_string(isHirom));
+
+	checkRomType(&romContents, isHirom, videoStandard, loadLog);
+
+	//
 
 	unsigned char* pSnesRAM = theMMU.getInternalRAMPtr();
 	unsigned short int filesizeInKb = (unsigned short int)(romContents.size() / 1024);

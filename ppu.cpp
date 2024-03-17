@@ -1233,8 +1233,8 @@ void ppu::calculateMode7Starts(int y)
 
 unsigned char ppu::getPixelForMode7(int x, int layer, bool priority) 
 {
-	priority++;
-	layer++;
+	//priority++;
+	//layer++;
 
 	unsigned char rx = (unsigned char)(m7xFlip ? 255 - x : x);
 	int xPos = (m7startX + m7matrix[0] * rx) >> 8;

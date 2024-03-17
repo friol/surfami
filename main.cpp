@@ -21,6 +21,8 @@
 #include <iomanip>
 #include <sstream>
 
+#include "imfilebrowser.h"
+
 #include "audioSystem.h"
 #include "romLoader.h"
 #include "mmu.h"
@@ -668,7 +670,7 @@ void displayMemoryWindow(mmu& theMMU,ppu& thePPU,int& baseAddress)
     ImGui::End();
 }
 
-void displayAppoWindow(ppu& thePPU, mmu& ourMMU, debugger5a22& theDebugger5a22, debuggerSPC700& theDebuggerSPC)
+void displayAppoWindow(cpu5a22& theCPU,ppu& thePPU, mmu& ourMMU, debugger5a22& theDebugger5a22, debuggerSPC700& theDebuggerSPC, ImGui::FileBrowser& fileDialog, std::vector<std::string>& romLoadingLog,int& emustatus)
 {
     ImGui::Begin("Appo and tests window");
     ImGui::Text("surFami emu: Super Nintendo lives");
@@ -685,10 +687,51 @@ void displayAppoWindow(ppu& thePPU, mmu& ourMMU, debugger5a22& theDebugger5a22, 
     std::vector<debugInfoRec>* pOpcodeList = theDebugger5a22.getOpcodesList();
     std::vector<dbgSPC700info>* pSPCOpcodeList = theDebuggerSPC.getOpcodesList();
 
+    // (optional) set browser properties
+    fileDialog.SetTitle("Load SNES ROM");
+    fileDialog.SetTypeFilters({ ".smc", ".sfc" });
+    //fileDialog.SetPwd("d:\\prova\\snes\\");
+    fileDialog.SetPwd("D:\\romz\\nintendo\\snes\\USA\\");
+
     if (ImGui::Button("Load rom!"))
     {
+        fileDialog.Open();
     }
     ImGui::SameLine();
+
+    fileDialog.Display();
+
+    if (fileDialog.HasSelected())
+    {
+        std::string romName = fileDialog.GetSelected().string();
+        glbTheLogger.logMsg("Ok, trying to load rom:" + romName);
+
+        bool isHiRom = false;
+        int snesStandard = 0;
+        romLoader theRomLoader;
+        if (theRomLoader.loadRom(romName, ourMMU, romLoadingLog, isHiRom, snesStandard)==0)
+        {
+            ourMMU.setStandard(snesStandard);
+            ourMMU.setHiRom(isHiRom);
+            ourMMU.setStandard(snesStandard);
+
+            theCPU.reset();
+            ourMMU.setCPU(theCPU);
+        }
+
+        // a little help from my friends nop
+        /*if (romName == "d:\\prova\\snes\\Mickey Mania (E).smc")
+        {
+            theMMU.write8(0xb3fab2, 0xea);
+            theMMU.write8(0xb3fab3, 0xea);
+            theMMU.write8(0xb3fabf, 0xea);
+            theMMU.write8(0xb3fac0, 0xea);
+        }*/
+
+        emustatus = 1;
+
+        fileDialog.ClearSelected();
+    }
 
     if (ImGui::Button("Start 65816 test"))
     {
@@ -796,7 +839,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
 
     //
 
-    int snesStandard = 0;
     ppu thePPU;
     apu theAPU;
     if (!theAPU.isBootRomLoaded())
@@ -816,183 +858,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
 
     mmu theMMU(thePPU,theAPU);
     std::vector<std::string> romLoadingLog;
-    bool isHiRom = false;
-
-    romLoader theRomLoader;
-    //std::string romName = "d:\\prova\\snes\\HelloWorld.sfc";
-    //std::string romName = "d:\\prova\\snes\\BANKWRAM.sfc";
-    //std::string romName = "d:\\prova\\snes\\CPUMOV.sfc";
-    //std::string romName = "d:\\prova\\snes\\CPUDEC.sfc";
-    //std::string romName = "d:\\prova\\snes\\CPUAND.sfc"; // 33
-    //std::string romName = "d:\\prova\\snes\\CPUASL.sfc";
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\ADC\\CPUADC.sfc";
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\BIT\\CPUBIT.sfc";
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\BRA\\CPUBRA.sfc";
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\JMP\\CPUJMP.sfc";
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\CMP\\CPUCMP.sfc"; // c1
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\EOR\\CPUEOR.sfc"; // 52
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\INC\\CPUINC.sfc"; 
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\LDR\\CPULDR.sfc"; // a1
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\LSR\\CPULSR.sfc";
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\MSC\\CPUMSC.sfc"; // 42
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\ORA\\CPUORA.sfc"; // 01
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\PHL\\CPUPHL.sfc";
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\PSR\\CPUPSR.sfc";
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\RET\\CPURET.sfc";
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\ROL\\CPUROL.sfc"; // 36
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\ROR\\CPUROR.sfc"; // 76
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\SBC\\CPUSBC.sfc"; // f2
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\STR\\CPUSTR.sfc"; // 81
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\CPUTest\\CPU\\TRN\\CPUTRN.sfc"; 
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\BANK\\HiROMFastROM\\BANKHiROMFastROM.sfc"; isHiRom = true;
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\SPC700\\Twinkle\\Twinkle.sfc";
-
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\Compress\\LZ77\\LZ77WRAMGFX\\LZ77WRAMGFX.sfc"; // mode 5
-
-    //std::string romName = "d:\\prova\\snes\\8x8BG1Map2BPP32x328PAL.sfc"; // mode0
-    //std::string romName = "d:\\prova\\snes\\8x8BGMap4BPP32x328PAL.sfc"; // mode3
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\BGMAP\\8x8\\2BPP\\8x8BG2Map2BPP32x328PAL\\8x8BG2Map2BPP32x328PAL.sfc"; // mode0
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\BGMAP\\8x8\\8BPP\\TileFlip\\8x8BGMapTileFlip.sfc"; // mode3
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\BGMAP\\8x8\\8BPP\\32x32\\8x8BGMap8BPP32x32.sfc"; // bg scrolling
-    //std::string romName = "d:\\prova\\snes\\Rings.sfc"; // mode0
-    //std::string romName = "d:\\prova\\snes\\MosaicMode3.sfc";
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\HDMA\\RedSpaceHDMA\\RedSpaceHDMA.sfc";
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\HDMA\\HiColor64PerTileRow\\HiColor64PerTileRow.sfc"; 
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\HDMA\\WaveHDMA\\WaveHDMA.sfc"; 
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\HDMA\\RedSpaceIndirectHDMA\\RedSpaceIndirectHDMA.sfc";
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\Mode7\\RotZoom\\RotZoom.sfc";
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\Mode7\\StarWars\\StarWars.sfc";
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\PPU\\Mode7\\Perspective\\Perspective.sfc";
-    //std::string romName = "d:\\prova\\snes\\ctrltest_auto.sfc";
-
-    //std::string romName = "d:\\prova\\snes\\Ms. Pac-Man (U).smc";
-    std::string romName = "d:\\prova\\snes\\Super Mario World (USA).sfc";
-    //std::string romName = "d:\\prova\\snes\\Super Mario World (J) [!].sfc";
-    //std::string romName = "d:\\prova\\snes\\Ninjawarriors (USA).sfc";
-    //std::string romName = "d:\\prova\\snes\\Mario Paint (E) [!].smc";
-    //std::string romName = "d:\\prova\\snes\\Mickey Mania (E).smc"; // stuck without patching the code
-    //std::string romName = "d:\\prova\\snes\\Gradius III (U) [!].smc"; 
-    //std::string romName = "d:\\prova\\snes\\Parodius (Europe).sfc"; // sprites disappear later in the level
-    //std::string romName = "d:\\prova\\snes\\Parodius Da! - Shinwa kara Owarai e (Japan).sfc";
-    //std::string romName = "d:\\prova\\snes\\Mr. Do! (U).smc"; // very slow
-    //std::string romName = "d:\\prova\\snes\\Tetris & Dr Mario (E) [!].smc"; snesStandard = 1;
-    //std::string romName = "d:\\prova\\snes\\Arkanoid - Doh it Again (E) [!].smc";
-    //std::string romName = "d:\\prova\\snes\\Pac Attack (E).smc"; snesStandard = 1;
-    //std::string romName = "d:\\prova\\snes\\International Superstar Soccer (U) [!].smc";
-    //std::string romName = "d:\\prova\\snes\\Kick Off (E).smc"; 
-    //std::string romName = "d:\\prova\\snes\\Tetris Attack (E).smc"; snesStandard = 1; // slow, maybe opt?
-    //std::string romName = "d:\\prova\\snes\\Prince of Persia (E) [!].smc";
-    //std::string romName = "d:\\prova\\snes\\James Pond's Crazy Sports (E).smc";
-    //std::string romName = "d:\\prova\\snes\\Yoshi's Cookie (E).smc"; // SPC 35
-    //std::string romName = "d:\\prova\\snes\\Blues Brothers, The (E) [a1].smc";
-    //std::string romName = "d:\\prova\\snes\\Incredible Crash Dummies, The (U).smc";
-    //std::string romName = "d:\\prova\\snes\\Sim City (E) [!].smc";
-    //std::string romName = "d:\\prova\\snes\\Gun Force (E).smc"; snesStandard = 1; // a tad slow
-    //std::string romName = "d:\\prova\\snes\\Space Invaders (U).smc";
-    //std::string romName = "d:\\prova\\snes\\Lawnmower Man, The (E).smc"; // SPC e9
-    //std::string romName = "D:\\prova\\snes\\HiRom\\Earthworm Jim (U).smc"; isHiRom = true;
-    //std::string romName = "d:\\prova\\snes\\Final Fight (U).smc"; // SPC 57
-    //std::string romName = "D:\\prova\\snes\\HiRom\\Super Bomberman (U).smc"; isHiRom = true;
-    //std::string romName = "D:\\prova\\snes\\HiRom\\Wolfenstein 3D (U).smc"; isHiRom = true;
-    //std::string romName = "d:\\prova\\snes\\F-Zero (U).smc"; snesStandard = 1;
-    //std::string romName = "d:\\prova\\snes\\Micro Machines (U).smc"; 
-    //std::string romName = "d:\\prova\\snes\\Robocop 3 (U).smc";
-    //std::string romName = "d:\\prova\\snes\\Race Drivin' (U).smc"; // SPC 49
-    //std::string romName = "d:\\prova\\snes\\Final Fantasy IV (J).smc"; // SPC 0d
-    //std::string romName = "d:\\prova\\snes\\Final Fantasy 4 (tr).sfc";
-    //std::string romName = "d:\\prova\\snes\\Addams Family, The (E).smc";
-    //std::string romName = "D:\\prova\\snes\\HiRom\\Donkey Kong Country (V1.1) (E).smc"; isHiRom = true; snesStandard = 1; // missing bg on title screen
-    //std::string romName = "D:\\prova\\snes\\HiRom\\Donkey Kong Country (USA) (Rev 2).sfc"; isHiRom = true; // missing bg 
-    //std::string romName = "D:\\prova\\snes\\HiRom\\Flashback - The Quest for Identity (U) [!].smc"; isHiRom = true; // a tad slow
-    //std::string romName = "d:\\prova\\snes\\The Legend Of Zelda -  A Link To The Past.smc"; // black floor
-    //std::string romName = "D:\\romz\\nintendo\\snes\\Earthbound (U).smc"; isHiRom = true; // anti-piracy screen
-    //std::string romName = "d:\\prova\\snes\\Williams Arcade's Greatest Hits (E) [!].smc"; // a1, SPC a9
-    //std::string romName = "d:\\prova\\snes\\Super Back to the Future 2 (J).sfc";
-    //std::string romName = "d:\\prova\\snes\\Unirally (E) [!].smc";
-    //std::string romName = "d:\\prova\\snes\\Super Turrican (USA).sfc";
-    //std::string romName = "d:\\prova\\snes\\Pinball Dreams (E).smc";
-    //std::string romName = "d:\\prova\\snes\\Lemmings (E).sfc"; // hdma/irq problems?
-    //std::string romName = "d:\\prova\\snes\\Chessmaster, The (U).smc";
-    //std::string romName = "d:\\prova\\snes\\Super Tennis (V1.1) (E) [!].smc";
-    //std::string romName = "D:\\prova\\snes\\HiRom\\Supercooked! (J) (v1.2).sfc"; isHiRom = true;
-    //std::string romName = "D:\\prova\\snes\\HiRom\\Chrono Trigger (U) [!].smc"; isHiRom = true;
-    //std::string romName = "d:\\prova\\snes\\Pocky & Rocky (U).smc"; // bad logo screen
-    //std::string romName = "d:\\prova\\snes\\Animaniacs (U) [!].smc"; // mode 3 missing bg
-
-    // HDMA/HIRQ problems
-    //std::string romName = "d:\\prova\\snes\\Frogger (U).smc"; snesStandard = 1; // cars are not moving
-    //std::string romName = "d:\\prova\\snes\\Puzzle Bobble (E).smc"; // mode4, HDMA/HIRQ not working
-    //std::string romName = "d:\\prova\\snes\\Street Fighter II - The World Warrior (U).smc"; // background problems if HDMA enabled
-    //std::string romName = "d:\\prova\\snes\\Super Ghouls 'N Ghosts (E).sfc"; // gameplay garbage, HDMA problems
-
-    //std::string romName = "d:\\prova\\snes\\Super Off Road (E) [!].smc"; // 34, a bg remains uncleared, SPC 5b
-    //std::string romName = "d:\\prova\\snes\\Rock N' Roll Racing (U).smc"; // no bg mode3, corrupted graphics
-    //std::string romName = "d:\\prova\\snes\\Spectre (E) [!].smc";
-    //std::string romName = "D:\\prova\\snes\\SNES-master\\Games\\MonsterFarmJump\\MonsterFarmJump.sfc";
-    //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars + Super Mario World (USA).sfc"; // controls don't work
-    //std::string romName = "d:\\prova\\snes\\Super Mario All-Stars (U) [!].smc"; // no input
-    //std::string romName = "d:\\prova\\snes\\Tiny Toons - Wild and Wacky Sports (U).smc"; // stuck after player select 0x2137
-    //std::string romName = "d:\\prova\\snes\\Monopoly (V1.1) (U).smc"; // wrong controls, sprite at the start
-    //std::string romName = "d:\\prova\\snes\\R-Type 3 (U).smc"; // better but gets stuck
-    //std::string romName = "d:\\prova\\snes\\Super Double Dragon (U).smc"; // no input
-    //std::string romName = "d:\\prova\\snes\\Home Alone (E) [!].smc"; // resets
-    //std::string romName = "d:\\prova\\snes\\SNES Test Program (U).smc"; // mode 5
-    //std::string romName = "d:\\prova\\snes\\SHVC-AGING.sfc";
-    //std::string romName = "d:\\prova\\snes\\Spanky's Quest (E).smc"; // sub mode 1,stuck
-    //std::string romName = "d:\\prova\\snes\\petsciirobotsdemo.sfc"; // stuck
-    //std::string romName = "d:\\prova\\snes\\Another World (Europe).sfc"; // SPC 38, stuck
-    //std::string romName = "d:\\prova\\snes\\Out of This World (U).smc"; // jumps to nowhere after introduction of VIRQ
-    //std::string romName = "d:\\prova\\snes\\Sensible Soccer - International Edition (E).smc"; // blank screen, stuck
-
-    // hiroms
-    //std::string romName = "D:\\prova\\snes\\HiRom\\Final Fantasy III (USA).sfc"; isHiRom = true; // stuck
-    //std::string romName = "D:\\prova\\snes\\HiRom\\Diddy's Kong Quest (E).smc"; isHiRom = true; snesStandard = 1;
-    //std::string romName = "D:\\prova\\snes\\HiRom\\Secret of Mana (Europe).sfc"; isHiRom = true; snesStandard = 1; // stuck 4212, SPC ca
-    //std::string romName = "D:\\prova\\snes\\HiRom\\Michael Jordan - Chaos in the Windy City (USA).sfc"; isHiRom = true; // missing/bad bg, 13
-
-    // demos
-    //std::string romName = "d:\\prova\\snes\\desire_d-zero_snes_pal_revision_2021_oldschool_compo.sfc"; snesStandard = 1; // reads from CGRAM
-    //std::string romName = "d:\\prova\\snes\\elix-smashit-pal.sfc"; snesStandard = 1; // mode6
-    //std::string romName = "D:\\prova\\snes\\demos\\elix-nu-pal.sfc"; snesStandard = 1;
-    //std::string romName = "D:\\prova\\snes\\demos\\2.68 MHz Demo (PD).sfc"; snesStandard = 1;
-    //std::string romName = "D:\\prova\\snes\\demos\\DSR_STNICCC_NOFX_SNES_PAL.sfc"; snesStandard = 1; // jumps to nowhere, no mode7 graphics
-    //std::string romName = "D:\\prova\\snes\\demos\\rse-intro.sfc"; snesStandard = 1; // 42, HDMA wrong palette if bAdr is reloaded, SPC 01
-    //std::string romName = "d:\\prova\\snes\\demo_mode3.smc"; isHiRom = true;
-
-    theMMU.setStandard(snesStandard);
-    theMMU.setHiRom(isHiRom);
-    thePPU.setStandard(snesStandard);
-
-    if (theRomLoader.loadRom(romName,theMMU,romLoadingLog,isHiRom) != 0)
-    {
-        ImGui_ImplOpenGL3_Shutdown();
-        ImGui_ImplWin32_Shutdown();
-        ImGui::DestroyContext();
-
-        CleanupDeviceWGL(hwnd, &g_MainWindow);
-        wglDeleteContext(g_hRC);
-        ::DestroyWindow(hwnd);
-        ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
-
-        return 1;
-    }
-
-    // a little help from my friends nop
-    if (romName == "d:\\prova\\snes\\Mickey Mania (E).smc")
-    {
-        theMMU.write8(0xb3fab2, 0xea);
-        theMMU.write8(0xb3fab3, 0xea);
-        theMMU.write8(0xb3fabf, 0xea);
-        theMMU.write8(0xb3fac0, 0xea);
-    }
 
     //
 
     debugger5a22 theDebugger5a22;
     debuggerSPC700 theDebuggerSPC700;
     cpu5a22 theCPU(&theMMU,false);
-    theCPU.reset();
-    theMMU.setCPU(theCPU);
 
     audioSystem theAudioSys;
     if (!theAudioSys.audioSystemInited)
@@ -1027,7 +898,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     jumpToAppoBuf[0] = '\0';
     int baseMemoryAddress = 0x800;
     unsigned long int totCPUCycles = 0;
-    int emustatus = 0; // 0 debugging, 1 running, -1 no rom loaded
+    int emustatus = -1; // 0 debugging, 1 running, -1 no rom loaded
+    ImGui::FileBrowser fileDialog;
 
     while (!done)
     {
@@ -1181,7 +1053,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         bool rushSPC = false;
         unsigned short int rushToSPCAddress = 0;
 
-        displayAppoWindow(thePPU, theMMU, theDebugger5a22,theDebuggerSPC700);
+        displayAppoWindow(theCPU,thePPU, theMMU, theDebugger5a22,theDebuggerSPC700, fileDialog,romLoadingLog, emustatus);
         displayRomLoadingLogWindow(romLoadingLog);
         displayDebugWindow(theCPU, theDebugger5a22,theMMU,isDebugWindowFocused,rush,rushToAddress,jumpToAppoBuf,totCPUCycles,emustatus,thePPU);
         displaySPCDebugWindow(thePPU, theMMU, theCPU,theAPU, theDebuggerSPC700,rushSPC,rushToSPCAddress,emustatus,theAudioSys);

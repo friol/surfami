@@ -8,15 +8,9 @@
 #include "bass/bass.h"
 #include "apu.h"
 #include "logger.h"
-#include "include/AudioFile.h"
+//#include "include/AudioFile.h"
 
 class apu;
-
-struct spcInstrument
-{
-	float* data;
-	unsigned int len = 0;
-};
 
 class audioSystem
 {
@@ -27,15 +21,7 @@ private:
 	const unsigned int audioBufLen = 1024;
 	float audioBuf[1024*2];
 	
-	float* outwavbuf;
-	signed long int outwavpos = 0;
-	const unsigned long int outwavdim = 65536*2;
-	
 	std::vector<float> audioStream;
-
-	spcInstrument insArray[0x14];
-
-	void loadTestSamples();
 
 public:
 
@@ -43,7 +29,6 @@ public:
 	float sampleRate = 0;
 
 	audioSystem();
-	void updateStream(apu& theAPU);
 	void feedAudiobuf(float l, float r);
 	~audioSystem();
 };

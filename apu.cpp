@@ -720,7 +720,7 @@ void apu::dspDecodeBrr(int ch)
 			case 3: s += 2 * old + ((13 * -old) >> 6) - older + ((3 * older) >> 4); break;
 		}
 
-		channels[ch].decodeBuffer[bOff + i] = clamp16(s) * 2;
+		channels[ch].decodeBuffer[bOff + i] = (signed short int)(clamp16(s) * 2);
 		older = old;
 		old = channels[ch].decodeBuffer[bOff + i] >> 1;
 	}
@@ -795,7 +795,7 @@ void apu::dspHandleGain(int ch)
 	}
 	
 	// store new value
-	if (dspCheckCounter(rate)) channels[ch].gain = newGain;
+	if (dspCheckCounter(rate)) channels[ch].gain = (unsigned short int)newGain;
 }
 
 static const int rateValues[32] = {
@@ -920,15 +920,15 @@ void apu::dspCycle(signed short int& sampleOutL, signed short int& sampleOutR, f
 
 		// update pitch counter
 		channels[ch].pitchCounter &= 0x3fff;
-		channels[ch].pitchCounter += pitch;
+		channels[ch].pitchCounter += (unsigned short)pitch;
 		if (channels[ch].pitchCounter > 0x7fff) channels[ch].pitchCounter = 0x7fff;
 		
 		// set outputs
-		dspRam[(ch << 4) | 8] = channels[ch].gain >> 4;
-		dspRam[(ch << 4) | 9] = sample >> 8;
+		dspRam[(ch << 4) | 8] = (unsigned char)(channels[ch].gain >> 4);
+		dspRam[(ch << 4) | 9] = (unsigned char)(sample >> 8);
 		
-		sampleOutL = clamp16(sampleOutL + ((sample * channels[ch].leftVol) >> 7));
-		sampleOutR = clamp16(sampleOutR + ((sample * channels[ch].rightVol) >> 7));
+		sampleOutL = (signed short)clamp16(sampleOutL + ((sample * channels[ch].leftVol) >> 7));
+		sampleOutR = (signed short)clamp16(sampleOutR + ((sample * channels[ch].rightVol) >> 7));
 
 		//if (dsp->channel[ch].echoEnable) {
 		//	dsp->echoOutL = clamp16(dsp->echoOutL + ((sample * dsp->channel[ch].volumeL) >> 7));
@@ -2652,7 +2652,7 @@ int apu::stepOne()
 			val0 ^= 0xff;
 			int result = val1 + val0 + 1;
 			flagC = result > 0xff;
-			doFlagsNZ(result);
+			doFlagsNZ((unsigned char)result);
 
 			regPC += 3;
 			cycles = 6;
@@ -2900,15 +2900,14 @@ int apu::stepOne()
 			if (flagP) adr1 |= 0x100;
 
 			unsigned char val0 = (this->*read8)(adr0);
-			unsigned char val1 = (this->*read8)(adr1);
 
 			unsigned char applyOn = (this->*read8)(adr1);
 			int result = applyOn + val0 + (flagC?1:0);
 			flagV = (applyOn & 0x80) == (val0 & 0x80) && (val0 & 0x80) != (result & 0x80);
 			flagH = ((applyOn & 0xf) + (val0 & 0xf) + (flagC ? 1 : 0)) > 0xf;
 			flagC = result > 0xff;
-			(this->*write8)(adr1,result);
-			doFlagsNZ(result);
+			(this->*write8)(adr1,(unsigned char)result);
+			doFlagsNZ((unsigned char)result);
 
 			regPC += 3;
 			cycles = 6;
@@ -3157,7 +3156,7 @@ int apu::stepOne()
 			val1 = (unsigned char)result;
 			doFlagsNZ(val1);
 
-			(this->*write8)(adr1, result);
+			(this->*write8)(adr1, (unsigned char)result);
 
 			regPC += 3;
 			cycles = 6;
