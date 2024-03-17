@@ -198,6 +198,19 @@ dbgSPC700info listOfInstrs[]
 	{0x1b,"ASL $param0+X",2,1,true}, // validatedFC
 	{0xaa,"MOV1 $param0.$param1",3,2,true}, // validatedFC
 	{0x8a,"EOR1 $param0.$param1",3,2,true}, // validatedFC
+	{0xa9,"SBC $param0,$param1",3,2,true}, // validatedFC
+	{0x35,"AND A,!$param0+X",3,1,true}, // validatedFC
+	{0x45,"EOR A,!$param0",3,1,true}, // validatedFC
+	{0x66,"CMP A,(X)",1,0,true}, // validatedFC
+	{0x56,"EOR A,!$param0+Y",3,1,true}, // validatedFC
+	{0xea,"NOT1 $param0.$param1",3,2,true}, // validatedFC
+	{0x54,"EOR A,$param0+X",2,1,true}, // validatedFC
+	{0xa0,"EI",1,0,true}, // validatedFC
+	{0x01,"TCALL 0",1,0,true}, // validatedFC
+	{0x9d,"MOV X,SP",1,0,true}, // validatedFC
+	{0x5d,"LSR $param0+X",2,1,true}, // validatedFC
+	{0x7b,"ROR $param0+X",2,1,true}, // validatedFC
+	{0x37,"AND A,[$param0]+Y",2,1,true}, // validatedFC
 
 
 };

@@ -202,6 +202,19 @@ unsigned char ppu::vmDataRead(unsigned int port)
 	return (port == 0x2139) ? vram[adr & 0x7fff] & 0xff : vram[adr & 0x7fff] >> 8;
 }
 
+void ppu::setPalarrColor(int idx)
+{
+	unsigned int palcol = (((int)(cgram[idx + 1] & 0x7f)) << 8) | cgram[idx];
+	int red = palcol & 0x1f; red <<= 3;
+	int green = (palcol >> 5) & 0x1f; green <<= 3;
+	int blue = (palcol >> 10) & 0x1f; blue <<= 3;
+
+	idx >>= 1;
+	palarrLookup[(idx * 3) + 0] = (unsigned char)red;
+	palarrLookup[(idx * 3) + 1] = (unsigned char)green;
+	palarrLookup[(idx * 3) + 2] = (unsigned char)blue;
+}
+
 void ppu::writeRegister(int reg, unsigned char val)
 {
 	if (reg == 0x2121)
@@ -215,6 +228,9 @@ void ppu::writeRegister(int reg, unsigned char val)
 		cgramIdx &= 0x1ff;
 		if (cgramIdx & 0x01) val &= 0x7f;
 		cgram[cgramIdx] = val;
+
+		setPalarrColor(cgramIdx&0x1fe);
+
 		cgramIdx += 1;
 		cgramIdx &= 0x1ff;
 	}
@@ -584,148 +600,6 @@ void ppu::renderBackdropScanline(int scanlinenum)
 	}
 }
 
-void ppu::renderTile(int bpp, int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip)
-{
-	unsigned char* pBuf;
-
-	const int numCols = (bpp == 2) ? 4 : (bpp == 4) ? 16 : 256;
-	unsigned char* palArr=new unsigned char[3 * numCols];
-
-	int colidx;
-	if (bpp == 2)
-	{
-		if ((bgMode & 0x07) == 0)
-		{
-			colidx = ((palId * 4) * 2)+(0x40 * bgnum);
-		}
-		else
-		{
-			colidx = ((palId * 4) * 2);
-		}
-	}
-	else
-	{
-		colidx = (palId * numCols) * 2;
-	}
-
-	for (int col = 0;col < numCols;col++)
-	{
-		unsigned int palcol = (((int)(cgram[colidx + 1] & 0x7f)) << 8) | cgram[colidx];
-		int red = palcol & 0x1f; red <<= 3;
-		int green = (palcol >> 5) & 0x1f; green <<= 3;
-		int blue = (palcol >> 10) & 0x1f; blue <<= 3;
-
-		palArr[(col * 3) + 0] = (unsigned char)red;
-		palArr[(col * 3) + 1] = (unsigned char)green;
-		palArr[(col * 3) + 2] = (unsigned char)blue;
-
-		colidx += 2;
-	}
-
-	//
-
-	int multiplier = (bpp == 2) ? 8 : (bpp == 4) ? 16 : 32;
-	int tileAddr = tileNum * multiplier;
-	tileAddr += ((bgTileBaseAddress >> (4 * bgnum)) & 0x0f) * 1024 * 4;
-	tileAddr &= 0x7fff;
-
-	int ybase = 0; int yend = 8; int yinc = 1;
-	if (yflip)
-	{
-		ybase = 7; yend = -1; yinc = -1;
-	}
-
-	for (int y = ybase;y != yend;y += yinc)
-	{
-		unsigned int ppos = (px * 4) + ((py + y) * ppuResolutionX * 4);
-		if ((ppos >= 0) && (ppos < (ppuResolutionX * ppuResolutionY * 4)))
-		{
-			pBuf = &screenFramebuffer[ppos];
-
-			const unsigned char b_1 = vram[tileAddr] & 0xff;
-			const unsigned char b_2 = vram[tileAddr] >> 8;
-			const unsigned char b_3 = vram[tileAddr + 8] & 0xff;
-			const unsigned char b_4 = vram[tileAddr + 8] >> 8;
-			const unsigned char b_5 = vram[tileAddr + 16] & 0xff;
-			const unsigned char b_6 = vram[tileAddr + 16] >> 8;
-			const unsigned char b_7 = vram[tileAddr + 24] & 0xff;
-			const unsigned char b_8 = vram[tileAddr + 24] >> 8;
-
-			int theX = px;
-			int xbase = 7; int xend = -1; int xinc = -1;
-			if (xflip)
-			{
-				xbase = 0; xend = 8; xinc = 1;
-			}
-
-			for (int x = xbase;x != xend;x += xinc)
-			{
-				if ((ppos >= 0) && (ppos < (ppuResolutionX * ppuResolutionY * 4)))
-				{
-					unsigned short int curCol;
-
-					if (bpp == 2)
-					{
-						curCol = ((b_1 >> x) & 1) + (2 * ((b_2 >> x) & 1));
-					}
-					else if (bpp == 4)
-					{
-						curCol = ((b_1 >> x) & 1) + (2 * ((b_2 >> x) & 1)) + (4 * ((b_3 >> x) & 1)) + (8 * ((b_4 >> x) & 1));
-					}
-					else
-					{
-						curCol = ((b_1 >> x) & 1) +
-							(2 * ((b_2 >> x) & 1)) +
-							(4 * ((b_3 >> x) & 1)) +
-							(8 * ((b_4 >> x) & 1)) +
-							(16 * ((b_5 >> x) & 1)) +
-							(32 * ((b_6 >> x) & 1)) +
-							(64 * ((b_7 >> x) & 1)) +
-							(128 * ((b_8 >> x) & 1));
-					}
-
-					if (bpp == 2)
-					{
-						if (((curCol % 4) != 0) && ((theX >= 0) && (theX < (signed int)ppuResolutionX)))
-						{
-							*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
-							*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
-							*pBuf = palArr[(curCol * 3) + 2]; pBuf++;
-							*pBuf = 0xff; pBuf++;
-						}
-						else pBuf += 4;
-					}
-					else if (bpp == 4)
-					{
-						if (((curCol % 16) != 0) && ((theX >= 0) && (theX < (signed int)ppuResolutionX)))
-						{
-							*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
-							*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
-							*pBuf = palArr[(curCol * 3) + 2]; pBuf++;
-							*pBuf = 0xff; pBuf++;
-						}
-						else pBuf += 4;
-					}
-					else
-					{
-						*pBuf = palArr[(curCol * 3) + 0]; pBuf++;
-						*pBuf = palArr[(curCol * 3) + 1]; pBuf++;
-						*pBuf = palArr[(curCol * 3) + 2]; pBuf++;
-						*pBuf = 0xff; pBuf++;
-					}
-				}
-
-				ppos += 4;
-				theX += 1;
-			}
-
-			tileAddr += 1;
-		}
-	}
-
-	delete(palArr);
-}
-
 void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip,int scanlinenum,unsigned char bgpri)
 {
 	unsigned char* pBuf;
@@ -733,7 +607,7 @@ void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, in
 	// palette setup
 
 	const int numCols = (bpp == 2) ? 4 : (bpp == 4) ? 16 : 256;
-	unsigned char* palArr = new unsigned char[3 * numCols];
+	//unsigned char* palArr = new unsigned char[3 * numCols];
 
 	int colidx;
 	if (bpp == 2)
@@ -756,7 +630,7 @@ void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, in
 		colidx = 0;
 	}
 
-	for (int col = 0;col < numCols;col++)
+	/*for (int col = 0;col < numCols;col++)
 	{
 		unsigned int palcol = (((int)(cgram[colidx + 1] & 0x7f)) << 8) | cgram[colidx];
 		int red = palcol & 0x1f; red <<= 3;
@@ -768,7 +642,7 @@ void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, in
 		palArr[(col * 3) + 2] = (unsigned char)blue;
 
 		colidx += 2;
-	}
+	}*/
 
 	//
 
@@ -815,7 +689,7 @@ void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, in
 		{
 			if ((ppos >= 0) && (ppos < (ppuResolutionX * ppuResolutionY * 4)))
 			{
-				unsigned short int curCol;
+				unsigned char curCol;
 
 				if (bpp == 2)
 				{
@@ -847,9 +721,13 @@ void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, in
 					{
 						if ((((curCol % 4) != 0) && ((theX >= 0) && (theX < (signed int)ppuResolutionX))))
 						{
-							*pBgColorAppo = palArr[(curCol * 3) + 0]; pBgColorAppo++;
-							*pBgColorAppo = palArr[(curCol * 3) + 1]; pBgColorAppo++;
-							*pBgColorAppo = palArr[(curCol * 3) + 2]; pBgColorAppo++;
+							//*pBgColorAppo = palArr[(curCol * 3) + 0]; pBgColorAppo++;
+							//*pBgColorAppo = palArr[(curCol * 3) + 1]; pBgColorAppo++;
+							//*pBgColorAppo = palArr[(curCol * 3) + 2]; pBgColorAppo++;
+							*pBgColorAppo = palarrLookup[(((colidx>>1)+curCol) * 3) + 0]; pBgColorAppo++;
+							*pBgColorAppo = palarrLookup[(((colidx >> 1) + curCol) * 3) + 1]; pBgColorAppo++;
+							*pBgColorAppo = palarrLookup[(((colidx >> 1) + curCol) * 3) + 2]; pBgColorAppo++;
+
 							*pBgColorAppo = 0xff; pBgColorAppo++;
 							*pBgPriAppo = bgpri; pBgPriAppo++;
 							*pBgIsTranspAppo = false; pBgIsTranspAppo++;
@@ -866,9 +744,13 @@ void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, in
 					{
 						if ((((curCol % 16) != 0) && ((theX >= 0) && (theX < (signed int)ppuResolutionX))))
 						{
-							*pBgColorAppo = palArr[(curCol * 3) + 0]; pBgColorAppo++;
-							*pBgColorAppo = palArr[(curCol * 3) + 1]; pBgColorAppo++;
-							*pBgColorAppo = palArr[(curCol * 3) + 2]; pBgColorAppo++;
+							//*pBgColorAppo = palArr[(curCol * 3) + 0]; pBgColorAppo++;
+							//*pBgColorAppo = palArr[(curCol * 3) + 1]; pBgColorAppo++;
+							//*pBgColorAppo = palArr[(curCol * 3) + 2]; pBgColorAppo++;
+							*pBgColorAppo = palarrLookup[(((palId * numCols)+curCol) * 3) + 0]; pBgColorAppo++;
+							*pBgColorAppo = palarrLookup[(((palId * numCols)+ curCol) * 3) + 1]; pBgColorAppo++;
+							*pBgColorAppo = palarrLookup[(((palId * numCols)+ curCol) * 3) + 2]; pBgColorAppo++;
+
 							*pBgColorAppo = 0xff; pBgColorAppo++;
 							*pBgPriAppo = bgpri; pBgPriAppo++;
 							*pBgIsTranspAppo = false; pBgIsTranspAppo++;
@@ -883,9 +765,9 @@ void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, in
 					}
 					else
 					{
-						*pBgColorAppo = palArr[(curCol * 3) + 0]; pBgColorAppo++;
-						*pBgColorAppo = palArr[(curCol * 3) + 1]; pBgColorAppo++;
-						*pBgColorAppo = palArr[(curCol * 3) + 2]; pBgColorAppo++;
+						*pBgColorAppo = palarrLookup[(curCol * 3) + 0]; pBgColorAppo++;
+						*pBgColorAppo = palarrLookup[(curCol * 3) + 1]; pBgColorAppo++;
+						*pBgColorAppo = palarrLookup[(curCol * 3) + 2]; pBgColorAppo++;
 						*pBgColorAppo = 0xff; pBgColorAppo++;
 						*pBgPriAppo = bgpri; pBgPriAppo++;
 						*pBgIsTranspAppo = false; pBgIsTranspAppo++;
@@ -900,14 +782,13 @@ void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, in
 		tileAddr += 1;
 	}
 
-	delete(palArr);
+	//delete(palArr);
 }
 
-void ppu::buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int baseTileAddr)
+void ppu::buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int baseTileAddr, unsigned int rowtobuild)
 {
 	/*
 		All tilemaps are 32x32, bits 0-1 simply select the number of 32x32 tilemaps and how they're laid out in memory
-
 		00  32x32   AA
 					AA
 		01  64x32   AB
@@ -922,10 +803,17 @@ void ppu::buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int b
 
 	for (int y = 0;y < 32;y++)
 	{
-		for (int x = 0;x < 32;x++)
+		if (y == rowtobuild)
 		{
-			tilemapMap[y][x] = vram[tilemapPos&0x7fff];
-			tilemapPos++;
+			for (int x = 0;x < 32;x++)
+			{
+				tilemapMap[y][x] = vram[tilemapPos & 0x7fff];
+				tilemapPos++;
+			}
+		}
+		else
+		{
+			tilemapPos += 32;
 		}
 	}
 
@@ -933,10 +821,17 @@ void ppu::buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int b
 
 	for (int y = 0;y < 32;y++)
 	{
-		for (int x = 32;x < 64;x++)
+		if (y == rowtobuild)
 		{
-			tilemapMap[y][x] = vram[tilemapPos & 0x7fff];
-			tilemapPos++;
+			for (int x = 32;x < 64;x++)
+			{
+				tilemapMap[y][x] = vram[tilemapPos & 0x7fff];
+				tilemapPos++;
+			}
+		}
+		else
+		{
+			tilemapPos += 32;
 		}
 	}
 
@@ -944,23 +839,37 @@ void ppu::buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int b
 
 	for (int y = 32;y < 64;y++)
 	{
-		for (int x = 0;x < 32;x++)
+		if (y == rowtobuild)
 		{
-			tilemapMap[y][x] = vram[tilemapPos & 0x7fff];
-			tilemapPos++;
+			for (int x = 0;x < 32;x++)
+			{
+				tilemapMap[y][x] = vram[tilemapPos & 0x7fff];
+				tilemapPos++;
+			}
+		}
+		else
+		{
+			tilemapPos += 32;
 		}
 	}
 
 	if (bgSize == 0) tilemapPos -= 0x400;
 	else if (bgSize == 1) tilemapPos -= 0x800;
-	else if (bgSize == 2) tilemapPos-=0x400;
+	else if (bgSize == 2) tilemapPos -= 0x400;
 
 	for (int y = 32;y < 64;y++)
 	{
-		for (int x = 32;x < 64;x++)
+		if (y == rowtobuild)
 		{
-			tilemapMap[y][x] = vram[tilemapPos & 0x7fff];
-			tilemapPos++;
+			for (int x = 32;x < 64;x++)
+			{
+				tilemapMap[y][x] = vram[tilemapPos & 0x7fff];
+				tilemapPos++;
+			}
+		}
+		else
+		{
+			tilemapPos += 32;
 		}
 	}
 }
@@ -1034,9 +943,6 @@ void ppu::renderBGScanline(int bgnum, int bpp, int scanlinenum)
 	int xscroll = bgScrollX[bgnum] & 0x3ff;
 	int yscroll = bgScrollY[bgnum] & 0x3ff;
 
-	unsigned short int tilemapMap[64][64];
-	buildTilemapMap(tilemapMap, bgSize, baseTileAddr);
-
 	/* 8x8 or 16x16 tiles for modes 0-4 */
 	int bgTileSize = (bgMode & (0x10 << bgnum));
 
@@ -1051,91 +957,98 @@ void ppu::renderBGScanline(int bgnum, int bpp, int scanlinenum)
 		tileDimY = 15;
 	}
 
-	for (int y = 0;y < tileDimY;y+=1)
+	const int y = (scanlinenum - ((scanlinenum) % tileDim)) / tileDim;
+	int realy = y + (yscroll / tileDim);
+	
+	int andery = 0x3f;
+	if ((bgSize == 0) || (bgSize == 1)) andery = 0x1f;
+
+	if (((yscroll % tileDim) + (scanlinenum % tileDim)) > (tileDim - 1))
 	{
-		if (((y * tileDim) + ((scanlinenum) % tileDim)) == scanlinenum)
+		realy += 1;
+	}
+
+	unsigned short int tilemapMap[64][64];
+	buildTilemapMap(tilemapMap, bgSize, baseTileAddr, realy & andery);
+
+	for (int x = 0;x < tileDimX;x+= 1)
+	{
+		if (x != 0)
 		{
-			for (int x = 0;x < tileDimX;x+= 1)
+			// opt
+			int screenMode = bgMode & 0x07;
+
+			if ((screenMode == 2) || (screenMode == 4))
 			{
-				if (x != 0)
+				int bg3baseTileAddr = ((bgTileMapBaseAddress[2] >> 2) << 10) & 0x7fff;
+
+				int bg3xscroll = bgScrollX[2] & 0x3ff;
+				int bg3realx = x - 1 + (bg3xscroll / 8);
+
+				unsigned short int bg3word = 0, bg3word2 = 0;
+				if ((bgMode & 0x07) == 2)
 				{
-					// opt
-					int screenMode = bgMode & 0x07;
-
-					if ((screenMode == 2) || (screenMode == 4))
-					{
-						int bg3baseTileAddr = ((bgTileMapBaseAddress[2] >> 2) << 10) & 0x7fff;
-
-						int bg3xscroll = bgScrollX[2] & 0x3ff;
-						int bg3realx = x - 1 + (bg3xscroll / 8);
-						//int bg3yscroll = bgScrollY[2] & 0x3ff;
-
-						unsigned short int bg3word = 0, bg3word2 = 0;
-						if ((bgMode & 0x07) == 2)
-						{
-							bg3word = vram[bg3baseTileAddr + (bg3realx & 0x3f)];
-							bg3word2 = vram[bg3baseTileAddr + (bg3realx & 0x3f) + 32];
-						}
-						else if ((bgMode & 0x07) == 4)
-						{
-							bg3word = vram[bg3baseTileAddr + (bg3realx & 0x3f)];
-						}
-
-						calcOffsetPerTileScroll(bg3word, bg3word2, bgnum, xscroll, yscroll);
-					}
+					bg3word = vram[bg3baseTileAddr + (bg3realx & 0x3f)];
+					bg3word2 = vram[bg3baseTileAddr + (bg3realx & 0x3f) + 32];
+				}
+				else if ((bgMode & 0x07) == 4)
+				{
+					bg3word = vram[bg3baseTileAddr + (bg3realx & 0x3f)];
 				}
 
-				int realx = x + (xscroll / tileDim);
-				int realy = y + (yscroll / tileDim);
-
-				if (((yscroll % tileDim) + (scanlinenum % tileDim)) > (tileDim-1))
+				calcOffsetPerTileScroll(bg3word, bg3word2, bgnum, xscroll, yscroll);
+				realy = y + (yscroll / tileDim);
+				if (((yscroll % tileDim) + (scanlinenum % tileDim)) > (tileDim - 1))
 				{
 					realy += 1;
 				}
 
-				int anderx = 0x3f; int andery = 0x3f;
-				if ((bgSize == 0) || (bgSize == 1)) andery = 0x1f;
-				if ((bgSize == 0) || (bgSize == 2)) anderx = 0x1f;
+				buildTilemapMap(tilemapMap, bgSize, baseTileAddr, realy & andery);
+			}
+		}
 
-				unsigned short int vramWord = tilemapMap[realy & andery][realx & anderx];
-				int tileNum = vramWord & 0x3ff;
-				int palId = (vramWord >> 10) & 0x7;
-				unsigned char bgPri = (vramWord >> 13) & 0x01;
-				int xflip = (vramWord >> 14) & 0x01;
-				int yflip = (vramWord >> 15) & 0x01;
+		int realx = x + (xscroll / tileDim);
 
-				if (tileDim == 8)
+		int anderx = 0x3f; 
+		if ((bgSize == 0) || (bgSize == 2)) anderx = 0x1f;
+
+		unsigned short int vramWord = tilemapMap[realy & andery][realx & anderx];
+		int tileNum = vramWord & 0x3ff;
+		int palId = (vramWord >> 10) & 0x7;
+		unsigned char bgPri = (vramWord >> 13) & 0x01;
+		int xflip = (vramWord >> 14) & 0x01;
+		int yflip = (vramWord >> 15) & 0x01;
+
+		if (tileDim == 8)
+		{
+			renderTileScanline(bpp, (x * 8) - (xscroll % tileDim), yscroll, tileNum, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
+		}
+		else
+		{
+			if (((yscroll+scanlinenum) % tileDim) < 8)
+			{
+				if (!xflip)
 				{
-					renderTileScanline(bpp, (x * 8) - (xscroll % tileDim), yscroll, tileNum, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
+					renderTileScanline(bpp, (x * 16) - (xscroll % tileDim), yscroll, tileNum, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
+					renderTileScanline(bpp, ((x * 16) + 8) - (xscroll % tileDim), yscroll, (tileNum + 1) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
 				}
 				else
 				{
-					if (((yscroll+scanlinenum) % tileDim) < 8)
-					{
-						if (!xflip)
-						{
-							renderTileScanline(bpp, (x * 16) - (xscroll % tileDim), yscroll, tileNum, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
-							renderTileScanline(bpp, ((x * 16) + 8) - (xscroll % tileDim), yscroll, (tileNum + 1) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
-						}
-						else
-						{
-							renderTileScanline(bpp, ((x * 16) + 8) - (xscroll % tileDim), yscroll, tileNum , palId, bgnum, xflip, yflip, scanlinenum, bgPri);
-							renderTileScanline(bpp, (x * 16) - (xscroll % tileDim), yscroll, (tileNum+1) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
-						}
-					}
-					else
-					{
-						if (!xflip)
-						{
-							renderTileScanline(bpp, (x * 16) - (xscroll % tileDim), yscroll, (tileNum + 16) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
-							renderTileScanline(bpp, ((x * 16) + 8) - (xscroll % tileDim), yscroll, (tileNum + 17) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
-						}
-						else
-						{
-							renderTileScanline(bpp, ((x * 16) + 8) - (xscroll % tileDim), yscroll, (tileNum + 16) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
-							renderTileScanline(bpp, (x * 16) - (xscroll % tileDim), yscroll, (tileNum + 17) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
-						}
-					}
+					renderTileScanline(bpp, ((x * 16) + 8) - (xscroll % tileDim), yscroll, tileNum , palId, bgnum, xflip, yflip, scanlinenum, bgPri);
+					renderTileScanline(bpp, (x * 16) - (xscroll % tileDim), yscroll, (tileNum+1) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
+				}
+			}
+			else
+			{
+				if (!xflip)
+				{
+					renderTileScanline(bpp, (x * 16) - (xscroll % tileDim), yscroll, (tileNum + 16) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
+					renderTileScanline(bpp, ((x * 16) + 8) - (xscroll % tileDim), yscroll, (tileNum + 17) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
+				}
+				else
+				{
+					renderTileScanline(bpp, ((x * 16) + 8) - (xscroll % tileDim), yscroll, (tileNum + 16) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
+					renderTileScanline(bpp, (x * 16) - (xscroll % tileDim), yscroll, (tileNum + 17) & 0x3ff, palId, bgnum, xflip, yflip, scanlinenum, bgPri);
 				}
 			}
 		}
@@ -1188,24 +1101,6 @@ void ppu::renderSpritesScanline(int scanlinenum)
 		const int spriteDimX = spriteDimensions[spriteDim][(attr >> 1) & 1][0];
 		const int spriteDimY = spriteDimensions[spriteDim][(attr >> 1) & 1][1];
 
-		const int numCols = 16;
-		unsigned char palArr[3 * numCols];
-
-		int colidx = 256 + (paletteNum * 16 * 2);
-		for (int col = 0;col < numCols;col++)
-		{
-			unsigned int palcol = (((int)(cgram[colidx + 1] & 0x7f)) << 8) | cgram[colidx];
-			int red = palcol & 0x1f; red <<= 3;
-			int green = (palcol >> 5) & 0x1f; green <<= 3;
-			int blue = (palcol >> 10) & 0x1f; blue <<= 3;
-
-			palArr[(col * 3) + 0] = (unsigned char)red;
-			palArr[(col * 3) + 1] = (unsigned char)green;
-			palArr[(col * 3) + 2] = (unsigned char)blue;
-
-			colidx += 2;
-		}
-
 		const unsigned int OAMBase = (obSel & 0x07)<<13;
 
 		int ybase = 0; int yend = spriteDimY; int yinc = 1;
@@ -1249,9 +1144,11 @@ void ppu::renderSpritesScanline(int scanlinenum)
 							unsigned char* pObjPriAppo = &objPriorityAppo[theEx];
 							bool* pObjTranspAppo = &objIsTransparentAppo[theEx];
 
-							*pObjColorAppo = palArr[(pixPalIdx * 3) + 0]; pObjColorAppo++;
-							*pObjColorAppo = palArr[(pixPalIdx * 3) + 1]; pObjColorAppo++;
-							*pObjColorAppo = palArr[(pixPalIdx * 3) + 2]; pObjColorAppo++;
+							unsigned int realColIdx = 128 + (paletteNum * 16) + pixPalIdx;
+							*pObjColorAppo = palarrLookup[(realColIdx * 3) + 0]; pObjColorAppo++;
+							*pObjColorAppo = palarrLookup[(realColIdx * 3) + 1]; pObjColorAppo++;
+							*pObjColorAppo = palarrLookup[(realColIdx * 3) + 2]; pObjColorAppo++;
+							
 							*pObjColorAppo = 0xff; pObjColorAppo++;
 							*pObjPriAppo = priority; 
 							*pObjTranspAppo = false; 
@@ -1273,22 +1170,38 @@ void ppu::renderSpritesScanline(int scanlinenum)
 
 void ppu::resetAppoBuffers()
 {
-	for (int x = 0;x < 256;x++)
-	{
-		bgPriorityAppo[0][x] = 0; bgPriorityAppo[1][x] = 0; bgPriorityAppo[2][x] = 0; bgPriorityAppo[3][x] = 0;
-		bgIsTransparentAppo[0][x] = true; bgIsTransparentAppo[1][x] = true; bgIsTransparentAppo[2][x] = true; bgIsTransparentAppo[3][x] = true;
-		bgColorAppo[0][(x * 4) + 0] = 0; bgColorAppo[0][(x * 4) + 1] = 0; bgColorAppo[0][(x * 4) + 2] = 0; bgColorAppo[0][(x * 4) + 3] = 0;
-		bgColorAppo[1][(x * 4) + 0] = 0; bgColorAppo[1][(x * 4) + 1] = 0; bgColorAppo[1][(x * 4) + 2] = 0; bgColorAppo[1][(x * 4) + 3] = 0;
-		bgColorAppo[2][(x * 4) + 0] = 0; bgColorAppo[2][(x * 4) + 1] = 0; bgColorAppo[2][(x * 4) + 2] = 0; bgColorAppo[2][(x * 4) + 3] = 0;
-		bgColorAppo[3][(x * 4) + 0] = 0; bgColorAppo[3][(x * 4) + 1] = 0; bgColorAppo[3][(x * 4) + 2] = 0; bgColorAppo[3][(x * 4) + 3] = 0;
+	memset(bgPriorityAppo, 0, 256);
+	memset(objColorAppo, 0, 1024);
+	memset(objIsTransparentAppo, true, 256);
+	memset(bgIsTransparentAppo[0], true, 256);
+	memset(bgIsTransparentAppo[1], true, 256);
+	memset(bgIsTransparentAppo[2], true, 256);
+	memset(bgIsTransparentAppo[3], true, 256);
+	memset(bgPriorityAppo[0], 0, 256);
+	memset(bgPriorityAppo[1], 0, 256);
+	memset(bgPriorityAppo[2], 0, 256);
+	memset(bgPriorityAppo[3], 0, 256);
+	memset(bgColorAppo[0], 0, 1024);
+	memset(bgColorAppo[1], 0, 1024);
+	memset(bgColorAppo[2], 0, 1024);
+	memset(bgColorAppo[3], 0, 1024);
 
-		objColorAppo[(x * 4) + 0] = 0; objColorAppo[(x * 4) + 1] = 0; objColorAppo[(x * 4) + 2] = 0; objColorAppo[(x * 4) + 3] = 0;
-		objPriorityAppo[x] = 0; 
-		objIsTransparentAppo[x] = true; 
-	}
+	//for (int x = 0;x < 256;x++)
+	//{
+		//bgPriorityAppo[0][x] = 0; bgPriorityAppo[1][x] = 0; bgPriorityAppo[2][x] = 0; bgPriorityAppo[3][x] = 0;
+		//bgIsTransparentAppo[0][x] = true; bgIsTransparentAppo[1][x] = true; bgIsTransparentAppo[2][x] = true; bgIsTransparentAppo[3][x] = true;
+		//bgColorAppo[0][(x * 4) + 0] = 0; bgColorAppo[0][(x * 4) + 1] = 0; bgColorAppo[0][(x * 4) + 2] = 0; bgColorAppo[0][(x * 4) + 3] = 0;
+		//bgColorAppo[1][(x * 4) + 0] = 0; bgColorAppo[1][(x * 4) + 1] = 0; bgColorAppo[1][(x * 4) + 2] = 0; bgColorAppo[1][(x * 4) + 3] = 0;
+		//bgColorAppo[2][(x * 4) + 0] = 0; bgColorAppo[2][(x * 4) + 1] = 0; bgColorAppo[2][(x * 4) + 2] = 0; bgColorAppo[2][(x * 4) + 3] = 0;
+		//bgColorAppo[3][(x * 4) + 0] = 0; bgColorAppo[3][(x * 4) + 1] = 0; bgColorAppo[3][(x * 4) + 2] = 0; bgColorAppo[3][(x * 4) + 3] = 0;
+
+		//objColorAppo[(x * 4) + 0] = 0; objColorAppo[(x * 4) + 1] = 0; objColorAppo[(x * 4) + 2] = 0; objColorAppo[(x * 4) + 3] = 0;
+		//objPriorityAppo[x] = 0; 
+		//objIsTransparentAppo[x] = true; 
+	//}
 }
 
-/* this fantastic code comes from https://github.com/angelo-wf/LakeSnes. Probably would have taken ages to write it by myself */
+/* this fantastic code comes from https://github.com/angelo-wf/LakeSnes */
 
 void ppu::calculateMode7Starts(int y)
 {
@@ -1341,60 +1254,17 @@ unsigned char ppu::getPixelForMode7(int x, int layer, bool priority)
 
 void ppu::renderMode7Scanline(int scanlinenum)
 {
-	unsigned char* palArr = new unsigned char[3 * 256];
-	unsigned int colidx = 0;
-
-	for (int col = 0;col < 256;col++)
-	{
-		unsigned int palcol = (((int)(cgram[colidx + 1] & 0x7f)) << 8) | cgram[colidx];
-		int red = palcol & 0x1f; red <<= 3;
-		int green = (palcol >> 5) & 0x1f; green <<= 3;
-		int blue = (palcol >> 10) & 0x1f; blue <<= 3;
-
-		palArr[(col * 3) + 0] = (unsigned char)red;
-		palArr[(col * 3) + 1] = (unsigned char)green;
-		palArr[(col * 3) + 2] = (unsigned char)blue;
-
-		colidx += 2;
-	}
-
-	//
-
 	calculateMode7Starts(scanlinenum);
 
 	unsigned char* pBuf = &screenFramebuffer[(scanlinenum * ppuResolutionX * 4)];
 	for (int x = 0;x < 256;x++)
 	{
 		unsigned char colNum = getPixelForMode7(x, 0, false);
-		*pBuf = palArr[(colNum * 3) + 0]; pBuf++;
-		*pBuf = palArr[(colNum * 3) + 1]; pBuf++;
-		*pBuf = palArr[(colNum * 3) + 2]; pBuf++;
+		*pBuf = palarrLookup[(colNum * 3) + 0]; pBuf++;
+		*pBuf = palarrLookup[(colNum * 3) + 1]; pBuf++;
+		*pBuf = palarrLookup[(colNum * 3) + 2]; pBuf++;
 		*pBuf = 0xff; pBuf++;
 	}
-
-	/*int tiley = scanlinenum / 8;
-
-	for (int x = 0;x < 32;x++)
-	{
-		unsigned int tileaddr = x + (tiley * 128);
-		unsigned int tileNum = vram[tileaddr] & 0xff;
-
-		unsigned int tiledataAddr = tileNum * 64;
-		tiledataAddr += 8 * (scanlinenum % 8);
-
-		unsigned char* pBuf = &screenFramebuffer[(scanlinenum * ppuResolutionX * 4)+(x*8*4)];
-		for (int bit = 0;bit < 8;bit++)
-		{
-			unsigned char colNum = vram[tiledataAddr + bit] >> 8;
-
-			*pBuf = palArr[(colNum * 3) + 0]; pBuf++;
-			*pBuf = palArr[(colNum * 3) + 1]; pBuf++;
-			*pBuf = palArr[(colNum * 3) + 2]; pBuf++;
-			*pBuf = 0xff; pBuf++;
-		}
-	}*/
-
-	delete(palArr);
 }
 
 void ppu::renderScanline(int scanlinenum)
@@ -1415,10 +1285,10 @@ void ppu::renderScanline(int scanlinenum)
 		// TODO
 	}
 
+	resetAppoBuffers();
+
 	// rendering depends on screen mode
 	int screenMode = (bgMode & 0x07);
-
-	resetAppoBuffers();
 
 	if (screenMode == 0)
 	{
@@ -1459,13 +1329,13 @@ void ppu::renderScanline(int scanlinenum)
 
 			if (finalCol == -1)
 			{
-				unsigned int backdropColor = (((int)(cgram[1] & 0x7f)) << 8) | cgram[0];
-				unsigned char red = backdropColor & 0x1f; red <<= 3;
-				unsigned char green = (backdropColor >> 5) & 0x1f; green <<= 3;
-				unsigned char blue = (backdropColor >> 10) & 0x1f; blue <<= 3;
-				*pfbuf = red; pfbuf++;
-				*pfbuf = green; pfbuf++;
-				*pfbuf = blue; pfbuf++;
+				//unsigned int backdropColor = (((int)(cgram[1] & 0x7f)) << 8) | cgram[0];
+				//unsigned char red = backdropColor & 0x1f; red <<= 3;
+				//unsigned char green = (backdropColor >> 5) & 0x1f; green <<= 3;
+				//unsigned char blue = (backdropColor >> 10) & 0x1f; blue <<= 3;
+				*pfbuf = palarrLookup[0]; pfbuf++;
+				*pfbuf = palarrLookup[1]; pfbuf++;
+				*pfbuf = palarrLookup[2]; pfbuf++;
 				*pfbuf = 0xff; pfbuf++;
 			}
 			else if (finalCol < 4)
@@ -1516,7 +1386,7 @@ void ppu::renderScanline(int scanlinenum)
 
 			if (finalCol == -1)
 			{
-				unsigned int backdropColor;
+				//unsigned int backdropColor;
 				
 				//if (((subScreenDesignation & 0x1f) & (1 << 1)))
 				//{
@@ -1524,15 +1394,12 @@ void ppu::renderScanline(int scanlinenum)
 				//}
 				//else
 				//{
-					backdropColor= (((int)(cgram[1] & 0x7f)) << 8) | cgram[0];
+				//	backdropColor= (((int)(cgram[1] & 0x7f)) << 8) | cgram[0];
 				//}
 				
-				unsigned char red = backdropColor & 0x1f; red <<= 3;
-				unsigned char green = (backdropColor >> 5) & 0x1f; green <<= 3;
-				unsigned char blue = (backdropColor >> 10) & 0x1f; blue <<= 3;
-				*pfbuf = red; pfbuf++;
-				*pfbuf = green; pfbuf++;
-				*pfbuf = blue; pfbuf++;
+				*pfbuf = palarrLookup[0]; pfbuf++;
+				*pfbuf = palarrLookup[1]; pfbuf++;
+				*pfbuf = palarrLookup[2]; pfbuf++;
 				*pfbuf = 0xff; pfbuf++;
 			}
 			else if (finalCol < 4)

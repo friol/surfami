@@ -394,7 +394,7 @@ void apu::writeToDSPRegister(unsigned char val)
 		int voiceNum = (dspSelectedRegister & 0xf0) >> 4;
 		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] SCRN voice " + std::to_string(voiceNum));
 		channels[voiceNum].sampleSourceEntry = val;
-		calcBRRSampleStart(voiceNum);
+		//calcBRRSampleStart(voiceNum);
 	}
 	else if (dspSelectedRegister==0x6c) 
 	{
@@ -403,37 +403,36 @@ void apu::writeToDSPRegister(unsigned char val)
 		echoWrites = (val & 0x20) == 0;
 		noiseRate = val & 0x1f;
 	}
+	else if (dspSelectedRegister == 0x7c)
+	{
+		// any write clears ENDx
+		val = 0;
+	}
+	else if ((dspSelectedRegister & 0x0f) == 5)
+	{
+		int voiceNum = (dspSelectedRegister & 0xf0) >> 4;
+		channels[voiceNum].adsrRates[0] = (val & 0xf) * 2 + 1;
+		channels[voiceNum].adsrRates[1] = ((val & 0x70) >> 4) * 2 + 16;
+		channels[voiceNum].useGain = (val & 0x80) == 0;
+	}
+	else if ((dspSelectedRegister & 0x0f) == 6)
+	{
+		int voiceNum = (dspSelectedRegister & 0xf0) >> 4;
+		channels[voiceNum].adsrRates[2] = val & 0x1f;
+		channels[voiceNum].sustainLevel = (val & 0xe0) >> 5;
+	}
+	else if ((dspSelectedRegister & 0x0f) == 7)
+	{
+		int voiceNum = (dspSelectedRegister & 0xf0) >> 4;
+		channels[voiceNum].directGain = (val & 0x80) == 0;
+		channels[voiceNum].gainMode = (val & 0x60) >> 5;
+		channels[voiceNum].adsrRates[3] = val & 0x1f;
+		channels[voiceNum].gainValue = (val & 0x7f) * 16;
+		channels[voiceNum].gainSustainLevel = (val & 0xe0) >> 5;
+	}
 	else
 	{
 		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to unmapped register "+ sDspReg.str());
-	}
-
-	int ch = dspSelectedRegister >> 4;
-	switch (dspSelectedRegister)
-	{
-		case 0x05: case 0x15: case 0x25: case 0x35: case 0x45: case 0x55: case 0x65: case 0x75: {
-			channels[ch].adsrRates[0] = (val & 0xf) * 2 + 1;
-			channels[ch].adsrRates[1] = ((val & 0x70) >> 4) * 2 + 16;
-			channels[ch].useGain = (val & 0x80) == 0;
-			break;
-		}
-		case 0x06: case 0x16: case 0x26: case 0x36: case 0x46: case 0x56: case 0x66: case 0x76: {
-			channels[ch].adsrRates[2] = val & 0x1f;
-			channels[ch].sustainLevel = (val & 0xe0) >> 5;
-			break;
-		}
-		case 0x07: case 0x17: case 0x27: case 0x37: case 0x47: case 0x57: case 0x67: case 0x77: {
-			channels[ch].directGain = (val & 0x80) == 0;
-			channels[ch].gainMode = (val & 0x60) >> 5;
-			channels[ch].adsrRates[3] = val & 0x1f;
-			channels[ch].gainValue = (val & 0x7f) * 16;
-			channels[ch].gainSustainLevel = (val & 0xe0) >> 5;
-			break;
-		}
-		default:
-		{
-			break;
-		}
 	}
 
 	dspRam[dspSelectedRegister] = val;
@@ -480,6 +479,10 @@ unsigned char apu::internalRead8(unsigned int address)
 	if ((address >= 0xf4) && (address <= 0xf7))
 	{
 		return portsFromCPU[address - 0xf4];
+	}
+	else if ((address == 0xf8) || (address == 0xf9))
+	{
+		return spc700ram[address];
 	}
 	else if ((address==0xfd)||(address==0xfe)||(address == 0xff))
 	{
@@ -606,6 +609,10 @@ void apu::internalWrite8(unsigned int address, unsigned char val)
 		timer[address - 0xfa].target = val;
 		return;
 	}
+	else if ((address == 0xf8) || (address == 0xf9))
+	{
+		spc700ram[address] = val;
+	}
 	else if ((address >= 0xf0) && (address <= 0xff))
 	{
 		glbTheLogger.logMsg("apu::unmapped write to register " + std::to_string(address));
@@ -615,6 +622,8 @@ void apu::internalWrite8(unsigned int address, unsigned char val)
 		spc700ram[address]=val;
 	}
 }
+
+/* the code for DSP sound generation comes from https://github.com/angelo-wf/LakeSnes */
 
 static const int gaussValues[512] = {
   0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000,
@@ -807,13 +816,14 @@ bool apu::dspCheckCounter(int rate)
 	return ((counter + rateOffsets[rate]) % rateValues[rate]) == 0;
 }
 
-void apu::dspCycle(signed short int& sampleOutL, signed short int& sampleOutR)
+void apu::dspCycle(signed short int& sampleOutL, signed short int& sampleOutR, float sampleRate)
 {
 	for (unsigned int ch = 0;ch < 8;ch++)
 	{
 		// handle pitch counter
 
-		int pitch = channels[ch].samplePitch;
+		//int pitch = channels[ch].samplePitch;
+		int pitch = (int)((float)channels[ch].samplePitch*(snesNativeSampleRate/sampleRate));
 
 		//if (ch > 0 && dsp->channel[ch].pitchModulation) {
 		//	pitch += ((dsp->channel[ch - 1].sampleOut >> 5) * pitch) >> 10;
@@ -834,7 +844,7 @@ void apu::dspCycle(signed short int& sampleOutL, signed short int& sampleOutR)
 				channels[ch].blockOffset = 1;
 				channels[ch].bufferOffset = 0;
 				channels[ch].brrHeader = 0;
-				//ram[0x7c] &= ~(1 << ch); // clear ENDx
+				dspRam[0x7c] &= ~(1 << ch); // clear ENDx
 			}
 			channels[ch].gain = 0;
 			channels[ch].startDelay--;
@@ -894,7 +904,7 @@ void apu::dspCycle(signed short int& sampleOutL, signed short int& sampleOutR)
 				if (channels[ch].brrHeader & 0x1) 
 				{
 					channels[ch].decodeOffset = sampleAdr;
-					//dsp->ram[0x7c] |= 1 << ch; // set ENDx
+					dspRam[0x7c] |= 1 << ch; // set ENDx
 				}
 				else 
 				{
@@ -914,8 +924,8 @@ void apu::dspCycle(signed short int& sampleOutL, signed short int& sampleOutR)
 		if (channels[ch].pitchCounter > 0x7fff) channels[ch].pitchCounter = 0x7fff;
 		
 		// set outputs
-		//dsp->ram[(ch << 4) | 8] = dsp->channel[ch].gain >> 4;
-		//dsp->ram[(ch << 4) | 9] = sample >> 8;
+		dspRam[(ch << 4) | 8] = channels[ch].gain >> 4;
+		dspRam[(ch << 4) | 9] = sample >> 8;
 		
 		sampleOutL = clamp16(sampleOutL + ((sample * channels[ch].leftVol) >> 7));
 		sampleOutR = clamp16(sampleOutR + ((sample * channels[ch].rightVol) >> 7));
@@ -946,7 +956,7 @@ void apu::step(audioSystem& theAudioSys)
 		signed short int l = 0;
 		signed short int r = 0;
 		
-		dspCycle(l, r);
+		dspCycle(l, r, theAudioSys.sampleRate);
 
 		float lf = (float)l / (0x8000);
 		float rf = (float)r / (0x8000);
@@ -3127,6 +3137,155 @@ int apu::stepOne()
 
 			regPC += 3;
 			cycles = 5;
+			break;
+		}
+		case 0xa9:
+		{
+			// SBC dd,ds
+			unsigned short int adr0 = (this->*read8)(regPC + 1);
+			if (flagP) adr0 |= 0x100;
+			unsigned short int adr1 = (this->*read8)(regPC + 2);
+			if (flagP) adr1 |= 0x100;
+
+			unsigned char val1 = (this->*read8)(adr1);
+
+			unsigned char value = (this->*read8)(adr0) ^ 0xff;
+			int result = val1 + value + (flagC ? 1 : 0);
+			flagV = (val1 & 0x80) == (value & 0x80) && (value & 0x80) != (result & 0x80);
+			flagH = ((val1 & 0xf) + (value & 0xf) + (flagC ? 1 : 0)) > 0xf;
+			flagC = result > 0xff;
+			val1 = (unsigned char)result;
+			doFlagsNZ(val1);
+
+			(this->*write8)(adr1, result);
+
+			regPC += 3;
+			cycles = 6;
+			break;
+		}
+		case 0x35:
+		{
+			// AND A,!a+X
+			unsigned short int addr = addrAbsX();
+			regA &= (this->*read8)(addr);
+			doFlagsNZ(regA);
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0x45:
+		{
+			// EOR A,!a
+			doEor(&apu::addrAbs);
+			regPC += 3;
+			cycles = 4;
+			break;
+		}
+		case 0x66:
+		{
+			// CMP A,(X)
+			doCMPA(&apu::addrModeX);
+			regPC += 1;
+			cycles = 3;
+			break;
+		}
+		case 0x56:
+		{
+			// EOR A,!a+Y
+			doEor(&apu::addrAbsY);
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0xea:
+		{
+			// NOT1 abs.bit
+			unsigned short int adr = 0;
+			unsigned char bit = addrAbsBit(&adr);
+
+			unsigned char result = (this->*read8)(adr) ^ (1 << bit);
+			(this->*write8)(adr, result);
+
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0x54:
+		{
+			// EOR A,d+X
+			doEor(&apu::addrDPX);
+			regPC += 2;
+			cycles = 4;
+			break;
+		}
+		case 0xa0:
+		{
+			// EI
+			flagI = true;
+			regPC += 1;
+			cycles = 3;
+			break;
+		}
+		case 0x01:
+		{
+			// TCALL 0
+			regPC += 1;
+			(this->*write8)(0x100 | regSP, regPC>>8);
+			regSP--;
+			regSP &= 0xff;
+			(this->*write8)(0x100 | regSP, regPC&0xff);
+			regSP--;
+			regSP &= 0xff;
+
+			unsigned short int adr = 0xffde - (2 * (nextOpcode >> 4));
+
+			unsigned char low = (this->*read8)(adr);
+			unsigned char high = (this->*read8)(adr+1);
+			unsigned short int newPC = low | (high<<8);
+
+			regPC = newPC;
+
+			cycles = 8;
+			break;
+		}
+		case 0x9d:
+		{
+			// MOV X,SP
+			regX = regSP & 0xff;
+			doFlagsNZ(regX);
+			regPC += 1;
+			cycles = 2;
+			break;
+		}
+		case 0x5b:
+		{
+			// LSR d+X
+			doLsr(&apu::addrDPX);
+			regPC += 2;
+			cycles = 5;
+			break;
+		}
+		case 0x7b:
+		{
+			// ROR d+X
+			unsigned short int addr = addrDPX();
+			unsigned char val = (this->*read8)(addr);
+			bool newC = val & 1;
+			val = (val >> 1) | ((flagC ? 1 : 0) << 7);
+			flagC = newC;
+			doFlagsNZ(val);
+			(this->*write8)(addr, val);
+
+			regPC += 2;
+			cycles = 5;
+			break;
+		}
+		case 0x37:
+		{
+			// AND A, [d]+Y
+			doAnd(&apu::addrIndirectY);
+			regPC += 2;
+			cycles = 6;
 			break;
 		}
 		default:

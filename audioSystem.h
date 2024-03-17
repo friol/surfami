@@ -40,6 +40,7 @@ private:
 public:
 
 	bool audioSystemInited = false;
+	float sampleRate = 0;
 
 	audioSystem();
 	void updateStream(apu& theAPU);

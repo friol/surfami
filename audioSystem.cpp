@@ -15,9 +15,10 @@ DWORD CALLBACK StreamProc(HSTREAM handle, float* buffer, DWORD length, void* use
 		buffer[pos + 1] = abuf[pos+1];
 	}*/
 
+	unsigned int avsize = audioVector.size();
 	for (int pos = 0;pos < length / sizeof(float);pos += 2)
 	{
-		if (audioVector.size() > pos)
+		if (pos<avsize)
 		{
 			buffer[pos] = audioVector[pos];
 			buffer[pos + 1] = audioVector[pos + 1];
@@ -55,6 +56,7 @@ audioSystem::audioSystem()
 
 	BASS_INFO info;
 	BASS_GetInfo(&info);
+	sampleRate = info.freq;
 
 	stream = BASS_StreamCreate(info.freq, 2, BASS_SAMPLE_FLOAT, (STREAMPROC*)StreamProc, (void*)audioBuf);
 	BASS_ChannelSetAttribute(stream, BASS_ATTRIB_BUFFER, 0.25);
@@ -65,7 +67,7 @@ audioSystem::audioSystem()
 	outwavbuf = new float[outwavdim * 2];
 
 	audioSystemInited = true;
-	glbTheLogger.logMsg("Audio system inited.");
+	glbTheLogger.logMsg("Audio system inited; sample rate:"+std::to_string(sampleRate));
 }
 
 void audioSystem::loadTestSamples()

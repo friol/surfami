@@ -18,7 +18,10 @@ private:
 
 	int standard = 0; // 0 NTSC, 1 PAL
 	int cgramIdx = 0;
+	
 	unsigned char cgram[512];
+	unsigned char palarrLookup[256 * 3];
+
 	unsigned short int vram[0x8000];
 	unsigned char OAM[0x220];
 	unsigned short int OAMAddr=0;
@@ -73,8 +76,6 @@ private:
 
 	unsigned char* screenFramebuffer;
 
-	void renderTile(int bpp,int px, int py, int tileNum, int palId, int bgnum, int xflip, int yflip);
-
 	void renderBackdrop();
 	void renderSpritesScanline(int scanlinenum);
 
@@ -82,8 +83,10 @@ private:
 	unsigned char getPixelForMode7(int x,int layer,bool priority);
 	void renderMode7Scanline(int scanlinenum);
 
-	void buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int baseTileAddr);
+	void buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int baseTileAddr, unsigned int rowtobuild);
 	void calcOffsetPerTileScroll(unsigned short int bg3word, unsigned short int bg3word2, int bgnum, int& xscroll, int& yscroll);
+
+	void setPalarrColor(int idx);
 
 	unsigned int scanline=0;
 	unsigned int internalCyclesCounter = 0;

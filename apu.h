@@ -29,7 +29,7 @@ struct spc700channel
 	unsigned short int BRRLoopStart;
 	unsigned char brrHeader;
 	unsigned short int decodeOffset;
-	int startDelay;
+	unsigned char startDelay;
 	unsigned char blockOffset; // offset within brr block
 	unsigned char bufferOffset;
 	unsigned short int pitchCounter;
@@ -125,11 +125,12 @@ private:
 	// S-DSP
 
 	unsigned char dspRam[0x80];
+	const float snesNativeSampleRate = 32000;
 
 	unsigned char dspSelectedRegister = 0;
 	void writeToDSPRegister(unsigned char val);
 	void calcBRRSampleStart(int voiceNum);
-	void dspCycle(signed short int& sampleOutL, signed short int& sampleOutR);
+	void dspCycle(signed short int& sampleOutL, signed short int& sampleOutR,float sampleRate);
 	signed short int dspGetSample(int ch);
 	void dspDecodeBrr(int ch);
 	void dspHandleGain(int ch);
