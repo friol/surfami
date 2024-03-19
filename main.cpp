@@ -410,12 +410,16 @@ void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& the
         }
     }
 
+
+    int pushedColors = 1;
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(ImColor(0.6f, 0.1f, 0.1f)));
     ImGui::SameLine();
     // RUN!
     if (ImGui::Button("Go!"))
     {
         emustatus = 1;
     }
+    ImGui::PopStyleColor(pushedColors);
 
     ImGui::SameLine();
     // Stop
@@ -693,11 +697,14 @@ void displayAppoWindow(cpu5a22& theCPU,ppu& thePPU, mmu& ourMMU, debugger5a22& t
     //fileDialog.SetPwd("d:\\prova\\snes\\");
     fileDialog.SetPwd("D:\\romz\\nintendo\\snes\\USA\\");
 
+    int pushedColors = 1;
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(ImColor(0.6f,0.1f,0.1f)));
     if (ImGui::Button("Load rom!"))
     {
         fileDialog.Open();
     }
     ImGui::SameLine();
+    ImGui::PopStyleColor(pushedColors);
 
     fileDialog.Display();
 

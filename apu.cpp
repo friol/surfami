@@ -29,6 +29,7 @@ apu::apu()
 	std::ifstream file(bootRomName, std::ios::binary);
 	if (!file)
 	{
+		glbTheLogger.logMsg("Unable to open roms/ipl.rom (SPC700 rom). Bailing out");
 		return;
 	}
 

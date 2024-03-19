@@ -6,7 +6,7 @@
 logger::logger()
 {
 	errno_t err;
-	err=fopen_s(&logFile,"log.log", "wt");
+	err=fopen_s(&logFile,"surFami.log", "wt");
 }
 
 void logger::logMsg(std::string msg)

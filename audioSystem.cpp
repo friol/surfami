@@ -8,15 +8,11 @@ std::vector<float> audioVector;
 
 DWORD CALLBACK StreamProc(HSTREAM handle, float* buffer, DWORD length, void* user)
 {
-	/*float* abuf = (float*)user;
-	for (int pos = 0;pos < length / sizeof(float);pos+=2)
-	{
-		buffer[pos] = abuf[pos];
-		buffer[pos + 1] = abuf[pos+1];
-	}*/
+	user = user;
+	handle = handle;
 
-	unsigned int avsize = audioVector.size();
-	for (int pos = 0;pos < length / sizeof(float);pos += 2)
+	unsigned int avsize = (unsigned int)audioVector.size();
+	for (unsigned int pos = 0;pos < length / sizeof(float);pos += 2)
 	{
 		if (pos<avsize)
 		{
@@ -39,42 +35,34 @@ audioSystem::audioSystem()
 {
 	HSTREAM stream;
 
-	//if (HIWORD(BASS_GetVersion()) != BASSVERSION) {
-	//	printf("An incorrect version of BASS.DLL was loaded");
-	//	return 0;
-	//}
-
-	for (int pos = 0;pos < audioBufLen*2;pos++)
+	if (HIWORD(BASS_GetVersion()) != BASSVERSION) 
 	{
-		audioBuf[pos] = 0;
+		glbTheLogger.logMsg("Incorrect bass.dll version");
+		return;
 	}
 
 	if (!BASS_Init(-1, 44100, 0, 0, NULL))
 	{
+		glbTheLogger.logMsg("Could not init BASS audio library");
 		return;
 	}
 
 	BASS_INFO info;
 	BASS_GetInfo(&info);
-	sampleRate = info.freq;
+	sampleRate = (float)info.freq;
 
 	stream = BASS_StreamCreate(info.freq, 2, BASS_SAMPLE_FLOAT, (STREAMPROC*)StreamProc, (void*)audioBuf);
 	BASS_ChannelSetAttribute(stream, BASS_ATTRIB_BUFFER, 0.25);
 	BASS_ChannelPlay(stream, FALSE);
 
 	audioSystemInited = true;
-	glbTheLogger.logMsg("Audio system inited; sample rate:"+std::to_string((int)sampleRate));
+	glbTheLogger.logMsg("Audio system inited; sample rate: "+std::to_string((int)sampleRate));
 }
 
 void audioSystem::feedAudiobuf(float l, float r)
 {
 	audioVector.push_back(l);
 	audioVector.push_back(r);
-
-	/*audioBuf[bufPos] = l;
-	audioBuf[bufPos+1] = r;
-	bufPos += 2;
-	if (bufPos >= (audioBufLen*2)) bufPos = 0;*/
 }
 
 audioSystem::~audioSystem()

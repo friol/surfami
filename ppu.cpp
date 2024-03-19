@@ -801,7 +801,7 @@ void ppu::buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int b
 
 	unsigned int tilemapPos = baseTileAddr;
 
-	for (int y = 0;y < 32;y++)
+	for (unsigned int y = 0;y < 32;y++)
 	{
 		if (y == rowtobuild)
 		{
@@ -819,7 +819,7 @@ void ppu::buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int b
 
 	if ((bgSize == 0) || (bgSize == 2)) tilemapPos -= 0x400;
 
-	for (int y = 0;y < 32;y++)
+	for (unsigned int y = 0;y < 32;y++)
 	{
 		if (y == rowtobuild)
 		{
@@ -837,7 +837,7 @@ void ppu::buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int b
 
 	if (bgSize == 0) tilemapPos -= 0x400;
 
-	for (int y = 32;y < 64;y++)
+	for (unsigned int y = 32;y < 64;y++)
 	{
 		if (y == rowtobuild)
 		{
@@ -857,7 +857,7 @@ void ppu::buildTilemapMap(unsigned short int tilemapMap[][64], int bgSize, int b
 	else if (bgSize == 1) tilemapPos -= 0x800;
 	else if (bgSize == 2) tilemapPos -= 0x400;
 
-	for (int y = 32;y < 64;y++)
+	for (unsigned int y = 32;y < 64;y++)
 	{
 		if (y == rowtobuild)
 		{
@@ -1233,6 +1233,7 @@ void ppu::calculateMode7Starts(int y)
 
 unsigned char ppu::getPixelForMode7(int x, int layer, bool priority) 
 {
+	priority = priority; layer = layer;
 	//priority++;
 	//layer++;
 
