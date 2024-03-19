@@ -3291,11 +3291,11 @@ int apu::stepOne()
 		default:
 		{
 			// unknown opcode
-			//std::stringstream strr;
-			//strr << std::hex << std::setw(2) << std::setfill('0') << (int)nextOpcode;
-			//std::stringstream staddr;
-			//staddr << std::hex << std::setw(4) << std::setfill('0') << regPC;
-			//glbTheLogger.logMsg("Unknown SPC700 opcode [" + strr.str() + "] at 0x" + staddr.str());
+			std::stringstream strr;
+			strr << std::hex << std::setw(2) << std::setfill('0') << (int)nextOpcode;
+			std::stringstream staddr;
+			staddr << std::hex << std::setw(4) << std::setfill('0') << regPC;
+			glbTheLogger.logMsg("Unknown SPC700 opcode [" + strr.str() + "] at 0x" + staddr.str());
 			return -1;
 		}
 	}

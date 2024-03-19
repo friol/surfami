@@ -410,7 +410,6 @@ void displayDebugWindow(cpu5a22& theCPU, debugger5a22& theDebugger5a22, mmu& the
         }
     }
 
-
     int pushedColors = 1;
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(ImColor(0.6f, 0.1f, 0.1f)));
     ImGui::SameLine();
@@ -744,8 +743,8 @@ void displayAppoWindow(cpu5a22& theCPU,ppu& thePPU, mmu& ourMMU, debugger5a22& t
     {
         for (auto& testCase : *pOpcodeList)
         {
-            //if (testCase.validatedTomHarte == false)
-            if (testCase.opcode>=0x61)
+            if (testCase.validatedTomHarte == false)
+            //if (testCase.opcode>=0x61)
             {
                 testMMU testMMU;
                 cpu5a22 testCPU(&testMMU, true);
@@ -818,7 +817,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     // Create application window
     WNDCLASSEXW wc = { sizeof(wc), CS_OWNDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr, L"SurFami", nullptr };
     ::RegisterClassExW(&wc);
-    HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"SurFami", WS_OVERLAPPEDWINDOW, 100, 100, 1580, 800, nullptr, nullptr, wc.hInstance, nullptr);
+    HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"SurFami", WS_OVERLAPPEDWINDOW, 100, 100, 1520, 800, nullptr, nullptr, wc.hInstance, nullptr);
 
     // Initialize OpenGL
     if (!CreateDeviceWGL(hwnd, &g_MainWindow))

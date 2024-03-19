@@ -92,7 +92,14 @@ void romLoader::checkRomType(std::vector<unsigned char>* romContents, bool& isHi
 
 	// 0 lorom, 1 hirom
 	unsigned char speedMemMap = (*romContents)[0xffd5+ romAdder];
-	loadLog.push_back("Map mode:" + (speedMemMap & 0x0f)==0?"LoROM":"HiROM");
+	if ((speedMemMap & 0x0f) == 0)
+	{
+		loadLog.push_back("Header says it's LoROM");
+	}
+	else
+	{
+		loadLog.push_back("Header says it's HiROM");
+	}
 
 	// rom country
 	unsigned char romCountry = (*romContents)[0xffd9+ romAdder];
@@ -102,9 +109,13 @@ void romLoader::checkRomType(std::vector<unsigned char>* romContents, bool& isHi
 	{
 		if (romCountry == ccode)
 		{
+			loadLog.push_back("ROM is PAL");
 			standard = 1;
+			return;
 		}
 	}
+
+	loadLog.push_back("ROM is NTSC");
 }
 
 int romLoader::loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>& loadLog,bool& isHirom,int& videoStandard)
@@ -193,12 +204,14 @@ int romLoader::loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>
 	std::string romName = romPath.substr(romBeg);
 	int pointPos = (int)romName.find_last_of(".");
 	std::string onlyRomName = romName.substr(0, pointPos);
-	std::string sramFileName = "D:\\prova\\snes\\sram\\" + onlyRomName + ".srm";
+	std::string sramFileName = "sram\\" + onlyRomName + ".srm";
 
 	std::vector<unsigned char> sramData;
 	std::ifstream file(sramFileName, std::ios::binary);
 	if (file)
 	{
+		loadLog.push_back("SRAM found, loading it.");
+
 		file.unsetf(std::ios::skipws);
 
 		std::streampos fileSize;
