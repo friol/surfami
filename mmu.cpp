@@ -381,8 +381,8 @@ void mmu::executeHDMA()
 
 void mmu::write8(unsigned int address, unsigned char val)
 {
-	std::stringstream strr;
-	strr << std::hex << std::setw(2) << std::setfill('0') << (int)val;
+	//std::stringstream strr;
+	//strr << std::hex << std::setw(2) << std::setfill('0') << (int)val;
 
 	unsigned char bank_nr = (unsigned char)(address >> 16);
 	unsigned short int adr = address & 0xffff;
@@ -610,8 +610,8 @@ void mmu::write8(unsigned int address, unsigned char val)
 		}
 		else if ((adr == 0x2140) || (adr == 0x2141) || (adr == 0x2142) || (adr == 0x2143))
 		{
-			std::stringstream strstrVal;
-			strstrVal << std::hex << std::setw(2) << std::setfill('0') << (int)val;
+			//std::stringstream strstrVal;
+			//strstrVal << std::hex << std::setw(2) << std::setfill('0') << (int)val;
 			//glbTheLogger.logMsg("Write ["+strstrVal.str() + "] to APU port " + std::to_string(adr - 0x2140));
 			pAPU->externalWrite8(adr, val);
 			return;

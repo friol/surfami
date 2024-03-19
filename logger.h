@@ -9,7 +9,7 @@ class logger
 {
 private:
 
-	bool log2file = false;
+	bool log2file = true;
 	FILE* logFile;
 
 	const int maxQueueDim = 100;

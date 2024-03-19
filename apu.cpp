@@ -296,35 +296,35 @@ void apu::calcBRRSampleStart(int voiceNum)
 
 void apu::writeToDSPRegister(unsigned char val)
 {
-	std::stringstream strstrVal;
-	strstrVal << std::hex << std::setw(2) << std::setfill('0') << (int)val;
+	//std::stringstream strstrVal;
+	//strstrVal << std::hex << std::setw(2) << std::setfill('0') << (int)val;
 
-	std::stringstream sDspReg;
-	sDspReg << std::hex << std::setw(2) << std::setfill('0') << (int)dspSelectedRegister;
+	//std::stringstream sDspReg;
+	//sDspReg << std::hex << std::setw(2) << std::setfill('0') << (int)dspSelectedRegister;
 
 	if (dspSelectedRegister == 0x0c)
 	{
-		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to MVOL (L)");
+		//glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to MVOL (L)");
 		mainVolLeft = (signed char)val;
 	}
 	else if (dspSelectedRegister == 0x1c)
 	{
-		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to MVOL (R)");
+		//glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to MVOL (R)");
 		mainVolRight = (signed char)val;
 	}
 	else if (dspSelectedRegister == 0x2c)
 	{
-		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to EVOL (L)");
+		//glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to EVOL (L)");
 		echoVolLeft = (signed char)val;
 	}
 	else if (dspSelectedRegister == 0x3c)
 	{
-		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to EVOL (R)");
+		//glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to EVOL (R)");
 		echoVolRight = (signed char)val;
 	}
 	else if (dspSelectedRegister == 0x4c)
 	{
-		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to KEYON");
+		//glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to KEYON");
 		for (int i = 0; i < 8; i++)
 		{
 			if (val & (1 << i))
@@ -335,7 +335,7 @@ void apu::writeToDSPRegister(unsigned char val)
 	}
 	else if (dspSelectedRegister == 0x5c)
 	{
-		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to KEYOFF");
+		//glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to KEYOFF");
 		for (int i = 0; i < 8; i++) 
 		{
 			channels[i].keyOff = val & (1 << i);
@@ -343,41 +343,41 @@ void apu::writeToDSPRegister(unsigned char val)
 	}
 	else if (dspSelectedRegister == 0x6c)
 	{
-		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to FLAGREG");
+		//glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to FLAGREG");
 		dspFlagReg= val;
 	}
 	else if (dspSelectedRegister == 0x5d)
 	{
-		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to DIR 5d sample source directory page");
+		//glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to DIR 5d sample source directory page");
 		dspDIR = (int)val<<8;
 	}
 	else if (dspSelectedRegister == 0x6d)
 	{
-		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to ESA 6d start echo mem reg");
+		//glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to ESA 6d start echo mem reg");
 	}
 	else if (dspSelectedRegister == 0x7d)
 	{
-		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to 7d echo delay time");
+		//glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to 7d echo delay time");
 	}
 	else if ((dspSelectedRegister & 0x0f) == 0)
 	{
 		// left channel volume for voice
 		int voiceNum = (dspSelectedRegister & 0xf0) >> 4;
-		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] VOL (L) voice "+std::to_string(voiceNum));
+		//glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] VOL (L) voice "+std::to_string(voiceNum));
 		channels[voiceNum].leftVol = val;
 	}
 	else if ((dspSelectedRegister & 0x0f) == 1)
 	{
 		// right channel volume for voice
 		int voiceNum = (dspSelectedRegister & 0xf0) >> 4;
-		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] VOL (R) voice " + std::to_string(voiceNum));
+		//glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] VOL (R) voice " + std::to_string(voiceNum));
 		channels[voiceNum].rightVol = val;
 	}
 	else if ((dspSelectedRegister & 0x0f) == 2)
 	{
 		// low 8 bits of sample pitch
 		int voiceNum = (dspSelectedRegister & 0xf0) >> 4;
-		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] PITCH (L) voice " + std::to_string(voiceNum));
+		//glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] PITCH (L) voice " + std::to_string(voiceNum));
 		//channels[voiceNum].samplePitch |= val;
 		channels[voiceNum].samplePitch= (channels[voiceNum].samplePitch & 0x3f00) | val;;
 	}
@@ -385,7 +385,7 @@ void apu::writeToDSPRegister(unsigned char val)
 	{
 		// high 6 bits of sample pitch
 		int voiceNum = (dspSelectedRegister & 0xf0) >> 4;
-		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] PITCH (H) voice " + std::to_string(voiceNum));
+		//glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] PITCH (H) voice " + std::to_string(voiceNum));
 		//channels[voiceNum].samplePitch |= (val<<8);
 		channels[voiceNum].samplePitch= ((channels[voiceNum].samplePitch & 0x00ff) | (val << 8)) & 0x3fff;
 	}
@@ -393,7 +393,7 @@ void apu::writeToDSPRegister(unsigned char val)
 	{
 		// sample source entry from DIR
 		int voiceNum = (dspSelectedRegister & 0xf0) >> 4;
-		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] SCRN voice " + std::to_string(voiceNum));
+		//glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] SCRN voice " + std::to_string(voiceNum));
 		channels[voiceNum].sampleSourceEntry = val;
 		//calcBRRSampleStart(voiceNum);
 	}
@@ -433,7 +433,7 @@ void apu::writeToDSPRegister(unsigned char val)
 	}
 	else
 	{
-		glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to unmapped register "+ sDspReg.str());
+		//glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to unmapped register "+ sDspReg.str());
 	}
 
 	dspRam[dspSelectedRegister] = val;
@@ -474,9 +474,6 @@ void apu::externalWrite8(unsigned int address, unsigned char val)
 
 unsigned char apu::internalRead8(unsigned int address)
 {
-	std::stringstream strstrAddr;
-	strstrAddr << std::hex << std::setw(4) << std::setfill('0') << (int)address;
-
 	if ((address >= 0xf4) && (address <= 0xf7))
 	{
 		return portsFromCPU[address - 0xf4];
@@ -505,6 +502,8 @@ unsigned char apu::internalRead8(unsigned int address)
 	}
 	else if ((address >= 0xf0) && (address <= 0xff))
 	{
+		std::stringstream strstrAddr;
+		strstrAddr << std::hex << std::setw(4) << std::setfill('0') << (int)address;
 		glbTheLogger.logMsg("apu::unmapped read from register "+ strstrAddr.str());
 	}
 	else if ((address >= 0xffc0) && (address <= 0xffff))
@@ -952,7 +951,7 @@ void apu::dspCycle(signed short int& sampleOutL, signed short int& sampleOutR, f
 
 void apu::step(audioSystem& theAudioSys)
 {
-	if ((apuCycles%8) == 0) 
+	if ((apuCycles&0x07) == 0) 
 	{
 		signed short int l = 0;
 		signed short int r = 0;
@@ -3284,6 +3283,14 @@ int apu::stepOne()
 		{
 			// AND A, [d]+Y
 			doAnd(&apu::addrIndirectY);
+			regPC += 2;
+			cycles = 6;
+			break;
+		}
+		case 0x57:
+		{
+			// EOR A, [d]+Y
+			doEor(&apu::addrIndirectY);
 			regPC += 2;
 			cycles = 6;
 			break;
