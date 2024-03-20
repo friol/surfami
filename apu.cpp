@@ -3304,6 +3304,40 @@ int apu::stepOne()
 			cycles = 2;
 			break;
 		}
+		case 0x6c:
+		{
+			// ROR !a
+			unsigned short int addr = addrAbs();
+			unsigned char val = (this->*read8)(addr);
+
+			bool newC = val & 1;
+			val = (val >> 1) | ((flagC ? 1 : 0) << 7);
+			flagC = newC;
+			doFlagsNZ(val);
+
+			(this->*write8)(addr, val);
+
+			regPC += 3;
+			cycles = 5;
+			break;
+		}
+		case 0x4f:
+		{
+			// PCALL u
+			signed char offs = (this->*read8)(regPC + 1);
+
+			(this->*write8)(0x100 | regSP, (regPC+2) >> 8);
+			regSP--;
+			regSP &= 0xff;
+			(this->*write8)(0x100 | regSP, (regPC+2) & 0xff);
+			regSP--;
+			regSP &= 0xff;
+
+			regPC = 0xff00 | offs;
+
+			cycles = 6;
+			break;
+		}
 		default:
 		{
 			// unknown opcode

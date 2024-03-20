@@ -213,6 +213,8 @@ dbgSPC700info listOfInstrs[]
 	{0x37,"AND A,[$param0]+Y",2,1,true}, // validatedFC
 	{0x57,"EOR A,[$param0]+Y",2,1,true}, // validatedFC
 	{0xe0,"CLRV",1,0,true}, // validatedFC
+	{0x6c,"ROR !$param0",3,1,true}, // validatedFC
+	{0x4f,"PCALL $param0",2,1,true}, // validatedFC
 
 
 };
