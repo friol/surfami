@@ -693,8 +693,8 @@ void displayAppoWindow(cpu5a22& theCPU,ppu& thePPU, mmu& ourMMU, debugger5a22& t
     // (optional) set browser properties
     fileDialog.SetTitle("Load SNES ROM");
     fileDialog.SetTypeFilters({ ".smc", ".sfc" });
-    fileDialog.SetPwd("d:\\prova\\snes\\");
-    //fileDialog.SetPwd("D:\\romz\\nintendo\\snes\\USA\\");
+    //fileDialog.SetPwd("d:\\prova\\snes\\");
+    fileDialog.SetPwd("D:\\romz\\nintendo\\snes\\USA\\");
 
     int pushedColors = 1;
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(ImColor(0.6f,0.1f,0.1f)));

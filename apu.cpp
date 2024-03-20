@@ -3295,6 +3295,15 @@ int apu::stepOne()
 			cycles = 6;
 			break;
 		}
+		case 0xe0:
+		{
+			// CLRV
+			flagV = false;
+			flagH = false;
+			regPC += 1;
+			cycles = 2;
+			break;
+		}
 		default:
 		{
 			// unknown opcode
