@@ -20,3 +20,14 @@ If you want to take a look at a visual history of the surFami build, you can tak
 <img src="https://github.com/friol/surfami/blob/master/images/ss20240111.png" width="480" /><br/>
 <img src="https://github.com/friol/surfami/blob/master/images/ss20240114.png" width="480" /><br/>
 
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240124.png" width="480" /><br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240201.png" width="480" /><br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240204.png" width="480" /><br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240209.png" width="480" /><br/>
+
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240210.png" width="480" /><br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240212.png" width="480" /><br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240214.2.png" width="480" /><br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240214.png" width="480" /><br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240219.2.png" width="480" /><br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240219.png" width="480" /><br/>
