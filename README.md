@@ -13,4 +13,10 @@ The 2 CPUs (65816 and SPC700) in surFami are built with Tom Harte's CPU tests in
 If you want to take a look at a visual history of the surFami build, you can take a peek at those images that represent the growth of the emu.
 <br/><br/>
 
-<img src="https://github.com/friol/surfami/blob/master/images/ss20231229.png" width="640" />
+<img src="https://github.com/friol/surfami/blob/master/images/ss20231229.png" width="480" /><br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240105.png" width="480" /><br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240107.png" width="480" /><br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240107_2.png" width="480" /><br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240111.png" width="480" /><br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240114.png" width="480" /><br/>
+
