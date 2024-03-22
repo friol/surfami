@@ -20,6 +20,10 @@
 #include <tchar.h>
 #include <iomanip>
 #include <sstream>
+#include <iostream>
+#include <cstdio>
+#include <chrono>
+#include <thread>
 
 #include "imfilebrowser.h"
 
@@ -694,7 +698,7 @@ void displayAppoWindow(cpu5a22& theCPU,ppu& thePPU, mmu& ourMMU, debugger5a22& t
     fileDialog.SetTitle("Load SNES ROM");
     fileDialog.SetTypeFilters({ ".smc", ".sfc" });
     //fileDialog.SetPwd("d:\\prova\\snes\\");
-    fileDialog.SetPwd("D:\\romz\\nintendo\\snes\\USA\\");
+    //fileDialog.SetPwd("D:\\romz\\nintendo\\snes\\USA\\");
 
     int pushedColors = 1;
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(ImColor(0.6f,0.1f,0.1f)));
@@ -906,6 +910,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     unsigned long int totCPUCycles = 0;
     int emustatus = -1; // 0 debugging, 1 running, -1 no rom loaded
     ImGui::FileBrowser fileDialog;
+
+    std::chrono::system_clock::time_point t0 = std::chrono::system_clock::now();
+    std::chrono::system_clock::time_point t1 = std::chrono::system_clock::now();
 
     while (!done)
     {
@@ -1141,11 +1148,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         ::SwapBuffers(g_MainWindow.hDC);
 
         // throttle
-        float fps = ImGui::GetIO().Framerate;
-        if (fps > 60.0)
+        t0 = std::chrono::system_clock::now();
+        std::chrono::duration<double, std::milli> work_time = t0 - t1;
+        const float targetMsPerFrame = 1000.0 / 60.0;
+
+        if (work_time.count() < targetMsPerFrame)
         {
-            Sleep(10);
+            std::chrono::duration<double, std::milli> delta_ms(targetMsPerFrame - work_time.count());
+            auto delta_ms_duration = std::chrono::duration_cast<std::chrono::milliseconds>(delta_ms);
+            std::this_thread::sleep_for(std::chrono::milliseconds(delta_ms_duration.count()));
         }
+
+        t1 = std::chrono::system_clock::now();
+        std::chrono::duration<double, std::milli> sleep_time = t1 - t0;
     }
 
     // dispose everything

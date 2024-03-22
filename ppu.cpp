@@ -121,6 +121,21 @@ void ppu::writeBgScrollY(int bgId, unsigned char val)
 	BGSCROLL_L1 = val;
 }
 
+unsigned char ppu::cgramRead(unsigned short int offset)
+{
+	unsigned char res;
+	offset &= 0x1ff;
+
+	res = cgram[offset];
+
+	if (offset & 0x01)
+	{
+		res &= 0x7f;
+	}
+
+	return res;
+}
+
 void ppu::writeOAM(unsigned char val)
 {
 	unsigned char latch_bit = OAMAddr & 1;

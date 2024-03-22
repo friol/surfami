@@ -158,6 +158,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x9e,3,"STZ param0,X",Absolute16,false,false,true}, // validatedF
 	{0x9f,4,"STA param0,X",AbsoluteLong,false,false,true}, // validatedF
 	{0xA0,2,"LDY param0",Immediate,true,false,true}, // validatedF
+	{0xa1,2,"LDA (param0,X)",Immediate8,false,false,true},
 	{0xA2,2,"LDX param0",Immediate,true,false,true}, // validatedF
 	{0xA3,2,"LDA param0,S",Immediate8,false,false,true}, // validatedF
 	{0xA4,2,"LDY param0",Immediate8,false,false,true}, // validatedF

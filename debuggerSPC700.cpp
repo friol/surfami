@@ -215,6 +215,8 @@ dbgSPC700info listOfInstrs[]
 	{0xe0,"CLRV",1,0,true}, // validatedFC
 	{0x6c,"ROR !$param0",3,1,true}, // validatedFC
 	{0x4f,"PCALL $param0",2,1,true}, // validatedFC
+	{0xd9,"MOV $param0+Y,X",2,1,true}, // validatedFC
+	{0x50,"BVC $param0",2,1,true}, // validatedFC
 
 
 };
@@ -226,7 +228,7 @@ debuggerSPC700::debuggerSPC700()
 		debugInstrList.push_back(instr);
 	}
 
-	glbTheLogger.logMsg("Opcodes added to debugger: " + std::to_string(debugInstrList.size()));
+	glbTheLogger.logMsg("Opcodes added to SPC debugger: " + std::to_string(debugInstrList.size()));
 }
 
 std::vector<dbgSPC700info>* debuggerSPC700::getOpcodesList()

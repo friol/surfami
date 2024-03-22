@@ -501,12 +501,14 @@ void mmu::write8(unsigned int address, unsigned char val)
 		{
 			//glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2121 (CGRAM index)");
 			pPPU->writeRegister(0x2121, val);
+			cgramAddress = val << 1;
 			return;
 		}
 		else if (adr == 0x2122)
 		{
 			// write to cgram
 			pPPU->writeRegister(0x2122, val);
+			cgramAddress = (cgramAddress + 1) & (0x200 - 1);
 			return;
 		}
 		else if (adr == 0x212d)
@@ -744,8 +746,16 @@ unsigned char mmu::read8(unsigned int address)
 		else if (adr == 0x213b)
 		{
 			//	PPU - CGDATA - Palette CGRAM Data Read (R)
-			//return PPU_readCGRAM(memory[0x2121]);
-			glbTheLogger.logMsg("Error: reading from 213b (CGRAM)");
+			unsigned char openbus = 0;
+			if(!(cgramAddress & 0x01)) openbus = pPPU->cgramRead(cgramAddress);
+			else
+			{
+				openbus &= 0x80;
+				openbus |= pPPU->cgramRead(cgramAddress) & 0x7f;
+			}
+
+			cgramAddress = (cgramAddress + 1) & (0x200 - 1);
+			return openbus;
 		}
 		else if (adr == 0x213d)
 		{

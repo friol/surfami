@@ -161,6 +161,8 @@ public:
 	unsigned char readOAM() { return OAM[OAMAddr++ & 0x1ff]; }
 	unsigned char* getOAMPtr() { return OAM; }
 
+	unsigned char cgramRead(unsigned short int offset);
+
 	void writeSubscreenFixedColor(unsigned char val);
 
 	void getPalette(unsigned char* destArr);

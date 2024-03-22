@@ -62,6 +62,8 @@ private:
 	int standard = 0; // 0 NTSC, 1 PAL
 	unsigned short int input1latch = 0;
 
+	unsigned short int cgramAddress = 0;
+
 	void DMAstart(unsigned char val);
 	DMA HDMAS[8];
 	void mmuDMATransfer(unsigned char dma_mode, unsigned char dma_dir, unsigned char dma_step,unsigned int& cpu_address, unsigned char io_address);

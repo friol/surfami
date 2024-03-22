@@ -6550,6 +6550,37 @@ int cpu5a22::stepOne()
 			cycles = 5 + cycAdder;
 			break;
 		}
+		case 0xa1:
+		{
+			// LDA (dp,x)
+			int cycAdder = 0;
+			unsigned int addr = getDirectPageIndirectX();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char lo = pMMU->read8(addr);
+				regA_lo = lo;
+				regP.setZero(lo == 0);
+				regP.setNegative(lo >> 7);
+			}
+			else
+			{
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned int val = (hi << 8) | lo;
+				regA_lo = (val & 0xff);
+				regA_hi = (unsigned char)(val >> 8);
+				regP.setZero(val == 0);
+				regP.setNegative((unsigned char)(val >> 15));
+				cycAdder += 1;
+			}
+
+			if (regD & 0xff) cycAdder += 1;
+
+			regPC += 2;
+			cycles = 6 + cycAdder;
+			break;
+		}
 		default:
 		{
 			// unknown opcode

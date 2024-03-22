@@ -3338,6 +3338,21 @@ int apu::stepOne()
 			cycles = 6;
 			break;
 		}
+		case 0xd9:
+		{
+			// MOV d+Y,X
+			doMoveWithRead(&apu::addrDPY, regX);
+			regPC += 2;
+			cycles = 5;
+			break;
+		}
+		case 0x50:
+		{
+			// BVC offs
+			signed char offs = (this->*read8)(regPC + 1);
+			cycles = doBranch(offs, !flagV);
+			break;
+		}
 		default:
 		{
 			// unknown opcode
