@@ -71,6 +71,7 @@ static const debugInfoRec debugInstrData[] =
 	{0x44,3,"MVP param0",Absolute16,false,false,true},
 	{0x45,2,"EOR param0",Immediate8,false,false,true}, // validatedFC
 	{0x46,2,"LSR param0",Immediate8,false,false,true}, // validatedFC
+	{0x47,2,"EOR [param0]",Immediate8,false,false,true}, // validatedF
 	{0x48,1,"PHA",None,false,false,true}, // validatedFC
 	{0x49,2,"EOR param0",Immediate,false,true,true}, // validatedFC
 	{0x4a,1,"LSR A",None,false,false,true}, // validatedFC

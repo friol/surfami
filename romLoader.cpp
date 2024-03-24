@@ -65,6 +65,13 @@ Country (also implies PAL/NTSC) (FFD9h)
 
 void romLoader::checkRomType(std::vector<unsigned char>* romContents, bool& isHirom, int& standard, std::vector<std::string>& loadLog)
 {
+	if (romContents->size() <= 0x8000)
+	{
+		isHirom = false;
+		standard = 0;
+		return;
+	}
+
 	int romAdder = 0;
 	const int listOfPALCountries[] = {2,3,4,5,7,8,9,0x0a,0x0b,0x0c}; //?
 

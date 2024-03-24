@@ -698,7 +698,8 @@ void displayAppoWindow(cpu5a22& theCPU,ppu& thePPU, mmu& ourMMU, debugger5a22& t
     fileDialog.SetTitle("Load SNES ROM");
     fileDialog.SetTypeFilters({ ".smc", ".sfc" });
     //fileDialog.SetPwd("d:\\prova\\snes\\");
-    //fileDialog.SetPwd("D:\\romz\\nintendo\\snes\\USA\\");
+    //fileDialog.SetPwd("D:\\prova\\snes\\SNES-master\\SPC700\\PlayBRRSample\\");
+    fileDialog.SetPwd("D:\\romz\\nintendo\\snes\\USA\\");
 
     int pushedColors = 1;
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(ImColor(0.6f,0.1f,0.1f)));
@@ -1150,7 +1151,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         // throttle
         t0 = std::chrono::system_clock::now();
         std::chrono::duration<double, std::milli> work_time = t0 - t1;
-        const float targetMsPerFrame = 1000.0 / 60.0;
+        const float targetMsPerFrame = 1000.0f / 60.0f;
 
         if (work_time.count() < targetMsPerFrame)
         {

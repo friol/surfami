@@ -207,6 +207,21 @@ dbgSPC700info listOfInstrs[]
 	{0x54,"EOR A,$param0+X",2,1,true}, // validatedFC
 	{0xa0,"EI",1,0,true}, // validatedFC
 	{0x01,"TCALL 0",1,0,true}, // validatedFC
+	{0x11,"TCALL 1",1,0,true}, // validatedFC
+	{0x21,"TCALL 2",1,0,true}, // validatedFC
+	{0x31,"TCALL 3",1,0,true}, // validatedFC
+	{0x41,"TCALL 4",1,0,true}, // validatedFC
+	{0x51,"TCALL 5",1,0,true}, // validatedFC
+	{0x61,"TCALL 6",1,0,true}, // validatedFC
+	{0x71,"TCALL 7",1,0,true}, // validatedFC
+	{0x81,"TCALL 8",1,0,true}, // validatedFC
+	{0x91,"TCALL 9",1,0,true}, // validatedFC
+	{0xa1,"TCALL 10",1,0,true}, // validatedFC
+	{0xb1,"TCALL 11",1,0,true}, // validatedFC
+	{0xc1,"TCALL 12",1,0,true}, // validatedFC
+	{0xd1,"TCALL 13",1,0,true}, // validatedFC
+	{0xe1,"TCALL 14",1,0,true}, // validatedFC
+	{0xf1,"TCALL 15",1,0,true}, // validatedFC
 	{0x9d,"MOV X,SP",1,0,true}, // validatedFC
 	{0x5d,"LSR $param0+X",2,1,true}, // validatedFC
 	{0x7b,"ROR $param0+X",2,1,true}, // validatedFC

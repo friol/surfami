@@ -666,7 +666,8 @@ void mmu::write8(unsigned int address, unsigned char val)
 		{
 			snesRAM[adr] = val;
 			if (!val) 
-			{			//	Division by zero, return 0xFFFF as Result, Remainder is Dividend
+			{			
+				//	Division by zero, return 0xFFFF as Result, Remainder is Dividend
 				snesRAM[0x4214] = 0xff;
 				snesRAM[0x4215] = 0xff;
 				snesRAM[0x4216] = snesRAM[0x4204];
@@ -932,7 +933,7 @@ unsigned char mmu::read8(unsigned int address)
 		return snesRAM[address];
 	}
 
-	return snesRAM[address];
+	//return snesRAM[address];
 }
 
 mmu::~mmu()

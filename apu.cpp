@@ -80,7 +80,8 @@ apu::apu()
 	mute=false;
 	echoWrites=false;
 	noiseRate=0;
-
+	noiseSample = 0x4000;
+	
 	// init DSP channels
 	for (int i = 0;i < 8;i++)
 	{
@@ -90,7 +91,6 @@ apu::apu()
 		channels[i].rightVol = 0;
 		channels[i].samplePitch = 0;
 		channels[i].sampleSourceEntry = 0;
-		channels[i].playingPos = 0;
 		channels[i].startDelay = 0;
 		channels[i].adsrState = 0;
 		channels[i].brrHeader = 0;
@@ -98,6 +98,7 @@ apu::apu()
 		channels[i].decodeOffset = 0;
 		channels[i].bufferOffset = 0;
 		channels[i].gain = 0;
+		channels[i].useNoise = false;
 
 		memset(channels[i].adsrRates, 0, sizeof(channels[i].adsrRates));
 		channels[i].sustainLevel = 0;
@@ -110,6 +111,9 @@ apu::apu()
 
 		memset(channels[i].decodeBuffer, 0, sizeof(channels[i].decodeBuffer));
 	}
+
+	memset(dspRam, 0, 0x80);
+	dspRam[0x7c] = 0xff;
 }
 
 void apu::useTestMMU()
@@ -341,10 +345,13 @@ void apu::writeToDSPRegister(unsigned char val)
 			channels[i].keyOff = val & (1 << i);
 		}
 	}
-	else if (dspSelectedRegister == 0x6c)
+	else if (dspSelectedRegister == 0x4d)
 	{
-		//glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to FLAGREG");
-		dspFlagReg= val;
+		// For each channel, sends to the echo unit.
+		for (int i = 0; i < 8; i++) 
+		{
+			channels[i].echoEnable = val & (1 << i);
+		}
 	}
 	else if (dspSelectedRegister == 0x5d)
 	{
@@ -354,10 +361,12 @@ void apu::writeToDSPRegister(unsigned char val)
 	else if (dspSelectedRegister == 0x6d)
 	{
 		//glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to ESA 6d start echo mem reg");
+		echoBufferAdr = val << 8;
 	}
 	else if (dspSelectedRegister == 0x7d)
 	{
 		//glbTheLogger.logMsg("apu::dsp::write [" + strstrVal.str() + "] to 7d echo delay time");
+		echoDelay = (val & 0xf) * 512; // 2048-byte steps, stereo sample is 4 bytes
 	}
 	else if ((dspSelectedRegister & 0x0f) == 0)
 	{
@@ -397,6 +406,11 @@ void apu::writeToDSPRegister(unsigned char val)
 		channels[voiceNum].sampleSourceEntry = val;
 		//calcBRRSampleStart(voiceNum);
 	}
+	else if ((dspSelectedRegister & 0x0f) == 0x0f)
+	{
+		int voiceNum = (dspSelectedRegister & 0xf0) >> 4;
+		firValues[voiceNum] = val;
+	}
 	else if (dspSelectedRegister==0x6c) 
 	{
 		dspReset = val & 0x80;
@@ -430,6 +444,14 @@ void apu::writeToDSPRegister(unsigned char val)
 		channels[voiceNum].adsrRates[3] = val & 0x1f;
 		channels[voiceNum].gainValue = (val & 0x7f) * 16;
 		channels[voiceNum].gainSustainLevel = (val & 0xe0) >> 5;
+	}
+	else if (dspSelectedRegister==0x3d)
+	{
+		// For each channel, replaces the sample waveform with the noise generator output.
+		for (int i = 0; i < 8; i++) 
+		{
+			channels[i].useNoise = val & (1 << i);
+		}
 	}
 	else
 	{
@@ -729,6 +751,15 @@ void apu::dspDecodeBrr(int ch)
 	if (channels[ch].bufferOffset >= 12) channels[ch].bufferOffset = 0;
 }
 
+void apu::dspHandleNoise()
+{
+	if (dspCheckCounter(noiseRate))
+	{
+		int bit = (noiseSample & 1) ^ ((noiseSample >> 1) & 1);
+		noiseSample = ((noiseSample >> 1) & 0x3fff) | (bit << 14);
+	}
+}
+
 void apu::dspHandleGain(int ch)
 {
 	int newGain = channels[ch].gain;
@@ -798,6 +829,69 @@ void apu::dspHandleGain(int ch)
 	if (dspCheckCounter(rate)) channels[ch].gain = (unsigned short int)newGain;
 }
 
+void apu::dspHandleEcho(signed short int& sampleOutL,signed short int& sampleOutR)
+{
+	// increment fir buffer index
+	firBufferIndex++;
+	firBufferIndex &= 0x7;
+
+	// get value out of ram
+	unsigned short int adr = echoBufferAdr + echoBufferIndex;
+	signed short int ramSample = spc700ram[adr] | (spc700ram[(adr + 1) & 0xffff] << 8);
+
+	firBufferL[firBufferIndex] = ramSample >> 1;
+	ramSample = spc700ram[(adr + 2) & 0xffff] | (spc700ram[(adr + 3) & 0xffff] << 8);
+	firBufferR[firBufferIndex] = ramSample >> 1;
+
+	// calculate FIR-sum
+	int sumL = 0, sumR = 0;
+	for (int i = 0; i < 8; i++) 
+	{
+		sumL += (firBufferL[(firBufferIndex + i + 1) & 0x7] * firValues[i]) >> 6;
+		sumR += (firBufferR[(firBufferIndex + i + 1) & 0x7] * firValues[i]) >> 6;
+		if (i == 6) 
+		{
+			// clip to 16-bit before last addition
+			sumL = clip16(sumL);
+			sumR = clip16(sumR);
+		}
+	}
+	sumL = clamp16(sumL) & ~1;
+	sumR = clamp16(sumR) & ~1;
+
+	// apply master volume and modify output with sum
+	sampleOutL = (signed short int)clamp16(((sampleOutL * mainVolLeft) >> 7) + ((sumL * echoVolLeft) >> 7));
+	sampleOutR = (signed short int)clamp16(((sampleOutR * mainVolRight) >> 7) + ((sumR * echoVolRight) >> 7));
+
+	// get echo value
+	int echoL = clamp16(echoOutL + clip16((sumL * feedbackVolume) >> 7)) & ~1;
+	int echoR = clamp16(echoOutR + clip16((sumR * feedbackVolume) >> 7)) & ~1;
+
+	// write it to ram
+	if (echoWrites) 
+	{
+		spc700ram[adr] = echoL & 0xff;
+		spc700ram[(adr + 1) & 0xffff] = (unsigned char)(echoL >> 8);
+		spc700ram[(adr + 2) & 0xffff] = echoR & 0xff;
+		spc700ram[(adr + 3) & 0xffff] = (unsigned char)(echoR >> 8);
+	}
+	
+	// handle indexes
+	if (echoBufferIndex == 0) 
+	{
+		echoLength = echoDelay * 4;
+	}
+	
+	echoBufferIndex += 4;
+	if (echoBufferIndex >= echoLength) 
+	{
+		echoBufferIndex = 0;
+	}
+}
+
+
+//
+
 static const int rateValues[32] = {
   0, 2048, 1536, 1280, 1024, 768, 640, 512,
   384, 320, 256, 192, 160, 128, 96, 80,
@@ -818,10 +912,12 @@ bool apu::dspCheckCounter(int rate)
 
 void apu::dspCycle(signed short int& sampleOutL, signed short int& sampleOutR, float sampleRate)
 {
+	echoOutL = 0;
+	echoOutR = 0;
+
+	//unsigned int ch = 0;
 	for (unsigned int ch = 0;ch < 8;ch++)
 	{
-		// handle pitch counter
-
 		//int pitch = channels[ch].samplePitch;
 		int pitch = (int)((float)channels[ch].samplePitch*(snesNativeSampleRate/sampleRate));
 
@@ -829,14 +925,16 @@ void apu::dspCycle(signed short int& sampleOutL, signed short int& sampleOutR, f
 		//	pitch += ((dsp->channel[ch - 1].sampleOut >> 5) * pitch) >> 10;
 		//}
 
+		channels[ch].brrHeader = spc700ram[channels[ch].decodeOffset];
+
 		unsigned short int samplePointer = dspDIR + (4 * channels[ch].sampleSourceEntry);
 		if (channels[ch].startDelay == 0) samplePointer += 2;
 		
 		unsigned short int sampleAdr = spc700ram[samplePointer] | (spc700ram[(samplePointer + 1) & 0xffff] << 8);
-		channels[ch].brrHeader = spc700ram[channels[ch].decodeOffset];
 		
 		// handle starting of sample
-		if (channels[ch].startDelay > 0) {
+		if (channels[ch].startDelay > 0) 
+		{
 			if (channels[ch].startDelay == 5) 
 			{
 				// first keyed on
@@ -858,17 +956,19 @@ void apu::dspCycle(signed short int& sampleOutL, signed short int& sampleOutR, f
 
 		// get sample
 		int sample = 0;
-		//if (dsp->channel[ch].useNoise) {
-		//	sample = clip16(dsp->noiseSample * 2);
-		//}
-		//else {
+		if (channels[ch].useNoise) 
+		{
+			sample = clip16(noiseSample * 2);
+		}
+		else 
+		{
 			sample = dspGetSample(ch);
-		//}
+		}
 
 		sample = ((sample * channels[ch].gain) >> 11) & ~1;
 		
 		// handle reset and release
-		if (dspReset || (channels[ch].brrHeader & 0x03) == 1) 
+		if (dspReset || ((channels[ch].brrHeader & 0x03) == 1) ) 
 		{
 			channels[ch].adsrState = 3; // go to release
 			channels[ch].gain = 0;
@@ -930,29 +1030,33 @@ void apu::dspCycle(signed short int& sampleOutL, signed short int& sampleOutR, f
 		sampleOutL = (signed short)clamp16(sampleOutL + ((sample * channels[ch].leftVol) >> 7));
 		sampleOutR = (signed short)clamp16(sampleOutR + ((sample * channels[ch].rightVol) >> 7));
 
-		//if (dsp->channel[ch].echoEnable) {
-		//	dsp->echoOutL = clamp16(dsp->echoOutL + ((sample * dsp->channel[ch].volumeL) >> 7));
-		//	dsp->echoOutR = clamp16(dsp->echoOutR + ((sample * dsp->channel[ch].volumeR) >> 7));
-		//}
-
-		//sampleOutL *= mainVolLeft; sampleOutL >>= 7; sampleOutL = clamp16(sampleOutL);
-		//sampleOutR *= mainVolRight; sampleOutR >>= 7; sampleOutR = clamp16(sampleOutR);
+		if (channels[ch].echoEnable) 
+		{
+			echoOutL = clamp16(echoOutL + ((sample * channels[ch].leftVol) >> 7));
+			echoOutR = clamp16(echoOutR + ((sample * channels[ch].rightVol) >> 7));
+		}
 	}
 
-	if (mute) 
+	dspHandleEcho(sampleOutL,sampleOutR);
+
+	counter = counter == 0 ? 30720 : counter - 1;
+	dspHandleNoise();
+	evenCycle = !evenCycle;
+
+	if (mute)
 	{
 		sampleOutL = 0;
 		sampleOutR = 0;
 	}
-
-	evenCycle = !evenCycle;
-	counter = counter == 0 ? 30720 : counter - 1;
 }
 
 void apu::step(audioSystem& theAudioSys)
 {
-	if ((apuCycles&0x07) == 0) 
+	if (apufcounter>=9.4)
+	//if ((apuCycles%8) == 0) 
 	{
+		apufcounter = 0.0;
+
 		signed short int l = 0;
 		signed short int r = 0;
 		
@@ -987,6 +1091,7 @@ void apu::step(audioSystem& theAudioSys)
 	}
 
 	apuCycles++;
+	apufcounter += theAudioSys.internalAudioInc;
 }
 
 //
@@ -3226,8 +3331,23 @@ int apu::stepOne()
 			break;
 		}
 		case 0x01:
+		case 0x11:
+		case 0x21:
+		case 0x31:
+		case 0x41:
+		case 0x51:
+		case 0x61:
+		case 0x71:
+		case 0x81:
+		case 0x91:
+		case 0xa1:
+		case 0xb1:
+		case 0xc1:
+		case 0xd1:
+		case 0xe1:
+		case 0xf1:
 		{
-			// TCALL 0
+			// TCALL nn
 			regPC += 1;
 			(this->*write8)(0x100 | regSP, regPC>>8);
 			regSP--;

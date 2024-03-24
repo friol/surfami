@@ -41,12 +41,13 @@ struct spc700channel
 	unsigned char gainSustainLevel;
 	unsigned char gainMode;
 	bool directGain;
+	bool useNoise;
 	unsigned short int gainValue; // for direct gain
 	unsigned short int preclampGain; // for bent increase
 
 	signed short int decodeBuffer[12];
 
-	float playingPos = 0.0;
+	bool echoEnable = false;
 };
 
 class apu
@@ -121,6 +122,7 @@ private:
 	typedef void (apu::* internalMemWriter)(unsigned int,unsigned char);
 
 	unsigned long int apuCycles = 0;
+	float apufcounter = 0.0;
 
 	// S-DSP
 
@@ -134,20 +136,35 @@ private:
 	signed short int dspGetSample(int ch);
 	void dspDecodeBrr(int ch);
 	void dspHandleGain(int ch);
+	void dspHandleNoise();
+	void dspHandleEcho(signed short int& sampleOutL, signed short int& sampleOutR);
 	bool dspCheckCounter(int rate);
 
 	signed char mainVolLeft = 0;
 	signed char mainVolRight = 0;
 	signed char echoVolLeft = 0;
 	signed char echoVolRight = 0;
+	signed int echoOutL = 0;
+	signed int echoOutR = 0;
 
+	signed char feedbackVolume = 0;
 	unsigned char dspFlagReg = 0;
 	unsigned short int dspDIR = 0;
 	bool evenCycle;
 	bool dspReset;
 	bool mute;
-	bool echoWrites;
+	bool echoWrites=false;
+	unsigned char firBufferIndex=0;
+	unsigned short int echoBufferAdr=0;
+	unsigned short int echoBufferIndex=0;
+	signed char firValues[8];
+	signed short firBufferL[8];
+	signed short firBufferR[8];
+	unsigned short int echoLength = 0;
+	unsigned short int echoDelay = 0;
+		
 	unsigned char noiseRate;
+	signed int noiseSample;
 
 	unsigned short int counter=0;
 

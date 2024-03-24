@@ -20,13 +20,16 @@ private:
 	
 	const unsigned int audioBufLen = 1024;
 	float audioBuf[1024*2];
+	float tmpbuf[4096*4];
 	
+	HSTREAM stream;
 	std::vector<float> audioStream;
 
 public:
 
 	bool audioSystemInited = false;
 	float sampleRate = 0;
+	float internalAudioInc = 1.0;
 
 	audioSystem();
 	void feedAudiobuf(float l, float r);
