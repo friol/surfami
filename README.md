@@ -12,3 +12,51 @@ The 2 CPUs (65816 and SPC700) in surFami are built with Tom Harte's CPU tests in
 <br/><br/>
 If you want to take a look at a visual history of the surFami build, you can take a peek at those images that represent the growth of the emu.
 <br/><br/>
+
+The first Krom tests:<br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20231229.png" width="480" /><br/>
+
+The SNES Nintendo test rom was one of the first roms to boot:<br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240105.png" width="480" /><br/>
+
+Nintendo sprites in Super Mario World:<br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240107.png" width="480" /><br/>
+
+A very messy Super Mario World title screen:<br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240107_2.png" width="480" /><br/>
+
+Colorful title screen:<br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240111.png" width="480" /><br/>
+
+Super Mario World going ingame:<br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240114.png" width="480" /><br/>
+
+Parodius going ingame:<br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240124.png" width="480" /><br/>
+
+The triforce of Zelda, available only implementing the inner multiplication in hardware:<br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240201.png" width="480" /><br/>
+
+Donkey Kong Country was the first HiRom to boot:<br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240204.png" width="480" /><br/>
+
+DKC ingame:<br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240209.png" width="480" /><br/>
+
+HDMA effects in a demoscene release:<br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240210.png" width="480" /><br/>
+
+F-Zero titlescreen correctly displayed after implementing the VIRQ (it switches between modes 1 and 7):<br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240212.png" width="480" /><br/>
+
+Wolfenstein working with HDMA:<br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240214.2.png" width="480" /><br/>
+
+A slightly glitched title screen of The Addams Family, after fixing a DMA quirk:<br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240214.png" width="480" /><br/>
+
+Super Mario All-stars was hard to run because of missing SRAM implementation:<br/>
+<img src="https://github.com/friol/surfami/blob/master/images/ss20240219.2.png" width="480" /><br/>
+
+<br/>
+What next?
