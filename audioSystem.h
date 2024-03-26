@@ -2,13 +2,13 @@
 #ifndef AUDIOSYSTEM_H
 #define AUDIOSYSTEM_H
 
+#include <deque>
 #include <vector>
 #include <iomanip>
 #include <sstream>
 #include "bass/bass.h"
 #include "apu.h"
 #include "logger.h"
-//#include "include/AudioFile.h"
 
 class apu;
 

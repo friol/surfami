@@ -108,6 +108,11 @@ void romLoader::checkRomType(std::vector<unsigned char>* romContents, bool& isHi
 		loadLog.push_back("Header says it's HiROM");
 	}
 
+	// SRAM size
+	unsigned char sramSize = (*romContents)[0xffd8 + romAdder];
+	int iSRAMsize = (1 << sramSize)*1024;
+	loadLog.push_back("SRAM size:" + std::to_string(iSRAMsize));
+
 	// rom country
 	unsigned char romCountry = (*romContents)[0xffd9+ romAdder];
 	loadLog.push_back("Standard/Country:" + std::to_string(romCountry));

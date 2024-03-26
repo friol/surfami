@@ -1,13 +1,9 @@
 
-#include "math.h"
 #include "audioSystem.h"
 
 extern logger glbTheLogger;
 
-std::vector<float> audioVector;
-static bool travasing = false;
-float buffaPos = 0;
-
+static std::deque<float> audioQueue;
 
 //
 
@@ -18,12 +14,11 @@ DWORD CALLBACK StreamProc(HSTREAM handle, float* buffer, DWORD length, void* use
 
 	float* paudioInc = (float*)user;
 
-	travasing = true;
-	unsigned int avsize = (unsigned int)audioVector.size();
+	const unsigned int avsize = (unsigned int)audioQueue.size();
 
 	if (length == 0) return 0;
 
-	if (avsize == 0)
+	if (avsize < 2)
 	{
 		for (unsigned int pos = 0;pos < length / sizeof(float);pos ++)
 		{
@@ -33,23 +28,21 @@ DWORD CALLBACK StreamProc(HSTREAM handle, float* buffer, DWORD length, void* use
 		return length;
 	}
 
-	float nsamplesAva = avsize - buffaPos;
-	//glbTheLogger.logMsg("samples available:"+std::to_string(avsize- buffaPos));
+	float nsamplesAva = avsize;
+	//glbTheLogger.logMsg("samples available:"+std::to_string(avsize));
+	//glbTheLogger.logMsg("audio inc:"+std::to_string((*paudioInc)));
 	
 	if (nsamplesAva > 15000) (*paudioInc) -= 0.001f;
 	else (*paudioInc) += 0.001f;
 	
-	//float inc = 1.0;
-	//inc = (avsize - buffaPos) / (length / sizeof(float));
-	//glbTheLogger.logMsg("inc is:" + std::to_string(inc));
-
 	for (unsigned int pos = 0;pos < length / sizeof(float);pos += 2)
 	{
-		if (buffaPos < avsize)
+		if (audioQueue.size()>=2)
 		{
-			buffer[pos] = audioVector[(unsigned int)buffaPos];
-			buffer[pos + 1] = audioVector[(unsigned int)buffaPos + 1];
-			buffaPos += 2;
+			buffer[pos] = audioQueue[0];
+			audioQueue.pop_front();
+			buffer[pos + 1] = audioQueue[0];
+			audioQueue.pop_front();
 		}
 		else
 		{
@@ -58,12 +51,8 @@ DWORD CALLBACK StreamProc(HSTREAM handle, float* buffer, DWORD length, void* use
 			//glbTheLogger.logMsg("not enough samples to fill audio buffer");
 		}
 	}
-	
-	//audioVector.clear();
-	travasing = false;
 
 	return length;
-	//return avsize*sizeof(float);
 }
 
 audioSystem::audioSystem()
@@ -98,27 +87,8 @@ audioSystem::audioSystem()
 
 void audioSystem::feedAudiobuf(float l, float r)
 {
-	audioVector.push_back(l);
-	audioVector.push_back(r);
-
-	/*float samplesPerFrame = (sampleRate / 60.0) * 2;
-	DWORD status = BASS_ChannelGetData(stream, NULL, BASS_DATA_AVAILABLE);
-	if ((status != -1) && (status < samplesPerFrame))
-	{
-		const int dim = audioVector.size();
-		if (dim>=samplesPerFrame)
-		{
-			glbTheLogger.logMsg("Available samples:" + std::to_string(status));
-			glbTheLogger.logMsg("Feeding:" + std::to_string(dim));
-			for (unsigned int pos = 0;pos < dim;pos++)
-			{
-				tmpbuf[pos] = audioVector[pos];
-			}
-
-			BASS_StreamPutData(stream, (void*)tmpbuf, dim);
-			audioVector.clear();
-		}
-	}*/
+	audioQueue.push_back(l);
+	audioQueue.push_back(r);
 }
 
 audioSystem::~audioSystem()

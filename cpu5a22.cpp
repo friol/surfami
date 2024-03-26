@@ -6369,7 +6369,7 @@ int cpu5a22::stepOne()
 			unsigned int addr = getDirectPageIndirectX();
 
 			doADC(addr);
-			if (regP.getAccuMemSize())
+			if (regP.getAccuMemSize()==0)
 			{
 				cycAdder += 1;;
 			}
@@ -6612,6 +6612,24 @@ int cpu5a22::stepOne()
 
 			regPC += 2;
 			cycles = 6 + cycAdder;
+			break;
+		}
+		case 0xe1:
+		{
+			// SBC (dp,X)
+			int cycAdder = 0;
+			unsigned int addr = getDirectPageIndirectX();
+
+			doSBC(addr);
+			if (regP.getAccuMemSize()==0)
+			{
+				cycAdder += 1;
+			}
+
+			if (regD & 0xff) cycAdder += 1;
+
+			regPC += 2;
+			cycles = cycAdder + 6;
 			break;
 		}
 		default:
