@@ -63,7 +63,7 @@ Country (also implies PAL/NTSC) (FFD9h)
   11h U  Australia                (PAL)
 */
 
-void romLoader::checkRomType(std::vector<unsigned char>* romContents, bool& isHirom, int& standard, std::vector<std::string>& loadLog)
+void romLoader::checkRomType(std::vector<unsigned char>* romContents, bool& isHirom, int& standard, std::vector<std::string>& loadLog, int& sramSz)
 {
 	if (romContents->size() <= 0x8000)
 	{
@@ -78,13 +78,26 @@ void romLoader::checkRomType(std::vector<unsigned char>* romContents, bool& isHi
 	// check header with sophisticated heuristics
 	std::string romnameFromHeader;
 	int numAlnumLorom = 0, numAlnumHirom = 0;
+	std::string hiromTitle, loromTitle;
 	for (unsigned int rampos = 0;rampos < 21;rampos++)
 	{
 		unsigned char charHi=(*romContents)[0xffc0 + rampos];
 		unsigned char charLo=(*romContents)[0xffc0-0x8000 + rampos];
-		if (std::isalnum(charHi)) numAlnumHirom += 1;
-		if (std::isalnum(charLo)) numAlnumLorom += 1;
+		if (std::isalnum(charHi))
+		{
+			numAlnumHirom += 1;
+			hiromTitle += charHi;
+		}
+
+		if (std::isalnum(charLo))
+		{
+			numAlnumLorom += 1;
+			loromTitle += charLo;
+		}
 	}
+
+	loadLog.push_back("LoRom title:[" + loromTitle + "]");
+	loadLog.push_back("HiRom title:["+hiromTitle+"]");
 
 	if (numAlnumHirom > numAlnumLorom) 
 	{
@@ -112,6 +125,18 @@ void romLoader::checkRomType(std::vector<unsigned char>* romContents, bool& isHi
 	unsigned char sramSize = (*romContents)[0xffd8 + romAdder];
 	int iSRAMsize = (1 << sramSize)*1024;
 	loadLog.push_back("SRAM size:" + std::to_string(iSRAMsize));
+
+	if (iSRAMsize > (1024 * 32)) iSRAMsize = 0;
+
+	// 1024 is not considered sram?
+	if (iSRAMsize > 1024)
+	{
+		sramSz = iSRAMsize;
+	}
+	else
+	{
+		sramSz = -1;
+	}
 
 	// rom country
 	unsigned char romCountry = (*romContents)[0xffd9+ romAdder];
@@ -146,7 +171,8 @@ int romLoader::loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>
 
 	loadLog.push_back("ROM was read correctly. Size is " + std::to_string(romContents.size()/1024) + "kb. HiRom: "+std::to_string(isHirom));
 
-	checkRomType(&romContents, isHirom, videoStandard, loadLog);
+	int sramSize = 0;
+	checkRomType(&romContents, isHirom, videoStandard, loadLog,sramSize);
 
 	//
 
@@ -218,10 +244,12 @@ int romLoader::loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>
 	std::string onlyRomName = romName.substr(0, pointPos);
 	std::string sramFileName = "sram\\" + onlyRomName + ".srm";
 
+	bool hasSram = false;
 	std::vector<unsigned char> sramData;
 	std::ifstream file(sramFileName, std::ios::binary);
 	if (file)
 	{
+		hasSram = true;
 		loadLog.push_back("SRAM found, loading it.");
 
 		file.unsetf(std::ios::skipws);
@@ -233,8 +261,23 @@ int romLoader::loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>
 
 		sramData.reserve(fileSize);
 		sramData.insert(sramData.begin(), std::istream_iterator<unsigned char>(file), std::istream_iterator<unsigned char>());
+	}
+	else
+	{
+		if (sramSize > 0)
+		{
+			loadLog.push_back("Allocating and saving new SRAM");
+			hasSram = true;
+			for (unsigned int b = 0;b < sramSize;b++)
+			{
+				sramData.push_back(0);
+			}
+		}
+	}
 
-		for (int pos = 0;pos < fileSize;pos++)
+	if (hasSram)
+	{
+		for (int pos = 0;pos < sramData.size();pos++)
 		{
 			if (!isHirom)
 			{
@@ -246,7 +289,7 @@ int romLoader::loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>
 			}
 		}
 
-		theMMU.hasSram(sramFileName, (unsigned int)fileSize);
+		theMMU.hasSram(sramFileName, (unsigned int)sramData.size());
 	}
 
 	// RESET (emulation)	0xFFFC / 0xFFFD

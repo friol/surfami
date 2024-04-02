@@ -14,7 +14,7 @@ class romLoader
 {
 private:
 
-	void checkRomType(std::vector<unsigned char>* romContents, bool& isHirom, int& standard, std::vector<std::string>& loadLog);
+	void checkRomType(std::vector<unsigned char>* romContents, bool& isHirom, int& standard, std::vector<std::string>& loadLog,int& sramSz);
 	std::vector<unsigned char> readFile(std::string& filename,int& error);
 
 public:

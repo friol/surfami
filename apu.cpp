@@ -3473,6 +3473,29 @@ int apu::stepOne()
 			cycles = doBranch(offs, !flagV);
 			break;
 		}
+		case 0xf9:
+		{
+			// MOV X,d+Y
+			doMoveToX(&apu::addrDPY);
+			regPC += 2;
+			cycles = 4;
+			break;
+		}
+		case 0x39:
+		{
+			// AND (X),(Y)
+			unsigned char src = (this->*read8)(regY | ((flagP?1:0) << 8));
+			unsigned char dst= (this->*read8)(regX | ((flagP ? 1 : 0) << 8));
+
+			dst &= src;
+			doFlagsNZ(dst);
+
+			(this->*write8)(regX | ((flagP ? 1 : 0) << 8), dst);
+
+			regPC += 1;
+			cycles = 5;
+			break;
+		}
 		default:
 		{
 			// unknown opcode

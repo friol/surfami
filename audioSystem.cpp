@@ -4,6 +4,7 @@
 extern logger glbTheLogger;
 
 static std::deque<float> audioQueue;
+static bool audioSemaphore = false;
 
 //
 
@@ -14,9 +15,14 @@ DWORD CALLBACK StreamProc(HSTREAM handle, float* buffer, DWORD length, void* use
 
 	float* paudioInc = (float*)user;
 
+	audioSemaphore = true;
 	const unsigned int avsize = (unsigned int)audioQueue.size();
 
-	if (length == 0) return 0;
+	if (length == 0)
+	{
+		audioSemaphore = false;
+		return 0;
+	}
 
 	if (avsize < 2)
 	{
@@ -25,6 +31,7 @@ DWORD CALLBACK StreamProc(HSTREAM handle, float* buffer, DWORD length, void* use
 			buffer[pos] = 0;
 		}
 			
+		audioSemaphore = false;
 		return length;
 	}
 
@@ -34,14 +41,23 @@ DWORD CALLBACK StreamProc(HSTREAM handle, float* buffer, DWORD length, void* use
 	
 	if (nsamplesAva > 15000) (*paudioInc) -= 0.001f;
 	else (*paudioInc) += 0.001f;
-	
+
+	if ((audioQueue.size() % 2) != 0)
+	{
+		glbTheLogger.logMsg("error: audio queue is not even (size"+std::to_string(audioQueue.size())+" )");
+	}
+
 	for (unsigned int pos = 0;pos < length / sizeof(float);pos += 2)
 	{
 		if (audioQueue.size()>=2)
 		{
-			buffer[pos] = audioQueue[0];
+			float s0= audioQueue[0];
+			float s1= audioQueue[1];
+
+			buffer[pos] = s0;
+			buffer[pos + 1] =s1;
+
 			audioQueue.pop_front();
-			buffer[pos + 1] = audioQueue[0];
 			audioQueue.pop_front();
 		}
 		else
@@ -52,6 +68,7 @@ DWORD CALLBACK StreamProc(HSTREAM handle, float* buffer, DWORD length, void* use
 		}
 	}
 
+	audioSemaphore = false;
 	return length;
 }
 
@@ -87,6 +104,11 @@ audioSystem::audioSystem()
 
 void audioSystem::feedAudiobuf(float l, float r)
 {
+	if (audioSemaphore)
+	{
+		Sleep(1);
+	}
+
 	audioQueue.push_back(l);
 	audioQueue.push_back(r);
 }

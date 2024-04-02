@@ -698,14 +698,19 @@ void displayAppoWindow(cpu5a22& theCPU,ppu& thePPU, mmu& ourMMU, debugger5a22& t
     fileDialog.SetTitle("Load SNES ROM");
     fileDialog.SetTypeFilters({ ".smc", ".sfc" });
     //fileDialog.SetPwd("d:\\prova\\snes\\");
-    //fileDialog.SetPwd("D:\\prova\\snes\\SNES-master\\SPC700\\PlayBRRSample\\");
+    //fileDialog.SetPwd("d:\\prova\\");
     fileDialog.SetPwd("D:\\romz\\nintendo\\snes\\USA\\");
+    
+    if (emustatus == -1)
+    {
+        fileDialog.Open();
+    }
 
     int pushedColors = 1;
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(ImColor(0.6f,0.1f,0.1f)));
     if (ImGui::Button("Load rom!"))
     {
-        fileDialog.Open();
+        //fileDialog.Open();
     }
     ImGui::SameLine();
     ImGui::PopStyleColor(pushedColors);

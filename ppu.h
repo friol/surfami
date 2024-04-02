@@ -101,7 +101,16 @@ private:
 	bool opvctFlipFlop = false;
 	bool oamPriRot = false;
 
+	int applyWindow(int x, int finalCol);
+
+	int windowxpos[2][2];
+	unsigned char windowTMW=0;
+	unsigned char w12sel = 0;
+	unsigned char w34sel = 0;
+
 public:
+
+	unsigned char openBus = 0;
 
 	bool getWriteBreakpoint() { return writeBreakpoint; }
 
@@ -110,10 +119,12 @@ public:
 	void setINIDISP(unsigned char val) 
 	{ 
 		iniDisp = val; 
-		/*if ((screenDisabled & 0x80) && (!(val & 0x80)))
+		if ((screenDisabled & 0x80) && (!(val & 0x80)))
 		{
-			resetOAMAddress();
-		}*/
+			// TODO
+			//resetOAMAddress();
+			//OAMAddrSave = OAMAddr;
+		}
 		screenDisabled = val & 0x80;
 	}
 	

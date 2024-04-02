@@ -51,8 +51,13 @@ private:
 
 	bool nmiFlag = false;
 	unsigned char nmiTimen = 0;
+
 	bool vIrqEnabled = false;
 	unsigned short int vIrqTimer = 0;
+
+	bool hIrqEnabled = false;
+	unsigned short int hIrqTimer = 0;
+
 	bool irqTriggered = false;
 	
 	int isHiRom = false;
@@ -97,6 +102,16 @@ public:
 
 	bool isVIRQEnabled() { return vIrqEnabled; }
 	unsigned short int getVIRQScanline() { return vIrqTimer; }
+
+	bool isHIRQEnabled() 
+	{ 
+		return hIrqEnabled; 
+	}
+	unsigned short int getHIRQPos() 
+	{ 
+		return hIrqTimer; 
+	}
+
 	void setIrqTriggered() { irqTriggered = true; }
 
 	void resetHDMA();

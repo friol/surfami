@@ -381,8 +381,7 @@ void mmu::executeHDMA()
 
 void mmu::write8(unsigned int address, unsigned char val)
 {
-	//std::stringstream strr;
-	//strr << std::hex << std::setw(2) << std::setfill('0') << (int)val;
+	pPPU->openBus = val;
 
 	unsigned char bank_nr = (unsigned char)(address >> 16);
 	unsigned short int adr = address & 0xffff;
@@ -434,6 +433,7 @@ void mmu::write8(unsigned int address, unsigned char val)
 			//glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x4200 (NMITIMEN - Interrupt Enable and Joypad Request)");
 			nmiTimen = val;
 			vIrqEnabled= val & 0x20;
+			hIrqEnabled= val & 0x10;
 			return;
 		}
 		else if (adr == 0x2180)
@@ -452,6 +452,16 @@ void mmu::write8(unsigned int address, unsigned char val)
 		{
 			unsigned int byte = adr - 0x2181;
 			wram281x[byte] = val;
+			return;
+		}
+		else if (adr == 0x4207)
+		{
+			hIrqTimer = (hIrqTimer & 0x100) | val;
+			return;
+		}
+		else if (adr == 0x4208)
+		{
+			hIrqTimer = (hIrqTimer & 0x0ff) | ((val & 1) << 8);
 			return;
 		}
 		else if (adr == 0x4209)
@@ -509,6 +519,48 @@ void mmu::write8(unsigned int address, unsigned char val)
 			// write to cgram
 			pPPU->writeRegister(0x2122, val);
 			cgramAddress = (cgramAddress + 1) & (0x200 - 1);
+			return;
+		}
+		else if (adr == 0x2123)
+		{
+			// Enable (ABCD) and Invert (abcd) windows for BG1 (AB) and BG2 (CD)
+			pPPU->writeRegister(0x2123, val);
+			return;
+		}
+		else if (adr == 0x2124)
+		{
+			// Enable (EFGH) and Invert (efgh) windows for BG3 (EF) and BG2 (GH)
+			pPPU->writeRegister(0x2124, val);
+			return;
+		}
+		else if (adr == 0x2126)
+		{
+			// window 1 left position
+			pPPU->writeRegister(0x2126, val);
+			return;
+		}
+		else if (adr == 0x2127)
+		{
+			// window 1 right position
+			pPPU->writeRegister(0x2127, val);
+			return;
+		}
+		else if (adr == 0x2128)
+		{
+			// window 2 left position
+			pPPU->writeRegister(0x2128, val);
+			return;
+		}
+		else if (adr == 0x2129)
+		{
+			// window 2 right position
+			pPPU->writeRegister(0x2129, val);
+			return;
+		}
+		else if (adr == 0x212e)
+		{
+			// main screen layer window enable
+			pPPU->writeRegister(0x212e, val);
 			return;
 		}
 		else if (adr == 0x212d)
@@ -731,7 +783,8 @@ unsigned char mmu::read8(unsigned int address)
 		{
 			// 2137h - SLHV - Latch H/V-Counter by Software (R)
 			// TODO 
-			return 0x21;
+			//return 0x21;
+			return (unsigned char)(rand() % 256);
 		}
 		else if (adr == 0x2138)
 		{
@@ -757,6 +810,12 @@ unsigned char mmu::read8(unsigned int address)
 
 			cgramAddress = (cgramAddress + 1) & (0x200 - 1);
 			return openbus;
+		}
+		else if (adr == 0x213c)
+		{
+			/* Horizontal counter data by ext/soft latch */
+			// TODO 
+			return (unsigned char)(rand()%256);
 		}
 		else if (adr == 0x213d)
 		{
@@ -801,10 +860,9 @@ unsigned char mmu::read8(unsigned int address)
 		else if (adr == 0x4211)
 		{
 			//	PPU Interrupts - H/V-Timer IRQ Flag (R) [Read/Ack] - TODO
-			unsigned char val = (vIrqEnabled && irqTriggered) << 7;
+			unsigned char val = ((vIrqEnabled||hIrqEnabled) && irqTriggered) << 7;
 			irqTriggered = false;
-			return val;// | (snes->openBus & 0x7f);
-			//return val | ((256*rand()) & 0x7f);
+			return val | (pPPU->openBus & 0x7f);
 		}
 		else if (adr == 0x4212)
 		{
@@ -898,6 +956,10 @@ unsigned char mmu::read8(unsigned int address)
 			//4216h - RDMPYL - Unsigned Division Remainder / Multiply Product(lo.8bit) (R)
 			//4217h - RDMPYH - Unsigned Division Remainder / Multiply Product(up.8bit) (R)
 			return snesRAM[adr];
+		}
+		else if (adr >= 0x2100 && adr < 0x2200)
+		{
+			return pPPU->openBus;
 		}
 		else if (isHiRom && ((bank_nr >= 0x30) && (bank_nr < 0x3f)) && hasSRAM)
 		{
