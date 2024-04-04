@@ -26,6 +26,7 @@
 #include <thread>
 
 #include "imfilebrowser.h"
+#include "include/BitmapPlusPlus.hpp"
 
 #include "audioSystem.h"
 #include "romLoader.h"
@@ -677,7 +678,7 @@ void displayMemoryWindow(mmu& theMMU,ppu& thePPU,int& baseAddress)
     ImGui::End();
 }
 
-void displayAppoWindow(cpu5a22& theCPU,ppu& thePPU, mmu& ourMMU, debugger5a22& theDebugger5a22, debuggerSPC700& theDebuggerSPC, ImGui::FileBrowser& fileDialog, std::vector<std::string>& romLoadingLog,int& emustatus)
+void displayAppoWindow(cpu5a22& theCPU,ppu& thePPU, mmu& ourMMU, debugger5a22& theDebugger5a22, debuggerSPC700& theDebuggerSPC, ImGui::FileBrowser& fileDialog, std::vector<std::string>& romLoadingLog,int& emustatus,bool& isInitialOpening)
 {
     ImGui::Begin("Appo and tests window");
     ImGui::Text("surFami emu: Super Nintendo lives");
@@ -694,23 +695,23 @@ void displayAppoWindow(cpu5a22& theCPU,ppu& thePPU, mmu& ourMMU, debugger5a22& t
     std::vector<debugInfoRec>* pOpcodeList = theDebugger5a22.getOpcodesList();
     std::vector<dbgSPC700info>* pSPCOpcodeList = theDebuggerSPC.getOpcodesList();
 
-    // (optional) set browser properties
     fileDialog.SetTitle("Load SNES ROM");
     fileDialog.SetTypeFilters({ ".smc", ".sfc" });
     //fileDialog.SetPwd("d:\\prova\\snes\\");
     //fileDialog.SetPwd("d:\\prova\\");
-    fileDialog.SetPwd("D:\\romz\\nintendo\\snes\\USA\\");
+    //fileDialog.SetPwd("D:\\romz\\nintendo\\snes\\USA\\");
     
-    if (emustatus == -1)
+    if (isInitialOpening)
     {
         fileDialog.Open();
+        isInitialOpening = false;
     }
 
     int pushedColors = 1;
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(ImColor(0.6f,0.1f,0.1f)));
     if (ImGui::Button("Load rom!"))
     {
-        //fileDialog.Open();
+        fileDialog.Open();
     }
     ImGui::SameLine();
     ImGui::PopStyleColor(pushedColors);
@@ -734,15 +735,6 @@ void displayAppoWindow(cpu5a22& theCPU,ppu& thePPU, mmu& ourMMU, debugger5a22& t
             theCPU.reset();
             ourMMU.setCPU(theCPU);
         }
-
-        // a little help from my friends nop
-        /*if (romName == "d:\\prova\\snes\\Mickey Mania (E).smc")
-        {
-            theMMU.write8(0xb3fab2, 0xea);
-            theMMU.write8(0xb3fab3, 0xea);
-            theMMU.write8(0xb3fabf, 0xea);
-            theMMU.write8(0xb3fac0, 0xea);
-        }*/
 
         emustatus = 1;
 
@@ -801,6 +793,25 @@ void displayAppoWindow(cpu5a22& theCPU,ppu& thePPU, mmu& ourMMU, debugger5a22& t
                 }
             }
         }
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("Save Image"))
+    {
+        bmp::Bitmap image(thePPU.getPPUResolutionX(),thePPU.getPPUResolutionY());
+        unsigned char* pfb = thePPU.getPPUFramebuffer();
+
+        for (bmp::Pixel& pixel : image) 
+        {
+            bmp::Pixel color{};
+            color.r = *pfb; pfb++;
+            color.g = *pfb; pfb++;
+            color.b = *pfb; pfb++;
+            pfb++;
+            pixel = color;
+        }
+
+        image.save("screenshot.bmp");
     }
 
     ImGui::SameLine();
@@ -916,6 +927,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     unsigned long int totCPUCycles = 0;
     int emustatus = -1; // 0 debugging, 1 running, -1 no rom loaded
     ImGui::FileBrowser fileDialog;
+    bool isInitialOpening = true;
 
     std::chrono::system_clock::time_point t0 = std::chrono::system_clock::now();
     std::chrono::system_clock::time_point t1 = std::chrono::system_clock::now();
@@ -1060,6 +1072,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
             {
                 theMMU.pressRKey(false);
             }
+
+            if (ImGui::IsKeyPressed(ImGuiKey_1)) thePPU.toggleBgActive(0);
+            if (ImGui::IsKeyPressed(ImGuiKey_2)) thePPU.toggleBgActive(1);
+            if (ImGui::IsKeyPressed(ImGuiKey_3)) thePPU.toggleBgActive(2);
+            if (ImGui::IsKeyPressed(ImGuiKey_4)) thePPU.toggleBgActive(3);
         }
 
         ImGui_ImplOpenGL3_NewFrame();
@@ -1072,7 +1089,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         bool rushSPC = false;
         unsigned short int rushToSPCAddress = 0;
 
-        displayAppoWindow(theCPU,thePPU, theMMU, theDebugger5a22,theDebuggerSPC700, fileDialog,romLoadingLog, emustatus);
+        displayAppoWindow(theCPU,thePPU, theMMU, theDebugger5a22,theDebuggerSPC700, fileDialog,romLoadingLog, emustatus,isInitialOpening);
         displayRomLoadingLogWindow(romLoadingLog);
         displayDebugWindow(theCPU, theDebugger5a22,theMMU,isDebugWindowFocused,rush,rushToAddress,jumpToAppoBuf,totCPUCycles,emustatus,thePPU);
         displaySPCDebugWindow(thePPU, theMMU, theCPU,theAPU, theDebuggerSPC700,rushSPC,rushToSPCAddress,emustatus,theAudioSys);

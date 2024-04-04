@@ -6632,6 +6632,34 @@ int cpu5a22::stepOne()
 			cycles = cycAdder + 6;
 			break;
 		}
+		case 0x81:
+		{
+			// STA (dp,X)
+			int cycAdder = 0;
+			unsigned int addr = getDirectPageIndirectX();
+
+			pMMU->write8(addr, regA_lo);
+			if (regP.getAccuMemSize() == 0)
+			{
+				pMMU->write8(addr + 1, regA_hi);
+				cycAdder += 1;
+			}
+
+			if (regD & 0xff) cycAdder += 1;
+
+			regPC += 2;
+			cycles = cycAdder + 6;
+			break;
+		}
+		case 0x42:
+		{
+			// WDM
+			// TODO checkint
+
+			regPC += 2;
+			cycles = 2;
+			break;
+		}
 		default:
 		{
 			// unknown opcode

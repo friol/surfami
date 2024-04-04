@@ -35,7 +35,7 @@ DWORD CALLBACK StreamProc(HSTREAM handle, float* buffer, DWORD length, void* use
 		return length;
 	}
 
-	float nsamplesAva = avsize;
+	float nsamplesAva = (float)avsize;
 	//glbTheLogger.logMsg("samples available:"+std::to_string(avsize));
 	//glbTheLogger.logMsg("audio inc:"+std::to_string((*paudioInc)));
 	

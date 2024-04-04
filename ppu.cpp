@@ -1400,7 +1400,7 @@ void ppu::renderScanline(int scanlinenum)
 			}
 		}
 
-		if (mainScreenDesignation & 0x10)
+		if ((mainScreenDesignation & 0x10) || (subScreenDesignation & 0x10))
 		{
 			renderSpritesScanline(scanlinenum);
 		}
@@ -1451,11 +1451,12 @@ void ppu::renderScanline(int scanlinenum)
 	else if (screenMode == 0x01)
 	{
 		// 1      16-color    16-color    4-color     -         ;Normal
-		if ((((mainScreenDesignation & 0x1f) & (1 << 2)) > 0)) renderBGScanline(2, 2, scanlinenum + 1);
-		if ( (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1))) ) renderBGScanline(1, 4, scanlinenum+1);
-		if ((((mainScreenDesignation & 0x1f) & (1 << 0)) > 0)) renderBGScanline(0, 4, scanlinenum + 1);
+		if ( ((((mainScreenDesignation & 0x1f) & (1 << 2)) > 0)) && isBgActive[2] ) renderBGScanline(2, 2, scanlinenum + 1);
+		if ( ( (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1))) ) && isBgActive[1] ) renderBGScanline(1, 4, scanlinenum+1);
+		//if ( ((((mainScreenDesignation & 0x1f) & (1 << 0)) > 0)) && isBgActive[0] ) renderBGScanline(0, 4, scanlinenum + 1);
+		if (((((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 0)))) && isBgActive[0]) renderBGScanline(0, 4, scanlinenum + 1);
 
-		if (mainScreenDesignation & 0x10)
+		if ((mainScreenDesignation & 0x10)|| (subScreenDesignation & 0x10))
 		{
 			renderSpritesScanline(scanlinenum);
 		}
@@ -1521,7 +1522,7 @@ void ppu::renderScanline(int scanlinenum)
 		if ((((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1)) > 0)) renderBGScanline(1, 4, scanlinenum+1);
 		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBGScanline(0, 4, scanlinenum+1);
 
-		if (mainScreenDesignation & 0x10)
+		if ((mainScreenDesignation & 0x10) || (subScreenDesignation & 0x10))
 		{
 			renderSpritesScanline(scanlinenum);
 		}
@@ -1577,7 +1578,7 @@ void ppu::renderScanline(int scanlinenum)
 		//if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBGScanline(0, 8, scanlinenum);
 		if ((((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 0)))) renderBGScanline(0, 8, scanlinenum+1);
 
-		if (mainScreenDesignation & 0x10)
+		if ((mainScreenDesignation & 0x10) || (subScreenDesignation & 0x10))
 		{
 			renderSpritesScanline(scanlinenum);
 		}
@@ -1630,7 +1631,7 @@ void ppu::renderScanline(int scanlinenum)
 		if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBGScanline(1, 2, scanlinenum+1);
 		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBGScanline(0, 8, scanlinenum+1);
 
-		if (mainScreenDesignation & 0x10)
+		if ((mainScreenDesignation & 0x10) || (subScreenDesignation & 0x10))
 		{
 			renderSpritesScanline(scanlinenum);
 		}
@@ -1682,7 +1683,7 @@ void ppu::renderScanline(int scanlinenum)
 	{
 		renderMode7Scanline(scanlinenum);
 
-		if (mainScreenDesignation & 0x10)
+		if ((mainScreenDesignation & 0x10) || (subScreenDesignation & 0x10))
 		{
 			renderSpritesScanline(scanlinenum);
 		}

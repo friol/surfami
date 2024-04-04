@@ -253,6 +253,8 @@ static const debugInfoRec debugInstrData[] =
 	{0xfd,3,"SBC param0,X",Absolute16,false,false,true}, // validatedF
 	{0xfe,3,"INC param0,X",Absolute16,false,false ,true}, // validatedF
 	{0xff,4,"SBC param0,X",AbsoluteLong,false,false,true}, // validatedF
+	{0x81,2,"STA (param0,X)",Immediate8,false,false,true}, // validatedF
+	{0x42,2,"WDM",Immediate8,false,false,true}, // validatedF
 };
 
 debugger5a22::debugger5a22()

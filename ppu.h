@@ -47,6 +47,8 @@ private:
 	unsigned char BGSCROLL_L1;
 	unsigned char BGSCROLL_L2;
 
+	bool isBgActive[4] = { true,true,true,true };
+
 	// mode se7en
 	signed short int m7matrix[8] = { 0,0,0,0,0,0,0,0 };
 	int m7prev = 0;
@@ -192,6 +194,8 @@ public:
 	int getPPUResolutionX() { return ppuResolutionX; }
 	int getPPUResolutionY() { return ppuResolutionY; }
 	unsigned char* getPPUFramebuffer() { return screenFramebuffer; }
+
+	void toggleBgActive(int bgnum) { isBgActive[bgnum] = !isBgActive[bgnum]; }
 
 	void step(int numCycles,mmu& theMMU,cpu5a22& theCPU);
 	bool isVBlankActive() { return scanline >= vblankStartScanline; }

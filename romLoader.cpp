@@ -63,7 +63,7 @@ Country (also implies PAL/NTSC) (FFD9h)
   11h U  Australia                (PAL)
 */
 
-void romLoader::checkRomType(std::vector<unsigned char>* romContents, bool& isHirom, int& standard, std::vector<std::string>& loadLog, int& sramSz)
+void romLoader::checkRomType(std::vector<unsigned char>* romContents, bool& isHirom, int& standard, std::vector<std::string>& loadLog, unsigned int& sramSz)
 {
 	if (romContents->size() <= 0x8000)
 	{
@@ -135,7 +135,7 @@ void romLoader::checkRomType(std::vector<unsigned char>* romContents, bool& isHi
 	}
 	else
 	{
-		sramSz = -1;
+		sramSz = 0;
 	}
 
 	// rom country
@@ -171,7 +171,7 @@ int romLoader::loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>
 
 	loadLog.push_back("ROM was read correctly. Size is " + std::to_string(romContents.size()/1024) + "kb. HiRom: "+std::to_string(isHirom));
 
-	int sramSize = 0;
+	unsigned int sramSize = 0;
 	checkRomType(&romContents, isHirom, videoStandard, loadLog,sramSize);
 
 	//
