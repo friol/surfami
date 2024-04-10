@@ -245,6 +245,10 @@ void ppu::writeRegister(int reg, unsigned char val)
 	{
 		w34sel = val;
 	}
+	else if (reg == 0x2125)
+	{
+		wobjsel = val;
+	}
 	else if (reg == 0x2126)
 	{
 		windowxpos[0][0] = val;
@@ -1315,14 +1319,16 @@ void ppu::renderMode7Scanline(int scanlinenum)
 int ppu::applyWindow(int x, int finalCol)
 {
 	if (!(windowTMW & 0x0f)) return finalCol;
-	//if ((!(w12sel & 0x02)) && (!(w12sel & 0x20)) && (!(w34sel & 0x02)) && (!(w34sel & 0x20))) return finalCol;
 
 	bool invert1[4] = { false,false,false,false };
+	bool invertObj = false;
 
+	// window 1
 	if ((w12sel & 0x03)==0x03) invert1[0] = true;
 	if ((w12sel & 0x30)==0x30) invert1[1] = true;
 	if ((w34sel & 0x03)==0x03) invert1[2] = true;
 	if ((w34sel & 0x30)==0x30) invert1[3] = true;
+	if ((wobjsel & 0x01)==0x01) invertObj = true;
 
 	if (invert1[0] && ((x < windowxpos[0][0]) || (x > windowxpos[0][1])))
 	{
@@ -1358,6 +1364,15 @@ int ppu::applyWindow(int x, int finalCol)
 	if ((!invert1[3]) && ((x >= windowxpos[0][0]) && (x <= windowxpos[0][1])))
 	{
 		if (w34sel & 0x20) bgIsTransparentAppo[3][x] = true;
+	}
+
+	if (invertObj && ((x < windowxpos[0][0]) || (x > windowxpos[0][1])))
+	{
+		if (wobjsel & 0x02) objIsTransparentAppo[x] = true;
+	}
+	if ((!invertObj) && ((x >= windowxpos[0][0]) && (x <= windowxpos[0][1])))
+	{
+		if (wobjsel & 0x02) objIsTransparentAppo[x] = true;
 	}
 
 	return finalCol;

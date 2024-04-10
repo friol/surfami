@@ -110,6 +110,14 @@ void romLoader::checkRomType(std::vector<unsigned char>* romContents, bool& isHi
 		romAdder = -0x8000;
 	}
 
+	// rom type from the header
+	unsigned char headRomType = (*romContents)[0xffd5 + romAdder];
+
+	std::stringstream strr;
+	strr << std::hex << std::setw(2) << std::setfill('0') << (int)headRomType;
+	std::string sRomType = strr.str();
+	loadLog.push_back("Rom Type:"+sRomType);
+
 	// 0 lorom, 1 hirom
 	unsigned char speedMemMap = (*romContents)[0xffd5+ romAdder];
 	if ((speedMemMap & 0x0f) == 0)
@@ -277,6 +285,9 @@ int romLoader::loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>
 
 	if (hasSram)
 	{
+		theMMU.hasSram(sramFileName, (unsigned int)sramData.size());
+		if (isHirom) theMMU.setHiRom(true);
+
 		for (int pos = 0;pos < sramData.size();pos++)
 		{
 			if (!isHirom)
@@ -285,11 +296,9 @@ int romLoader::loadRom(std::string& romPath,mmu& theMMU,std::vector<std::string>
 			}
 			else
 			{
-				theMMU.write8(0x306000 + pos, sramData[pos]);
+				theMMU.write8(0x206000 + pos, sramData[pos]);
 			}
 		}
-
-		theMMU.hasSram(sramFileName, (unsigned int)sramData.size());
 	}
 
 	// RESET (emulation)	0xFFFC / 0xFFFD

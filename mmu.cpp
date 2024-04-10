@@ -319,12 +319,13 @@ void mmu::executeHDMA()
 		{
 			if (HDMAS[i].doTransfer)
 			{
+				HDMAS[i].bAdr = snesRAM[0x4301 + (i * 0x10)];
+				//HDMAS[i].aBank = snesRAM[0x4304 + (i * 0x10)];
+				//HDMAS[i].fromB = (snesRAM[0x4300 + (i * 0x10)]) & 0x80;
+
 				//HDMAS[i].addressing_mode = (snesRAM[0x4300 + (i * 0x10)] >> 6) & 1;
 				//HDMAS[i].dma_mode = snesRAM[0x4300 + (i * 0x10)] & 0b111;
 				//HDMAS[i].indBank = snesRAM[0x4307 + (i * 0x10)];
-				HDMAS[i].bAdr = snesRAM[0x4301 + (i * 0x10)];
-				HDMAS[i].aBank = snesRAM[0x4304 + (i * 0x10)];
-				HDMAS[i].fromB = (snesRAM[0x4300 + (i * 0x10)]) & 0x80;
 				//HDMAS[i].repCount = read8((HDMAS[dma_id].aBank << 16) | HDMAS[dma_id].address++);
 
 				for (int j = 0; j < transferLength[HDMAS[i].dma_mode]; j++)
@@ -533,6 +534,12 @@ void mmu::write8(unsigned int address, unsigned char val)
 			pPPU->writeRegister(0x2124, val);
 			return;
 		}
+		else if (adr == 0x2125)
+		{
+			// WOBJSEL - Window Mask Settings for OBJ and Color Window ($2125 write)
+			pPPU->writeRegister(0x2125, val);
+			return;
+		}
 		else if (adr == 0x2126)
 		{
 			// window 1 left position
@@ -672,22 +679,40 @@ void mmu::write8(unsigned int address, unsigned char val)
 		}
 		else if (adr == 0x4016)
 		{
-			if (val & 0x01)
+			// 4016h/Write - JOYWR - Joypad Output (W)
+			latchLine = val & 0x01;
+
+			if (latchLine)
 			{
-				input1latch = 0;
-				if (isKeyBPressed) input1latch |= 0x8000;
-				if (isKeyYPressed) input1latch |= 0x4000;
-				if (isKeySelectPressed) input1latch |= 0x2000;
-				if (isKeyStartPressed) input1latch |= 0x1000;
-				if (isKeyRightPressed) input1latch |= 0x0100;
-				if (isKeyLeftPressed) input1latch |= 0x0200;
-				if (isKeyDownPressed) input1latch |= 0x0400;
-				if (isKeyUpPressed) input1latch |= 0x0800;
-				if (isKeyAPressed) input1latch |= 0x80;
-				if (isKeyXPressed) input1latch |= 0x40;
-				if (isKeyLPressed) input1latch |= 0x20;
-				if (isKeyRPressed) input1latch |= 0x10;
+				if (isKeyBPressed) latchedState |= 0x100;
+				else latchedState &= ~0x100;
+				if (isKeyYPressed) latchedState |= 0x200;
+				else latchedState &= ~0x200;
+				if (isKeyLPressed) latchedState |= 0x400;
+				else latchedState &= ~0x400;
+				if (isKeyRPressed) latchedState |= 0x800;
+				else latchedState &= ~0x800;
+
+				if (isKeyUpPressed) latchedState |= 0x10;
+				else latchedState &= ~0x10;
+				if (isKeyDownPressed) latchedState |= 0x20;
+				else latchedState &= ~0x20;
+				if (isKeyLeftPressed) latchedState |= 0x040;
+				else latchedState &= ~0x40;
+				if (isKeyRightPressed) latchedState |= 0x80;
+				else latchedState &= ~0x80;
+				
+				if (isKeyAPressed) latchedState |= 0x01;
+				else latchedState &= ~0x01;
+				if (isKeyXPressed) latchedState |= 0x02;
+				else latchedState &= ~0x02;
+
+				if (isKeySelectPressed) latchedState |= 0x4;
+				else latchedState &= ~0x4;
+				if (isKeyStartPressed) latchedState |= 0x8;
+				else latchedState &= ~0x8;
 			}
+
 			return;
 		}
 		else if (adr == 0x4202)			//	CPU MATH - WRMPYA - Multiplicand
@@ -732,11 +757,16 @@ void mmu::write8(unsigned int address, unsigned char val)
 			snesRAM[0x4217] = (unsigned short int)(((snesRAM[0x4205] << 8) | snesRAM[0x4204]) % val) >> 8;
 			return;
 		}
-		else if (isHiRom && ((bank_nr >= 0x30) && (bank_nr < 0x3f)) && hasSRAM)
+		else if (
+					isHiRom && 
+					hasSRAM &&
+					( (((bank_nr >= 0x20) && (bank_nr <= 0x3f))) || (((bank_nr >= 0xa0) && (bank_nr <= 0xbf))) ) &&
+					(adr>=0x6000)
+					)
 		{
 			// SRAM
-			//snesRAM[adr%sramSize] = val;
-			snesRAM[(bank_nr<<16)|(adr%sramSize)] = val;
+			//glbTheLogger.logMsg("Writing "+std::to_string(val)+" on SRAM addr "+std::to_string(adr));
+			snesRAM[0x206000+((adr-0x6000)%sramSize)] = val;
 			return;
 		}
 
@@ -744,9 +774,13 @@ void mmu::write8(unsigned int address, unsigned char val)
 	}
 	else
 	{
-		if ((!isHiRom) && hasSRAM && (bank_nr >= 0x70) && (bank_nr <= 0x77))
+		if (
+			(!isHiRom) && 
+			hasSRAM && 
+			( ((bank_nr >= 0x70) && (bank_nr < 0x7e)) || (bank_nr>=0xf0) )
+		   )
 		{
-			snesRAM[(bank_nr << 16) | (adr % sramSize)] = val;
+			snesRAM[0x700000 | (adr % sramSize)] = val;
 		}
 		else snesRAM[address] = val;
 	}
@@ -779,13 +813,6 @@ unsigned char mmu::read8(unsigned int address)
 		{
 			return pPPU->getMPY(adr);
 		}
-		else if (adr == 0x2137)
-		{
-			// 2137h - SLHV - Latch H/V-Counter by Software (R)
-			// TODO 
-			//return 0x21;
-			return (unsigned char)(rand() % 256);
-		}
 		else if (adr == 0x2138)
 		{
 			//	PPU - RDOAM - Read OAM Data (R)
@@ -811,24 +838,62 @@ unsigned char mmu::read8(unsigned int address)
 			cgramAddress = (cgramAddress + 1) & (0x200 - 1);
 			return openbus;
 		}
+		else if (adr == 0x2137)
+		{
+			// 2137h - SLHV - Latch H/V-Counter by Software (R)
+			// TODO 
+			pPPU->m_stat78 |= 0x40;
+			//return (unsigned char)(rand() % 256);
+			return pPPU->openBus;
+		}
 		else if (adr == 0x213c)
 		{
 			/* Horizontal counter data by ext/soft latch */
-			// TODO 
-			return (unsigned char)(rand()%256);
+			//return (unsigned char)(rand()%256);
+			int hPos = pPPU->internalCyclesCounter / 4;
+			if (m_read_ophct)
+			{
+				pPPU->m_ppu2_open_bus &= 0xfe;
+				pPPU->m_ppu2_open_bus |= (hPos >> 8) & 0x01;
+			}
+			else
+			{
+				pPPU->m_ppu2_open_bus = hPos & 0xff;
+			}
+			m_read_ophct ^= 1;
+			return pPPU->m_ppu2_open_bus;
 		}
 		else if (adr == 0x213d)
 		{
 			// 213Dh - OPVCT - Vertical Counter Latch (R)
 			// TODO
-			return (unsigned char)pPPU->getCurrentScanline();
+			//return (unsigned char)pPPU->getCurrentScanline();
+			int curScanline= pPPU->getCurrentScanline();
+			if (m_read_opvct)
+			{
+				pPPU->m_ppu2_open_bus &= 0xfe;
+				pPPU->m_ppu2_open_bus |= (curScanline >> 8) & 0x01;
+			}
+			else
+			{
+				pPPU->m_ppu2_open_bus = curScanline & 0xff;
+			}
+			m_read_opvct ^= 1;
+			return pPPU->m_ppu2_open_bus;
 		}
 		else if (adr == 0x213f)
 		{
+			m_read_opvct = false;
+			m_read_ophct = false;
+
 			unsigned char retval = 0x03;
 			if (standard == 1) retval |= 0x10;
-			pPPU->resetOpvctFlipFlop();
-			return retval;
+
+			pPPU->m_stat78 = (pPPU->m_stat78 & ~0x2f) | (pPPU->m_ppu2_open_bus & 0x20) | retval;
+			pPPU->m_ppu2_open_bus = pPPU->m_stat78;
+
+			return pPPU->m_ppu2_open_bus;
+			//return retval;
 		}
 		else if ((adr == 0x2140) || (adr == 0x2141) || (adr == 0x2142) || (adr == 0x2143))
 		{
@@ -837,14 +902,58 @@ unsigned char mmu::read8(unsigned int address)
 		else if (adr == 0x4016)
 		{
 			// 4016h / Read - JOYA - Joypad Input Register A(R)
-			// manual reading TODO
+			// manual reading
 
-			unsigned char ret = input1latch & 1;
-			input1latch >>= 1;
-			input1latch |= 0x8000;
+			if (latchLine) 
+			{
+				if (isKeyBPressed) latchedState |= 0x100;
+				else latchedState &= ~0x100;
+				if (isKeyYPressed) latchedState |= 0x200;
+				else latchedState &= ~0x200;
+				if (isKeyLPressed) latchedState |= 0x400;
+				else latchedState &= ~0x400;
+				if (isKeyRPressed) latchedState |= 0x800;
+				else latchedState &= ~0x800;
+
+				if (isKeyUpPressed) latchedState |= 0x10;
+				else latchedState &= ~0x10;
+				if (isKeyDownPressed) latchedState |= 0x20;
+				else latchedState &= ~0x20;
+				if (isKeyLeftPressed) latchedState |= 0x040;
+				else latchedState &= ~0x40;
+				if (isKeyRightPressed) latchedState |= 0x80;
+				else latchedState &= ~0x80;
+
+				if (isKeyAPressed) latchedState |= 0x01;
+				else latchedState &= ~0x01;
+				if (isKeyXPressed) latchedState |= 0x02;
+				else latchedState &= ~0x02;
+
+				if (isKeySelectPressed) latchedState |= 0x4;
+				else latchedState &= ~0x4;
+				if (isKeyStartPressed) latchedState |= 0x8;
+				else latchedState &= ~0x8;
+			}
+
+			unsigned char ret = latchedState & 1;
+			latchedState >>= 1;
+			latchedState |= 0x8000;
+
+			ret |= (pPPU->openBus & 0xfc);
+
+			if ((nmiTimen & 0x01) == 0x01)
+			{
+				return 0xff;
+			}
+			
 			return ret;
 		}
-		else if (adr==0x4200) 
+		else if (adr == 0x4016)
+		{
+			// 4017h/Read - JOYB - Joypad Input Register B (R)
+			return 0xff;
+		}
+		else if (adr == 0x4200)
 		{
 			return (nmiFlag << 7);
 		}
@@ -855,7 +964,8 @@ unsigned char mmu::read8(unsigned int address)
 			{
 				nmiFlag = false;
 			}
-			return (res << 7) | 0x62;
+			unsigned char openBusSim = (rand() % 256) & 0x70;
+			return (res << 7) | openBusSim | 0x62;
 		}
 		else if (adr == 0x4211)
 		{
@@ -938,17 +1048,70 @@ unsigned char mmu::read8(unsigned int address)
 
 			return res;
 		}
-		else if ((adr == 0x421a)|| (adr == 0x421b))
-		{
-			// 421Ah/421Bh - JOY2L/JOY2H - Joypad 2 (gameport 2, pin 4) (R) TODO
-			return 0;
-		}
+		//else if ((adr == 0x421a)|| (adr == 0x421b))
+		//{
+		//	// 421Ah/421Bh - JOY2L/JOY2H - Joypad 2 (gameport 2, pin 4) (R) TODO
+		//	return 0;
+		//}
 		else if ((adr == 0x430a) || (adr == 0x431a) || (adr == 0x432a) || (adr == 0x433a) || (adr == 0x434a) || (adr == 0x435a) || (adr == 0x436a) || (adr == 0x437a))
 		{
 			// 43xAh - NTRLx - HDMA Line - Counter(from current Table entry) (R / W)
 			int hdmaChan = (adr & 0x70)>>4;
 			return HDMAS[hdmaChan].repCount;
 		}
+		else if ((adr & 0xff0f) == 0x4300)
+		{
+			//glbTheLogger.logMsg("Warning: game reads from 0x43n0");
+			unsigned char c = (adr & 0x70) >> 4;
+			return snesRAM[0x4300 + (c * 0x10)];
+		}
+		else if ((adr & 0xff0f) == 0x4301)
+		{
+			//glbTheLogger.logMsg("Warning: game reads from 0x43n1");
+			unsigned char c = (adr & 0x70) >> 4;
+			return HDMAS[c].bAdr;
+		}
+		else if ((adr & 0xff0f) == 0x4302)
+		{
+			//glbTheLogger.logMsg("Warning: game reads from 0x43n2");
+			unsigned char c = (adr & 0x70) >> 4;
+			return HDMAS[c].aaddress & 0xff;
+		}
+		else if ((adr & 0xff0f) == 0x4303)
+		{
+			unsigned char c = (adr & 0x70) >> 4;
+			return (unsigned char)(HDMAS[c].aaddress >> 8);
+		}
+		else if ((adr & 0xff0f) == 0x4304)
+		{
+			unsigned char c = (adr & 0x70) >> 4;
+			return HDMAS[c].aBank;
+		}
+		else if ((adr & 0xff0f) == 0x4305)
+		{
+			unsigned char c = (adr & 0x70) >> 4;
+			return HDMAS[c].size & 0xff;
+		}
+		else if ((adr & 0xff0f) == 0x4306)
+		{
+			unsigned char c = (adr & 0x70) >> 4;
+			return (unsigned char)(HDMAS[c].size >> 8);
+		}
+		else if ((adr & 0xff0f) == 0x4307)
+		{
+			unsigned char c = (adr & 0x70) >> 4;
+			return HDMAS[c].indBank;
+		}
+		//else if ((adr & 0xff0f) == 0x4308)
+		//{
+		//	unsigned char c = (adr & 0x70) >> 4;
+		//	return HDMAS[c].tableAdr & 0xff;
+		//}
+		//else if ((adr & 0xff0f) == 0x4309)
+		//{
+		//	unsigned char c = (adr & 0x70) >> 4;
+		//	return HDMAS[c].tableAdr >> 8;
+		//}
 		else if ((adr == 0x4214)|| (adr == 0x4215)|| (adr == 0x4216)|| (adr == 0x4217))
 		{
 			//4214h - RDDIVL - Unsigned Division Result(Quotient) (lower 8bit) (R)
@@ -957,15 +1120,21 @@ unsigned char mmu::read8(unsigned int address)
 			//4217h - RDMPYH - Unsigned Division Remainder / Multiply Product(up.8bit) (R)
 			return snesRAM[adr];
 		}
+		else if (
+					isHiRom && 
+					((((bank_nr >= 0x20) && (bank_nr <= 0x3f))) || (((bank_nr >= 0xa0) && (bank_nr <= 0xbf)))) &&
+					hasSRAM &&
+					(adr >= 0x6000))
+		{
+			// SRAM
+			//unsigned char res = snesRAM[(bank_nr << 16) | (adr % sramSize)];
+			//glbTheLogger.logMsg("Returning ["+std::to_string(res) + "] for SRAM");
+			//return snesRAM[(bank_nr << 16) | (adr % sramSize)];
+			return snesRAM[0x206000+((adr-0x6000) % sramSize)];
+		}
 		else if (adr >= 0x2100 && adr < 0x2200)
 		{
 			return pPPU->openBus;
-		}
-		else if (isHiRom && ((bank_nr >= 0x30) && (bank_nr < 0x3f)) && hasSRAM)
-		{
-			// SRAM
-			//return snesRAM[adr%sramSize];
-			return snesRAM[(bank_nr << 16) | (adr % sramSize)];
 		}
 		else
 		{
@@ -978,16 +1147,16 @@ unsigned char mmu::read8(unsigned int address)
 		// and refuse to run, thinking you are using a copier 
 		if ((!isHiRom) && (!hasSRAM))
 		{
-			if ((bank_nr >= 0x70) && (bank_nr <= 0x77))
+			if ((bank_nr >= 0x70) && (bank_nr < 0x7e))
 			{
 				return 0;
 			}
 		}
 		else if ((!isHiRom) && (hasSRAM))
 		{
-			if ((bank_nr >= 0x70) && (bank_nr <= 0x77))
+			if ( ((bank_nr >= 0x70) && (bank_nr < 0x7e)) || (bank_nr>=0xf0) ) 
 			{
-				return snesRAM[(bank_nr << 16) | (adr % sramSize)];
+				return snesRAM[0x700000 | (adr % sramSize)];
 			}
 			else return snesRAM[address];
 		}
@@ -1004,10 +1173,21 @@ mmu::~mmu()
 	if (hasSRAM)
 	{
 		std::fstream fout(sramFileName, std::fstream::out | std::fstream::binary);
-		for (unsigned int b = 0;b < sramSize;b++)
+		if (!isHiRom)
 		{
-			unsigned char theByte = read8(0x700000 + b);
-			fout.write(reinterpret_cast<char*>(&theByte), 1);
+			for (unsigned int b = 0;b < sramSize;b++)
+			{
+				unsigned char theByte = read8(0x700000 + b);
+				fout.write(reinterpret_cast<char*>(&theByte), 1);
+			}
+		}
+		else
+		{
+			for (unsigned int b = 0;b < sramSize;b++)
+			{
+				unsigned char theByte = read8(0x206000 + b);
+				fout.write(reinterpret_cast<char*>(&theByte), 1);
+			}
 		}
 	}
 

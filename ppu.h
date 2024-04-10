@@ -3,6 +3,9 @@
 
 #include <vector>
 #include <string>
+#include "logger.h"
+
+extern logger glbTheLogger;
 
 class mmu;
 class cpu5a22;
@@ -91,7 +94,6 @@ private:
 	void setPalarrColor(int idx);
 
 	unsigned int scanline=0;
-	unsigned int internalCyclesCounter = 0;
 
 	unsigned int vblankStartScanline = 0xf0;
 	unsigned int cyclesPerScanline = 1364/6;
@@ -109,10 +111,13 @@ private:
 	unsigned char windowTMW=0;
 	unsigned char w12sel = 0;
 	unsigned char w34sel = 0;
+	unsigned char wobjsel = 0;
 
 public:
 
 	unsigned char openBus = 0;
+	unsigned char m_ppu2_open_bus = 0;
+	unsigned int internalCyclesCounter = 0;
 
 	bool getWriteBreakpoint() { return writeBreakpoint; }
 
@@ -143,10 +148,10 @@ public:
 	void setCGWSEL(unsigned char val) 
 	{ 
 		cgwSel = val; 
-		//if (cgwSel & 0x01)
-		//{
-		//	bool directMode = 1;
-		//}
+		if (cgwSel & 0x01)
+		{
+			glbTheLogger.logMsg("CGWSEL bit 0 direct color");
+		}
 	}
 
 	void writeOAMAddressLow(unsigned char val) 
@@ -223,19 +228,10 @@ public:
 
 	int getCurrentScanline() 
 	{ 
-		if (opvctFlipFlop == false)
-		{
-			opvctFlipFlop = true;
-			return scanline&0xff;
-		}
-		else
-		{
-			opvctFlipFlop = false;
-			return (scanline >> 8) & 0x01;
-		}
+		return scanline;
 	}
 
-	void resetOpvctFlipFlop() { opvctFlipFlop = false; }
+	unsigned char m_stat78 = 0;
 
 	~ppu();
 };

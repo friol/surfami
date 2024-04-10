@@ -65,7 +65,11 @@ private:
 	unsigned int sramSize = 0;
 	std::string sramFileName = "";
 	int standard = 0; // 0 NTSC, 1 PAL
-	unsigned short int input1latch = 0;
+	
+	//unsigned short int input1latch = 0;
+	unsigned char oldJoyWR = 0;
+	bool latchLine = false;
+	unsigned short int latchedState = 0;
 
 	unsigned short int cgramAddress = 0;
 
@@ -89,6 +93,9 @@ private:
 	bool isKeyYPressed = false;
 	bool isKeyLPressed = false;
 	bool isKeyRPressed = false;
+
+	bool m_read_ophct = false;
+	bool m_read_opvct = false;
 
 public:
 

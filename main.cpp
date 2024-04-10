@@ -25,6 +25,7 @@
 #include <chrono>
 #include <thread>
 
+#include "resource.h"
 #include "imfilebrowser.h"
 #include "include/BitmapPlusPlus.hpp"
 
@@ -697,9 +698,9 @@ void displayAppoWindow(cpu5a22& theCPU,ppu& thePPU, mmu& ourMMU, debugger5a22& t
 
     fileDialog.SetTitle("Load SNES ROM");
     fileDialog.SetTypeFilters({ ".smc", ".sfc" });
-    //fileDialog.SetPwd("d:\\prova\\snes\\");
-    //fileDialog.SetPwd("d:\\prova\\");
+    fileDialog.SetPwd("d:\\prova\\snes\\");
     //fileDialog.SetPwd("D:\\romz\\nintendo\\snes\\USA\\");
+    //fileDialog.SetPwd("D:\\romz\\nintendo\\snes\\szRoms\\");
     
     if (isInitialOpening)
     {
@@ -836,9 +837,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     glbTheLogger.logMsg("surFami starting...");
 
     // Create application window
-    WNDCLASSEXW wc = { sizeof(wc), CS_OWNDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr, L"SurFami", nullptr };
+    WNDCLASSEXW wc = { sizeof(wc), CS_OWNDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr, L"surFami", nullptr };
     ::RegisterClassExW(&wc);
-    HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"SurFami", WS_OVERLAPPEDWINDOW, 100, 100, 1520, 800, nullptr, nullptr, wc.hInstance, nullptr);
+    HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"surFami", WS_OVERLAPPEDWINDOW, 100, 100, 1520, 800, nullptr, nullptr, wc.hInstance, nullptr);
 
     // Initialize OpenGL
     if (!CreateDeviceWGL(hwnd, &g_MainWindow))
@@ -849,6 +850,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         return 1;
     }
     wglMakeCurrent(g_MainWindow.hDC, g_hRC);
+
+    HICON hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
+    SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+    SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 
     // Show the window
     ::ShowWindow(hwnd, SW_SHOWDEFAULT);
