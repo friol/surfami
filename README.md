@@ -8,9 +8,9 @@ SNES is not that hard to emulate, at the end. Beware, emulating it accurately wo
 That's not the aim of surFami. I just wanted to hack together an app to demonstrate that in a few months you can create a working SNES emu. I think I succeeded.<br/>
 I've spent about 2 months and a half on surFami (as you can see from the commit history), and, as always, working on it only in my free time.
 <br/><br/>
-The 2 CPUs (65816 and SPC700) in surFami are built with Tom Harte's CPU tests in mind. If you look at the code, you can test each opcode with TH tests. This helped immensely to build working CPUs and to loose the least amount of time running behind CPU bugs. Building the emu for the rest of the hardware (DMAs, PPU, MMU, etc.) was harder and a lot of bugs have been fixed in the process. I'm still not emulating a couple of things (open bus) and emulating badly a couple of other things. But, you know, I can feel satisfied for 2.5 months of work.
+The 2 CPUs (65816 and SPC700) in surFami are built with Tom Harte's CPU tests in mind. You can test each opcode with those tests. This helped immensely to build working CPUs and to lose the least amount of time running behind CPU bugs. Building the emu for the rest of the hardware (DMAs, PPU, MMU, etc.) was harder and a lot of bugs have been fixed in the process. I'm still not emulating a couple of things (open bus) and emulating badly a couple of other things. But, you know, I can feel satisfied for 2.5 months of work.
 <br/><br/>
-If you want to take a look at a visual history of the surFami build, you can take a peek at those images that represent the growth of the emu.
+You can find below a "visual history" of the surFami builds that represents the growth of the emu.
 <br/><br/>
 
 The first Krom tests:<br/>
