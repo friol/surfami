@@ -3496,6 +3496,18 @@ int apu::stepOne()
 			cycles = 5;
 			break;
 		}
+		case 0xca:
+		{
+			// MOV1 m.b,C
+			unsigned short int adr = 0;
+			unsigned char bit = addrAbsBit(&adr);
+			unsigned char result = ((this->*read8)(adr) & (~(1 << bit))) | ((flagC?1:0) << bit);
+			(this->*write8)(adr, result);
+
+			regPC += 3;
+			cycles = 6;
+			break;
+		}
 		default:
 		{
 			// unknown opcode

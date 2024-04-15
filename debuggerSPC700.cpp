@@ -234,6 +234,7 @@ dbgSPC700info listOfInstrs[]
 	{0x50,"BVC $param0",2,1,true}, // validatedFC
 	{0xf9,"MOV X,$param0+Y",2,1,true}, // validatedFC
 	{0x39,"AND (X),(Y)",1,0,true}, // validatedFC
+	{0xca,"MOV1 $param0.$param1,C",3,2,true}, // validatedFC
 
 
 };

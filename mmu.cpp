@@ -948,7 +948,7 @@ unsigned char mmu::read8(unsigned int address)
 			
 			return ret;
 		}
-		else if (adr == 0x4016)
+		else if (adr == 0x4017)
 		{
 			// 4017h/Read - JOYB - Joypad Input Register B (R)
 			return 0xff;
@@ -1059,7 +1059,7 @@ unsigned char mmu::read8(unsigned int address)
 			int hdmaChan = (adr & 0x70)>>4;
 			return HDMAS[hdmaChan].repCount;
 		}
-		else if ((adr & 0xff0f) == 0x4300)
+		/*else if ((adr & 0xff0f) == 0x4300)
 		{
 			//glbTheLogger.logMsg("Warning: game reads from 0x43n0");
 			unsigned char c = (adr & 0x70) >> 4;
@@ -1101,7 +1101,7 @@ unsigned char mmu::read8(unsigned int address)
 		{
 			unsigned char c = (adr & 0x70) >> 4;
 			return HDMAS[c].indBank;
-		}
+		}*/
 		//else if ((adr & 0xff0f) == 0x4308)
 		//{
 		//	unsigned char c = (adr & 0x70) >> 4;

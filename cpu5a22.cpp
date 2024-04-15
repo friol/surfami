@@ -6660,6 +6660,77 @@ int cpu5a22::stepOne()
 			cycles = 2;
 			break;
 		}
+		case 0x51:
+		{
+			// EOR (dp),Y
+			int cycAdder = 0;
+
+			unsigned int addr = getDirectPageIndirectIndexedYAddress();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				unsigned char res = val ^ (regA_lo & 0xff);
+				regA_lo = res;
+				regP.setNegative(res >> 7);
+				regP.setZero(res == 0);
+			}
+			else
+			{
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned short int val = (hi << 8) | lo;
+				unsigned short int res = val ^ (regA_lo | (regA_hi << 8));
+				regA_lo = res & 0xff;
+				regA_hi = res >> 8;
+				regP.setNegative(res >> 15);
+				regP.setZero(res == 0);
+				cycAdder = 1;
+			}
+
+			if (regD & 0xff) cycAdder += 1;
+
+			if (pageBoundaryCrossed()) cycAdder += 1;
+
+			regPC += 2;
+			cycles = cycAdder+5;
+			break;
+		}
+		case 0x01:
+		{
+			// ORA (dp,X)
+			int cycAdder = 0;
+			unsigned int addr = getDirectPageIndirectX();
+
+			if (regP.getAccuMemSize())
+			{
+				unsigned char val = pMMU->read8(addr);
+				unsigned char res = val | regA_lo;
+				regA_lo = res;
+				regP.setNegative(res >> 7);
+				regP.setZero(res == 0);
+			}
+			else
+			{
+				unsigned char lo = pMMU->read8(addr);
+				unsigned char hi = pMMU->read8(addr + 1);
+				unsigned short int val = (hi << 8) | lo;
+				unsigned short int res = val | (regA_lo | (regA_hi << 8));
+
+				regA_lo = res & 0xff;
+				regA_hi = res >> 8;
+
+				regP.setNegative(res >> 15);
+				regP.setZero(res == 0);
+				cycAdder = 1;
+			}
+
+			if (regD & 0xff) cycAdder += 1;
+
+			regPC += 2;
+			cycles = cycAdder + 6;
+			break;
+		}
 		default:
 		{
 			// unknown opcode

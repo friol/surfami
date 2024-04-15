@@ -700,8 +700,10 @@ void displayAppoWindow(cpu5a22& theCPU,ppu& thePPU, mmu& ourMMU, debugger5a22& t
     fileDialog.SetTypeFilters({ ".smc", ".sfc" });
     fileDialog.SetPwd("d:\\prova\\snes\\");
     //fileDialog.SetPwd("D:\\romz\\nintendo\\snes\\USA\\");
+    //fileDialog.SetPwd("D:\\romz\\nintendo\\snes\\0hRoms\\");
+    //fileDialog.SetPwd("D:\\romz\\nintendo\\snes\\irRoms\\");
     //fileDialog.SetPwd("D:\\romz\\nintendo\\snes\\szRoms\\");
-    
+
     if (isInitialOpening)
     {
         fileDialog.Open();

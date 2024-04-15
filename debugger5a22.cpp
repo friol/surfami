@@ -255,6 +255,8 @@ static const debugInfoRec debugInstrData[] =
 	{0xff,4,"SBC param0,X",AbsoluteLong,false,false,true}, // validatedF
 	{0x81,2,"STA (param0,X)",Immediate8,false,false,true}, // validatedF
 	{0x42,2,"WDM",Immediate8,false,false,true}, // validatedF
+	{0x51,2,"EOR (param0),Y",Immediate8,false,false,true}, // validatedFC
+	{0x01,2,"ORA (param0,X)",Immediate8,false,false,true}, // validatedFC
 };
 
 debugger5a22::debugger5a22()

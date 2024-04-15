@@ -806,10 +806,13 @@ void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, in
 					}
 					else
 					{
+						// direct color TODO
+
 						*pBgColorAppo = palarrLookup[(curCol * 3) + 0]; pBgColorAppo++;
 						*pBgColorAppo = palarrLookup[(curCol * 3) + 1]; pBgColorAppo++;
 						*pBgColorAppo = palarrLookup[(curCol * 3) + 2]; pBgColorAppo++;
 						*pBgColorAppo = 0xff; 
+						
 						*pBgPriAppo = bgpri; 
 						*pBgIsTranspAppo = false; 
 					}
@@ -1308,11 +1311,27 @@ void ppu::renderMode7Scanline(int scanlinenum)
 	unsigned char* pBuf = &screenFramebuffer[(scanlinenum * ppuResolutionX * 4)];
 	for (int x = 0;x < 256;x++)
 	{
-		unsigned char colNum = getPixelForMode7(x, 0, false);
-		*pBuf = palarrLookup[(colNum * 3) + 0]; pBuf++;
-		*pBuf = palarrLookup[(colNum * 3) + 1]; pBuf++;
-		*pBuf = palarrLookup[(colNum * 3) + 2]; pBuf++;
-		*pBuf = 0xff; pBuf++;
+		int colNum = getPixelForMode7(x, 0, false);
+
+		if ((cgwSel & 0x01) == 0)
+		{
+			*pBuf = palarrLookup[(colNum * 3) + 0]; pBuf++;
+			*pBuf = palarrLookup[(colNum * 3) + 1]; pBuf++;
+			*pBuf = palarrLookup[(colNum * 3) + 2]; pBuf++;
+			*pBuf = 0xff; pBuf++;
+		}
+		else
+		{
+			// direct color
+			unsigned char red = (((colNum & 0x7) << 2) | ((colNum & 0x100) >> 7))<<3;
+			unsigned char green = (((colNum & 0x38) >> 1) | ((colNum & 0x200) >> 8))<<3;
+			unsigned char blue = (((colNum & 0xc0) >> 3) | ((colNum & 0x400) >> 8))<<3;
+			
+			*pBuf = red; pBuf++;
+			*pBuf = green; pBuf++;
+			*pBuf = blue; pBuf++;
+			*pBuf = 0xff; pBuf++;
+		}
 	}
 }
 
@@ -1466,9 +1485,9 @@ void ppu::renderScanline(int scanlinenum)
 	else if (screenMode == 0x01)
 	{
 		// 1      16-color    16-color    4-color     -         ;Normal
+
 		if ( ((((mainScreenDesignation & 0x1f) & (1 << 2)) > 0)) && isBgActive[2] ) renderBGScanline(2, 2, scanlinenum + 1);
 		if ( ( (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1))) ) && isBgActive[1] ) renderBGScanline(1, 4, scanlinenum+1);
-		//if ( ((((mainScreenDesignation & 0x1f) & (1 << 0)) > 0)) && isBgActive[0] ) renderBGScanline(0, 4, scanlinenum + 1);
 		if (((((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 0)))) && isBgActive[0]) renderBGScanline(0, 4, scanlinenum + 1);
 
 		if ((mainScreenDesignation & 0x10)|| (subScreenDesignation & 0x10))
