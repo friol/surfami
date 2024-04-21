@@ -71,15 +71,28 @@ private:
 	void tileViewerRenderTile8bpp(int px, int py, int tileAddr);
 
 	unsigned int coldataColor = 0;
+	
 	unsigned char bgColorAppo[4][256 * 4];
 	unsigned char bgPriorityAppo[4][256];
 	bool bgIsTransparentAppo[4][256];
 	unsigned char objColorAppo[256 * 4];
 	unsigned char objPriorityAppo[256];
 	bool objIsTransparentAppo[256];
+
+	unsigned char bgColorAppoHires[4][512 * 4];
+	unsigned char bgPriorityAppoHires[4][512];
+	bool bgIsTransparentAppoHires[4][512];
+	unsigned char objColorAppoHires[512 * 4];
+	unsigned char objPriorityAppoHires[512];
+	bool objIsTransparentAppoHires[512];
+
+	void upskaleToHires(unsigned int scanlinenn);
+
 	void resetAppoBuffers();
+	void resetAppoBuffersHires();
 
 	unsigned char* screenFramebuffer;
+	unsigned char* screenFramebufferHires;
 
 	void renderBackdrop();
 	void renderSpritesScanline(int scanlinenum);
@@ -154,6 +167,18 @@ public:
 		}
 	}
 
+	unsigned char setini = 0;
+	void setSETINI(unsigned char val)
+	{
+		setini = val;
+	}
+
+	unsigned char mosaicReg = 0;
+	void writeMosaic(unsigned char val)
+	{
+		mosaicReg = val;
+	}
+
 	void writeOAMAddressLow(unsigned char val) 
 	{ 
 		OAMAddr = (OAMAddr & 0x0200) | (val << 1);
@@ -199,6 +224,7 @@ public:
 	int getPPUResolutionX() { return ppuResolutionX; }
 	int getPPUResolutionY() { return ppuResolutionY; }
 	unsigned char* getPPUFramebuffer() { return screenFramebuffer; }
+	unsigned char* getHiresFramebuffer() { return screenFramebufferHires; }
 
 	void toggleBgActive(int bgnum) { isBgActive[bgnum] = !isBgActive[bgnum]; }
 
@@ -229,6 +255,11 @@ public:
 	int getCurrentScanline() 
 	{ 
 		return scanline;
+	}
+
+	int getCurrentVideomode()
+	{
+		return (bgMode & 0x07);
 	}
 
 	unsigned char m_stat78 = 0;

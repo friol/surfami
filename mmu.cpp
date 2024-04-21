@@ -95,6 +95,7 @@ void mmu::DMAstart(unsigned char val)
 					snesRAM[0x4306 + (dmaChannel * 0x10)] = (unsigned char)(byteCount >> 8);
 					snesRAM[0x4305 + (dmaChannel * 0x10)] = (unsigned char)(byteCount & 0xff);
 					targetAddr += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+					targetAddr = (hiBank << 16) | (targetAddr & 0xffff);
 				}
 
 				snesRAM[0x4303 + (dmaChannel * 0x10)] = (targetAddr >> 8) & 0xff;
@@ -112,23 +113,26 @@ void mmu::DMAstart(unsigned char val)
 					{
 						write8(0x2100 + BBusAddr, read8(targetAddr));
 						targetAddr += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+						targetAddr = (hiBank << 16) | (targetAddr & 0xffff);
 						if (!--byteCount) goto endDma1;
 						write8(0x2100 + BBusAddr+1, read8(targetAddr));
 						targetAddr += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+						targetAddr = (hiBank << 16) | (targetAddr & 0xffff);
 						if (!--byteCount) goto endDma1;
 					}
 					else 
 					{
 						write8(targetAddr, read8(0x2100 + BBusAddr));
 						targetAddr += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+						targetAddr = (hiBank << 16) | (targetAddr & 0xffff);
 						if (!--byteCount) goto endDma1;
 						write8(targetAddr, read8(0x2100 + BBusAddr + 1));
 						targetAddr += (dma_step == 0) ? 1 : ((dma_step == 2) ? -1 : 0);
+						targetAddr = (hiBank << 16) | (targetAddr & 0xffff);
 						if (!--byteCount) goto endDma1;
 					}
 					snesRAM[0x4306 + (dmaChannel * 0x10)] = (unsigned char)(byteCount >> 8);
 					snesRAM[0x4305 + (dmaChannel * 0x10)] = (unsigned char)(byteCount & 0xff);
-					//targetAddr += (dma_step == 0) ? 2 : ((dma_step == 2) ? -2 : 0);
 				}
 
 				endDma1:
@@ -219,7 +223,7 @@ void mmu::DMAstart(unsigned char val)
 	snesRAM[0x420b] = 0x00;
 }
 
-void mmu::resetHDMA()
+void mmu::resetHDMA(bool midFrame)
 {
 	bool hdmaEnabled = false;
 	for (int i = 0; i < 8; i++) 
@@ -255,7 +259,7 @@ void mmu::resetHDMA()
 				HDMAS[dma_id].size |= read8((HDMAS[dma_id].aBank << 16) | HDMAS[dma_id].address++) << 8;
 			}
 			
-			HDMAS[dma_id].doTransfer = true;
+			/*if (midFrame == false)*/ HDMAS[dma_id].doTransfer = true;
 		}
 	}
 }
@@ -319,7 +323,7 @@ void mmu::executeHDMA()
 		{
 			if (HDMAS[i].doTransfer)
 			{
-				HDMAS[i].bAdr = snesRAM[0x4301 + (i * 0x10)];
+				//HDMAS[i].bAdr = snesRAM[0x4301 + (i * 0x10)];
 				//HDMAS[i].aBank = snesRAM[0x4304 + (i * 0x10)];
 				//HDMAS[i].fromB = (snesRAM[0x4300 + (i * 0x10)]) & 0x80;
 
@@ -428,6 +432,12 @@ void mmu::write8(unsigned int address, unsigned char val)
 			pPPU->writeOAM(val);
 			return;
 		}
+		else if (adr == 0x2106)
+		{
+			// 2106h - MOSAIC - Mosaic Size and Mosaic Enable (W)
+			pPPU->writeMosaic(val);
+			return;
+		}
 		else if (adr == 0x4200)
 		{
 			// NMITIMEN - Interrupt Enable and Joypad Request (W)
@@ -491,7 +501,10 @@ void mmu::write8(unsigned int address, unsigned char val)
 				if ((val >> i) & 1) atLeastOne = true;
 			}
 
-			//if (atLeastOne) resetHDMA();
+			// this fixes the capcom games
+			int scanline = pPPU->getCurrentScanline();
+			if (atLeastOne) resetHDMA(true);
+			//if ((atLeastOne)&&(scanline>=240)) resetHDMA(false);
 
 			return;
 		}
@@ -667,6 +680,12 @@ void mmu::write8(unsigned int address, unsigned char val)
 		{
 			// 2132h - COLDATA - Color Math Sub Screen Backdrop Color (W)
 			pPPU->writeSubscreenFixedColor(val);
+			return;
+		}
+		else if (adr == 0x2133)
+		{
+			// 2133h - SETINI - Display Control 2 (W)
+			pPPU->setSETINI(val);
 			return;
 		}
 		else if ((adr == 0x2140) || (adr == 0x2141) || (adr == 0x2142) || (adr == 0x2143))

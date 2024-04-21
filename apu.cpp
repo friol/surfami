@@ -3508,6 +3508,16 @@ int apu::stepOne()
 			cycles = 6;
 			break;
 		}
+		case 0x07:
+		{
+			// ORA A,[d+X]
+			unsigned short int addr = addrIndirectX();
+			regA |= (this->*read8)(addr);
+			doFlagsNZ(regA);
+			regPC += 2;
+			cycles = 6;
+			break;
+		}
 		default:
 		{
 			// unknown opcode

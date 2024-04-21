@@ -121,7 +121,7 @@ public:
 
 	void setIrqTriggered() { irqTriggered = true; }
 
-	void resetHDMA();
+	void resetHDMA(bool midFrame);
 	void executeHDMA();
 
 	bool isVblankNMIEnabled() { return ((nmiTimen & 0x80) == 0x80); }

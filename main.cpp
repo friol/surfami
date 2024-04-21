@@ -153,7 +153,14 @@ void renderToTexture(GLuint image_texture,int image_width,int image_height,unsig
         image_data
     );
 
-    ImGui::Image((void*)(intptr_t)image_texture, ImVec2((float)image_width*2, (float)image_height*2));
+    if (image_width > 256)
+    {
+        ImGui::Image((void*)(intptr_t)image_texture, ImVec2((float)image_width, (float)image_height));
+    }
+    else
+    {
+        ImGui::Image((void*)(intptr_t)image_texture, ImVec2((float)image_width * 2, (float)image_height * 2));
+    }
 }
 
 //
@@ -518,7 +525,7 @@ void displayVRAMViewerWindow(GLuint renderTexture,int image_width,int image_heig
     ImGui::End();
 }
 
-void displaySNESScreenWindow(GLuint renderTexture, int image_width, int image_height, unsigned char* parr,bool& isWindowFocused)
+void displaySNESScreenWindow(GLuint renderTextureHires, int image_width, int image_height,bool& isWindowFocused,ppu& thePPU)
 {
     ImGui::Begin("SNES TV Output");
 
@@ -528,7 +535,16 @@ void displaySNESScreenWindow(GLuint renderTexture, int image_width, int image_he
     }
     else isWindowFocused = false;
 
-    renderToTexture(renderTexture, image_width, image_height, parr);
+    //int vmode = thePPU.getCurrentVideomode();
+    //if (vmode == 0x05)
+    {
+        unsigned char* parrHires = thePPU.getHiresFramebuffer();
+        renderToTexture(renderTextureHires, image_width*2, image_height*2, parrHires);
+    }
+    //else
+    //{
+    //   renderToTexture(renderTexture, image_width, image_height, parr);
+    //}
 
     ImGui::End();
 }
@@ -698,6 +714,7 @@ void displayAppoWindow(cpu5a22& theCPU,ppu& thePPU, mmu& ourMMU, debugger5a22& t
 
     fileDialog.SetTitle("Load SNES ROM");
     fileDialog.SetTypeFilters({ ".smc", ".sfc" });
+    //fileDialog.SetPwd("d:\\prova\\");
     fileDialog.SetPwd("d:\\prova\\snes\\");
     //fileDialog.SetPwd("D:\\romz\\nintendo\\snes\\USA\\");
     //fileDialog.SetPwd("D:\\romz\\nintendo\\snes\\0hRoms\\");
@@ -801,8 +818,8 @@ void displayAppoWindow(cpu5a22& theCPU,ppu& thePPU, mmu& ourMMU, debugger5a22& t
     ImGui::SameLine();
     if (ImGui::Button("Save Image"))
     {
-        bmp::Bitmap image(thePPU.getPPUResolutionX(),thePPU.getPPUResolutionY());
-        unsigned char* pfb = thePPU.getPPUFramebuffer();
+        bmp::Bitmap image(thePPU.getPPUResolutionX()*2,thePPU.getPPUResolutionY()*2);
+        unsigned char* pfb = thePPU.getHiresFramebuffer();
 
         for (bmp::Pixel& pixel : image) 
         {
@@ -814,7 +831,7 @@ void displayAppoWindow(cpu5a22& theCPU,ppu& thePPU, mmu& ourMMU, debugger5a22& t
             pixel = color;
         }
 
-        image.save("screenshot.bmp");
+        image.save("screenshotHires.bmp");
     }
 
     ImGui::SameLine();
@@ -918,8 +935,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
 
     GLuint vramRenderTexture;
     prepareVRAMViewerTexture(vramRenderTexture,thePPU.getVRAMViewerXsize(), thePPU.getVRAMViewerYsize(), thePPU.getVRAMViewerBitmap());
-    GLuint screenRenderTexture;
-    prepareVRAMViewerTexture(screenRenderTexture, thePPU.getPPUResolutionX(), thePPU.getPPUResolutionY(), thePPU.getPPUFramebuffer());
+    //GLuint screenRenderTexture;
+    //prepareVRAMViewerTexture(screenRenderTexture, thePPU.getPPUResolutionX(), thePPU.getPPUResolutionY(), thePPU.getPPUFramebuffer());
+    GLuint screenRenderTextureHires;
+    prepareVRAMViewerTexture(screenRenderTextureHires, thePPU.getPPUResolutionX()*2, thePPU.getPPUResolutionY()*2, thePPU.getHiresFramebuffer());
 
     // 
     // main emu cycle
@@ -1105,7 +1124,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         displayPaletteWindow(thePPU);
         displayLogWindow();
         //displayVRAMViewerWindow(vramRenderTexture, thePPU.getVRAMViewerXsize(), thePPU.getVRAMViewerYsize(), thePPU.getVRAMViewerBitmap(),thePPU);
-        displaySNESScreenWindow(screenRenderTexture, thePPU.getPPUResolutionX(), thePPU.getPPUResolutionY(), thePPU.getPPUFramebuffer(),isTVWindowFocused);
+        displaySNESScreenWindow(screenRenderTextureHires,thePPU.getPPUResolutionX(), thePPU.getPPUResolutionY(), isTVWindowFocused,thePPU);
         displayMemoryWindow(theMMU,thePPU,baseMemoryAddress);
 
         if (emustatus == 1)
