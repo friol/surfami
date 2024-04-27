@@ -16,6 +16,7 @@ class audioSystem
 {
 private:
 
+	bool outputAudio = true;
 	unsigned int bufPos = 0;
 	
 	const unsigned int audioBufLen = 1024;
@@ -32,6 +33,7 @@ public:
 	float internalAudioInc = 1.0;
 
 	audioSystem();
+	void setAudioOutput(bool v) { outputAudio = v; }
 	void feedAudiobuf(float l, float r);
 	~audioSystem();
 };

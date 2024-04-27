@@ -109,10 +109,14 @@ void ppu::writeSubscreenFixedColor(unsigned char val)
 	bool r = ((val >> 5) & 1) == 1;
 	bool g = ((val >> 6) & 1) == 1;
 	bool b = ((val >> 7) & 1) == 1;
-	unsigned char intensity = val & 0b11111;
+	/*unsigned char intensity = val & 0b11111;
 	if (r) coldataColor = (coldataColor & 0b11111'11111'00000'1) | (intensity << 1);
 	if (g) coldataColor = (coldataColor & 0b11111'00000'11111'1) | (intensity << 6);
-	if (b) coldataColor = (coldataColor & 0b00000'11111'11111'1) | (intensity << 11);
+	if (b) coldataColor = (coldataColor & 0b00000'11111'11111'1) | (intensity << 11);*/
+
+	if (r) coldataColor[0] = (val & 0x1f)<<3;
+	if (g) coldataColor[1] = (val & 0x1f)<<3;
+	if (b) coldataColor[2] = (val & 0x1f)<<3;
 }
 
 void ppu::writeBgScrollX(int bgId,unsigned char val)
@@ -274,6 +278,10 @@ void ppu::writeRegister(int reg, unsigned char val)
 	else if (reg == 0x212e)
 	{
 		windowTMW = val;
+	}
+	else if (reg == 0x212f)
+	{
+		windowTSW = val;
 	}
 	else if (reg == 0x2122)
 	{
@@ -763,6 +771,7 @@ void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, in
 					unsigned char* pBgPriAppo;
 					bool* pBgIsTranspAppo;
 
+					// hi-res for mode 5
 					if ((bgMode & 0x07) == 0x05)
 					{
 						pBgColorAppo = &bgColorAppoHires[bgnum][theX * 4];
@@ -826,7 +835,9 @@ void ppu::renderTileScanline(int bpp, int px, int py, int tileNum, int palId, in
 						*pBgColorAppo = 0xff; 
 						
 						*pBgPriAppo = bgpri; 
-						*pBgIsTranspAppo = false; 
+
+						if (curCol==0) *pBgIsTranspAppo = true;
+						else *pBgIsTranspAppo = false; 
 					}
 				}
 			}
@@ -1215,6 +1226,7 @@ void ppu::renderSpritesScanline(int scanlinenum)
 						{
 							unsigned char* pObjColorAppo = &objColorAppo[theEx * 4];
 							unsigned char* pObjPriAppo = &objPriorityAppo[theEx];
+							unsigned char* pObjPaletteAppo = &objPaletteAppo[theEx];
 							bool* pObjTranspAppo = &objIsTransparentAppo[theEx];
 
 							unsigned int realColIdx = 128 + (paletteNum * 16) + pixPalIdx;
@@ -1225,6 +1237,7 @@ void ppu::renderSpritesScanline(int scanlinenum)
 							*pObjColorAppo = 0xff; pObjColorAppo++;
 							*pObjPriAppo = priority; 
 							*pObjTranspAppo = false; 
+							*pObjPaletteAppo = (unsigned char)paletteNum;
 						}
 						else
 						{
@@ -1260,6 +1273,7 @@ void ppu::resetAppoBuffers()
 		objColorAppo[(x * 4) + 0] = 0; objColorAppo[(x * 4) + 1] = 0; objColorAppo[(x * 4) + 2] = 0; objColorAppo[(x * 4) + 3] = 0;
 		objPriorityAppo[x] = 0; 
 		objIsTransparentAppo[x] = true; 
+		objPaletteAppo[x] = 0;
 	}
 }
 
@@ -1368,9 +1382,10 @@ void ppu::renderMode7Scanline(int scanlinenum)
 	}
 }
 
-int ppu::applyWindow(int x, int finalCol)
+bool ppu::applyWindow(int x)
 {
-	if (!(windowTMW & 0x0f)) return finalCol;
+	bool isMathWindowEnabled = false;
+	if ( (!(windowTMW & 0x0f)) && (!(windowTSW & 0x0f)) ) return isMathWindowEnabled;
 
 	bool invert1[4] = { false,false,false,false };
 	bool invertObj = false;
@@ -1384,50 +1399,90 @@ int ppu::applyWindow(int x, int finalCol)
 
 	if (invert1[0] && ((x < windowxpos[0][0]) || (x > windowxpos[0][1])))
 	{
-		if (w12sel & 0x02) bgIsTransparentAppo[0][x] = true;
+		if (w12sel & 0x02)
+		{
+			bgIsTransparentAppo[0][x] = true;
+			isMathWindowEnabled = true;
+		}
 	}
 	if ((!invert1[0]) && ((x >= windowxpos[0][0]) && (x <= windowxpos[0][1])))
 	{
-		if (w12sel & 0x02) bgIsTransparentAppo[0][x] = true;
+		if (w12sel & 0x02)
+		{
+			bgIsTransparentAppo[0][x] = true;
+			isMathWindowEnabled = true;
+		}
 	}
 
 	if (invert1[1] && ((x < windowxpos[0][0]) || (x > windowxpos[0][1])))
 	{
-		if (w12sel & 0x20) bgIsTransparentAppo[1][x] = true;
+		if (w12sel & 0x20)
+		{
+			bgIsTransparentAppo[1][x] = true;
+			isMathWindowEnabled = true;
+		}
 	}
 	if ((!invert1[1]) && ((x >= windowxpos[0][0]) && (x <= windowxpos[0][1])))
 	{
-		if (w12sel & 0x20) bgIsTransparentAppo[1][x] = true;
+		if (w12sel & 0x20)
+		{
+			bgIsTransparentAppo[1][x] = true;
+			isMathWindowEnabled = true;
+		}
 	}
 
 	if (invert1[2] && ((x < windowxpos[0][0]) || (x > windowxpos[0][1])))
 	{
-		if (w34sel & 0x02) bgIsTransparentAppo[2][x] = true;
+		if (w34sel & 0x02)
+		{
+			bgIsTransparentAppo[2][x] = true;
+			isMathWindowEnabled = true;
+		}
 	}
 	if ((!invert1[2]) && ((x >= windowxpos[0][0]) && (x <= windowxpos[0][1])))
 	{
-		if (w34sel & 0x02) bgIsTransparentAppo[2][x] = true;
+		if (w34sel & 0x02)
+		{
+			bgIsTransparentAppo[2][x] = true;
+			isMathWindowEnabled = true;
+		}
 	}
 
 	if (invert1[3] && ((x < windowxpos[0][0]) || (x > windowxpos[0][1])))
 	{
-		if (w34sel & 0x20) bgIsTransparentAppo[3][x] = true;
+		if (w34sel & 0x20)
+		{
+			bgIsTransparentAppo[3][x] = true;
+			isMathWindowEnabled = true;
+		}
 	}
 	if ((!invert1[3]) && ((x >= windowxpos[0][0]) && (x <= windowxpos[0][1])))
 	{
-		if (w34sel & 0x20) bgIsTransparentAppo[3][x] = true;
+		if (w34sel & 0x20)
+		{
+			bgIsTransparentAppo[3][x] = true;
+			isMathWindowEnabled = true;
+		}
 	}
 
 	if (invertObj && ((x < windowxpos[0][0]) || (x > windowxpos[0][1])))
 	{
-		if (wobjsel & 0x02) objIsTransparentAppo[x] = true;
+		if (wobjsel & 0x02)
+		{
+			objIsTransparentAppo[x] = true;
+			isMathWindowEnabled = true;
+		}
 	}
 	if ((!invertObj) && ((x >= windowxpos[0][0]) && (x <= windowxpos[0][1])))
 	{
-		if (wobjsel & 0x02) objIsTransparentAppo[x] = true;
+		if (wobjsel & 0x02)
+		{
+			objIsTransparentAppo[x] = true;
+			isMathWindowEnabled = true;
+		}
 	}
 
-	return finalCol;
+	return isMathWindowEnabled;
 }
 
 void ppu::upskaleToHires(unsigned int scanlinenn)
@@ -1448,9 +1503,299 @@ void ppu::upskaleToHires(unsigned int scanlinenn)
 	}
 }
 
+unsigned char ppu::clampAdd(unsigned char a, unsigned char b,bool div2)
+{
+	int ai = a; int bi = b;
+	int sum = ai + bi;
+	if (div2) sum /= 2;
+	if (sum > 255) return 255;
+	return (unsigned char)sum;
+}
+
+unsigned char ppu::clampSub(unsigned char a, unsigned char b,bool div2)
+{
+	int ai = a; int bi = b;
+	int diff = ai - bi;
+	if (div2) diff /= 2;
+	if (diff<0) return 0;
+	return (unsigned char)diff;
+}
+
+void ppu::doColorMath(int maincol, int subcol, unsigned char redm, unsigned char greenm, unsigned char bluem,
+	unsigned char reds, unsigned char greens, unsigned char blues,
+	unsigned char& red, unsigned char& green, unsigned char& blue,
+	unsigned char objPalette)
+{
+	subcol = subcol;
+
+	/*
+	  2131h - CGADSUB - Color Math Control Register B (W)
+	  7    Color Math Add/Subtract        (0=Add; Main+Sub, 1=Subtract; Main-Sub)
+	  6    Color Math "Div2" Half Result  (0=No divide, 1=Divide result by 2)
+	  5    Color Math when Main Screen = Backdrop        (0=Off, 1=On) ;\
+	  4    Color Math when Main Screen = OBJ/Palette4..7 (0=Off, 1=On) ; OFF: Show Raw Main,
+	  3    Color Math when Main Screen = BG4             (0=Off, 1=On) ;   or
+	  2    Color Math when Main Screen = BG3             (0=Off, 1=On) ; ON: Show
+	  1    Color Math when Main Screen = BG2             (0=Off, 1=On) ; Main+/-Sub
+	  0    Color Math when Main Screen = BG1             (0=Off, 1=On) ;/
+	*/
+
+	bool colorMathAdd = ((cgaddsub & 0x80) == 0);
+	bool colorMathDiv2= ((cgaddsub & 0x40) == 0x40);
+
+	if (
+				(((cgaddsub & 0x20) == 0x20) && (maincol == -1)) ||
+				(((cgaddsub & 0x10) == 0x10) && (maincol == 4) && ((objPalette >= 4) && (objPalette <= 7))) ||
+				(((cgaddsub & 0x01) == 0x01) && (maincol == 0)) ||
+				(((cgaddsub & 0x02) == 0x02) && (maincol == 1)) ||
+				(((cgaddsub & 0x04) == 0x04) && (maincol == 2)) ||
+				(((cgaddsub & 0x08) == 0x08) && (maincol == 3))
+		)
+	{
+		if (colorMathAdd)
+		{
+			red = clampAdd(redm, reds, colorMathDiv2);
+			green = clampAdd(greenm, greens, colorMathDiv2);
+			blue = clampAdd(bluem, blues, colorMathDiv2);
+		}
+		else
+		{
+			red = clampSub(redm, reds, colorMathDiv2);
+			green = clampSub(greenm, greens, colorMathDiv2);
+			blue = clampSub(bluem, blues, colorMathDiv2);
+		}
+	}
+	else
+	{
+		red = redm; green = greenm; blue = bluem;
+	}
+}
+
+void ppu::mixLayers(int scanlinenum, int screenMode)
+{
+	bool bg3_priority = (bgMode & 0x08) != 0;
+	unsigned char* pfbuf = &screenFramebuffer[scanlinenum * ppuResolutionX * 4];
+	for (int x = 0;x < 256;x++)
+	{
+		int finalColMain = -1;
+		int finalColSub = -1;
+
+		bool isWindowEnabled=applyWindow(x);
+
+		if (screenMode == 0x0)
+		{
+			if (objPriorityAppo[x] == 3 && (!objIsTransparentAppo[x])) finalColMain = 4;
+			else if ((bgPriorityAppo[0][x] == 1) && (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) && (!bgIsTransparentAppo[0][x])) finalColMain = 0;
+			else if ((bgPriorityAppo[1][x] == 1) && (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) && (!bgIsTransparentAppo[1][x])) finalColMain = 1;
+			else if (objPriorityAppo[x] == 2 && (!objIsTransparentAppo[x])) finalColMain = 4;
+			else if ((bgPriorityAppo[0][x] == 0) && (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) && (!bgIsTransparentAppo[0][x])) finalColMain = 0;
+			else if ((bgPriorityAppo[1][x] == 0) && (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) && (!bgIsTransparentAppo[1][x])) finalColMain = 1;
+			else if (objPriorityAppo[x] == 1 && (!objIsTransparentAppo[x])) finalColMain = 4;
+			else if ((bgPriorityAppo[2][x] == 1) && (((mainScreenDesignation & 0x1f) & (1 << 2)) > 0) && (!bgIsTransparentAppo[2][x])) finalColMain = 2;
+			else if ((bgPriorityAppo[3][x] == 1) && (((mainScreenDesignation & 0x1f) & (1 << 3)) > 0) && (!bgIsTransparentAppo[3][x])) finalColMain = 3;
+			else if (objPriorityAppo[x] == 0 && (!objIsTransparentAppo[x])) finalColMain = 4;
+			else if ((bgPriorityAppo[2][x] == 0) && (((mainScreenDesignation & 0x1f) & (1 << 2)) > 0) && (!bgIsTransparentAppo[2][x])) finalColMain = 2;
+			else if ((bgPriorityAppo[3][x] == 0) && (((mainScreenDesignation & 0x1f) & (1 << 3)) > 0) && (!bgIsTransparentAppo[3][x])) finalColMain = 3;
+
+			if ((subScreenDesignation & 0x1f) > 0)
+			{
+				if (objPriorityAppo[x] == 3 && (!objIsTransparentAppo[x])) finalColSub = 4;
+				else if ((bgPriorityAppo[0][x] == 1) && (((subScreenDesignation & 0x1f) & (1 << 0)) > 0) && (!bgIsTransparentAppo[0][x])) finalColSub = 0;
+				else if ((bgPriorityAppo[1][x] == 1) && (((subScreenDesignation & 0x1f) & (1 << 1)) > 0) && (!bgIsTransparentAppo[1][x])) finalColSub = 1;
+				else if (objPriorityAppo[x] == 2 && (!objIsTransparentAppo[x])) finalColSub = 4;
+				else if ((bgPriorityAppo[0][x] == 0) && (((subScreenDesignation & 0x1f) & (1 << 0)) > 0) && (!bgIsTransparentAppo[0][x])) finalColSub = 0;
+				else if ((bgPriorityAppo[1][x] == 0) && (((subScreenDesignation & 0x1f) & (1 << 1)) > 0) && (!bgIsTransparentAppo[1][x])) finalColSub = 1;
+				else if (objPriorityAppo[x] == 1 && (!objIsTransparentAppo[x])) finalColSub = 4;
+				else if ((bgPriorityAppo[2][x] == 1) && (((subScreenDesignation & 0x1f) & (1 << 2)) > 0) && (!bgIsTransparentAppo[2][x])) finalColSub = 2;
+				else if ((bgPriorityAppo[3][x] == 1) && (((subScreenDesignation & 0x1f) & (1 << 3)) > 0) && (!bgIsTransparentAppo[3][x])) finalColSub = 3;
+				else if (objPriorityAppo[x] == 0 && (!objIsTransparentAppo[x])) finalColSub = 4;
+				else if ((bgPriorityAppo[2][x] == 0) && (((subScreenDesignation & 0x1f) & (1 << 2)) > 0) && (!bgIsTransparentAppo[2][x])) finalColSub = 2;
+				else if ((bgPriorityAppo[3][x] == 0) && (((subScreenDesignation & 0x1f) & (1 << 3)) > 0) && (!bgIsTransparentAppo[3][x])) finalColSub = 3;
+			}
+		}
+		else if (screenMode == 0x01)
+		{
+			if ((bgPriorityAppo[2][x] == 1) && bg3_priority && (((mainScreenDesignation & 0x1f) & (1 << 2)) > 0) && (!bgIsTransparentAppo[2][x])) finalColMain = 2;
+			else if ((objPriorityAppo[x] == 3) && (!objIsTransparentAppo[x]) && (((mainScreenDesignation & 0x1f) & (1 << 4)) > 0) ) finalColMain = 4;
+			else if ((bgPriorityAppo[0][x] == 1) && (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) && (!bgIsTransparentAppo[0][x])) finalColMain = 0;
+			else if ((bgPriorityAppo[1][x] == 1) && (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) && (!bgIsTransparentAppo[1][x])) finalColMain = 1;
+			else if ((objPriorityAppo[x] == 2) && (!objIsTransparentAppo[x]) && (((mainScreenDesignation & 0x1f) & (1 << 4)) > 0)) finalColMain = 4;
+			else if ((bgPriorityAppo[0][x] == 0) && (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) && (!bgIsTransparentAppo[0][x])) finalColMain = 0;
+			else if ((bgPriorityAppo[1][x] == 0) && (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) && (!bgIsTransparentAppo[1][x])) finalColMain = 1;
+			else if ((objPriorityAppo[x] == 1) && (!objIsTransparentAppo[x]) && (((mainScreenDesignation & 0x1f) & (1 << 4)) > 0)) finalColMain = 4;
+			else if ((bgPriorityAppo[2][x] == 1) && (!bg3_priority) && (((mainScreenDesignation & 0x1f) & (1 << 2)) > 0) && (!bgIsTransparentAppo[2][x])) finalColMain = 2;
+			else if ((objPriorityAppo[x] == 0) && (!objIsTransparentAppo[x]) && (((mainScreenDesignation & 0x1f) & (1 << 4)) > 0)) finalColMain = 4;
+			else if ((bgPriorityAppo[2][x] == 0) && bg3_priority && (((mainScreenDesignation & 0x1f) & (1 << 2)) > 0) && (!bgIsTransparentAppo[2][x])) finalColMain = 2;
+			else if ((bgPriorityAppo[2][x] == 0) && (!bg3_priority) && (((mainScreenDesignation & 0x1f) & (1 << 2)) > 0) && (!bgIsTransparentAppo[2][x])) finalColMain = 2;
+
+			if ((subScreenDesignation & 0x1f) > 0)
+			{
+				if ((bgPriorityAppo[2][x] == 1) && bg3_priority && (((subScreenDesignation & 0x1f) & (1 << 2)) > 0) && (!bgIsTransparentAppo[2][x])) finalColSub = 2;
+				else if ((objPriorityAppo[x] == 3) && (!objIsTransparentAppo[x]) && (((subScreenDesignation & 0x1f) & (1 << 4)) > 0)) finalColSub = 4;
+				else if ((bgPriorityAppo[0][x] == 1) && (((subScreenDesignation & 0x1f) & (1 << 0)) > 0) && (!bgIsTransparentAppo[0][x])) finalColSub = 0;
+				else if ((bgPriorityAppo[1][x] == 1) && (((subScreenDesignation & 0x1f) & (1 << 1)) > 0) && (!bgIsTransparentAppo[1][x])) finalColSub = 1;
+				else if ((objPriorityAppo[x] == 2) && (!objIsTransparentAppo[x]) && (((subScreenDesignation & 0x1f) & (1 << 4)) > 0)) finalColSub = 4;
+				else if ((bgPriorityAppo[0][x] == 0) && (((subScreenDesignation & 0x1f) & (1 << 0)) > 0) && (!bgIsTransparentAppo[0][x])) finalColSub = 0;
+				else if ((bgPriorityAppo[1][x] == 0) && (((subScreenDesignation & 0x1f) & (1 << 1)) > 0) && (!bgIsTransparentAppo[1][x])) finalColSub = 1;
+				else if ((objPriorityAppo[x] == 1) && (!objIsTransparentAppo[x]) && (((subScreenDesignation & 0x1f) & (1 << 4)) > 0)) finalColSub = 4;
+				else if ((bgPriorityAppo[2][x] == 1) && (!bg3_priority) && (((subScreenDesignation & 0x1f) & (1 << 2)) > 0) && (!bgIsTransparentAppo[2][x])) finalColSub = 2;
+				else if ((objPriorityAppo[x] == 0) && (!objIsTransparentAppo[x]) && (((subScreenDesignation & 0x1f) & (1 << 4)) > 0)) finalColSub = 4;
+				else if ((bgPriorityAppo[2][x] == 0) && bg3_priority && (((subScreenDesignation & 0x1f) & (1 << 2)) > 0) && (!bgIsTransparentAppo[2][x])) finalColSub = 2;
+				else if ((bgPriorityAppo[2][x] == 0) && (!bg3_priority) && (((subScreenDesignation & 0x1f) & (1 << 2)) > 0) && (!bgIsTransparentAppo[2][x])) finalColSub = 2;
+			}
+		}
+		else if (screenMode == 0x02)
+		{
+			if ((objPriorityAppo[x] == 3) && (!objIsTransparentAppo[x])) finalColMain = 4;
+			else if ((bgPriorityAppo[0][x] == 1) && (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) && (!bgIsTransparentAppo[0][x])) finalColMain = 0;
+			else if ((objPriorityAppo[x] == 2) && (!objIsTransparentAppo[x])) finalColMain = 4;
+			else if ((bgPriorityAppo[1][x] == 1) && (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) && (!bgIsTransparentAppo[1][x])) finalColMain = 1;
+			else if ((objPriorityAppo[x] == 1) && (!objIsTransparentAppo[x])) finalColMain = 4;
+			else if ((bgPriorityAppo[0][x] == 0) && (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) && (!bgIsTransparentAppo[0][x])) finalColMain = 0;
+			else if ((objPriorityAppo[x] == 0) && (!objIsTransparentAppo[x])) finalColMain = 4;
+			else if ((bgPriorityAppo[1][x] == 0) && (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) && (!bgIsTransparentAppo[1][x])) finalColMain = 1;
+
+			if ((subScreenDesignation & 0x1f) > 0)
+			{
+				if ((objPriorityAppo[x] == 3) && (!objIsTransparentAppo[x])) finalColSub = 4;
+				else if ((bgPriorityAppo[0][x] == 1) && (((subScreenDesignation & 0x1f) & (1 << 0)) > 0) && (!bgIsTransparentAppo[0][x])) finalColSub = 0;
+				else if ((objPriorityAppo[x] == 2) && (!objIsTransparentAppo[x])) finalColSub = 4;
+				else if ((bgPriorityAppo[1][x] == 1) && (((subScreenDesignation & 0x1f) & (1 << 1)) > 0) && (!bgIsTransparentAppo[1][x])) finalColSub = 1;
+				else if ((objPriorityAppo[x] == 1) && (!objIsTransparentAppo[x])) finalColSub = 4;
+				else if ((bgPriorityAppo[0][x] == 0) && (((subScreenDesignation & 0x1f) & (1 << 0)) > 0) && (!bgIsTransparentAppo[0][x])) finalColSub = 0;
+				else if ((objPriorityAppo[x] == 0) && (!objIsTransparentAppo[x])) finalColSub = 4;
+				else if ((bgPriorityAppo[1][x] == 0) && (((subScreenDesignation & 0x1f) & (1 << 1)) > 0) && (!bgIsTransparentAppo[1][x])) finalColSub = 1;
+			}
+		}
+		else if (screenMode == 0x03)
+		{
+			if (objPriorityAppo[x] == 3 && (!objIsTransparentAppo[x]) && (((mainScreenDesignation & 0x1f) & (1 << 4)) > 0)) finalColMain = 4;
+			else if ((bgPriorityAppo[0][x] == 1) && (!bgIsTransparentAppo[0][x]) && (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0)) finalColMain = 0;
+			else if (objPriorityAppo[x] == 2 && (!objIsTransparentAppo[x]) && (((mainScreenDesignation & 0x1f) & (1 << 4)) > 0)) finalColMain = 4;
+			else if ((bgPriorityAppo[1][x] == 1) && (!bgIsTransparentAppo[1][x]) && (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0)) finalColMain = 1;
+			else if (objPriorityAppo[x] == 1 && (!objIsTransparentAppo[x]) && (((mainScreenDesignation & 0x1f) & (1 << 4)) > 0)) finalColMain = 4;
+			else if ((bgPriorityAppo[0][x] == 0) && (!bgIsTransparentAppo[0][x]) && (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0)) finalColMain = 0;
+			else if (objPriorityAppo[x] == 0 && (!objIsTransparentAppo[x]) && (((mainScreenDesignation & 0x1f) & (1 << 4)) > 0)) finalColMain = 4;
+			else if ((bgPriorityAppo[1][x] == 0) && (!bgIsTransparentAppo[1][x]) && (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0)) finalColMain = 1;
+
+			if ((subScreenDesignation & 0x1f) > 0)
+			{
+				if (objPriorityAppo[x] == 3 && (!objIsTransparentAppo[x]) && (((subScreenDesignation & 0x1f) & (1 << 4)) > 0)) finalColSub = 4;
+				else if ((bgPriorityAppo[0][x] == 1) && (!bgIsTransparentAppo[0][x]) && (((subScreenDesignation & 0x1f) & (1 << 0)) > 0)) finalColSub = 0;
+				else if (objPriorityAppo[x] == 2 && (!objIsTransparentAppo[x]) && (((subScreenDesignation & 0x1f) & (1 << 4)) > 0)) finalColSub = 4;
+				else if ((bgPriorityAppo[1][x] == 1) && (!bgIsTransparentAppo[1][x]) && (((subScreenDesignation & 0x1f) & (1 << 1)) > 0)) finalColSub = 1;
+				else if (objPriorityAppo[x] == 1 && (!objIsTransparentAppo[x]) && (((subScreenDesignation & 0x1f) & (1 << 4)) > 0)) finalColSub = 4;
+				else if ((bgPriorityAppo[0][x] == 0) && (!bgIsTransparentAppo[0][x]) && (((subScreenDesignation & 0x1f) & (1 << 0)) > 0)) finalColSub = 0;
+				else if (objPriorityAppo[x] == 0 && (!objIsTransparentAppo[x]) && (((subScreenDesignation & 0x1f) & (1 << 4)) > 0)) finalColSub = 4;
+				else if ((bgPriorityAppo[1][x] == 0) && (!bgIsTransparentAppo[1][x]) && (((subScreenDesignation & 0x1f) & (1 << 1)) > 0)) finalColSub = 1;
+			}
+		}
+		else if (screenMode == 0x04)
+		{
+			if (objPriorityAppo[x] == 3 && (!objIsTransparentAppo[x])) finalColMain = 4;
+			else if ((bgPriorityAppo[0][x] == 1) && (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) && (!bgIsTransparentAppo[0][x])) finalColMain = 0;
+			else if (objPriorityAppo[x] == 2 && (!objIsTransparentAppo[x])) finalColMain = 4;
+			else if ((bgPriorityAppo[1][x] == 1) && (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) && (!bgIsTransparentAppo[1][x])) finalColMain = 1;
+			else if (objPriorityAppo[x] == 1 && (!objIsTransparentAppo[x])) finalColMain = 4;
+			else if ((bgPriorityAppo[0][x] == 0) && (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) && (!bgIsTransparentAppo[0][x])) finalColMain = 0;
+			else if (objPriorityAppo[x] == 0 && (!objIsTransparentAppo[x])) finalColMain = 4;
+			else if ((bgPriorityAppo[1][x] == 0) && (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) && (!bgIsTransparentAppo[1][x])) finalColMain = 1;
+
+			if ((subScreenDesignation & 0x1f) > 0)
+			{
+				if (objPriorityAppo[x] == 3 && (!objIsTransparentAppo[x])) finalColSub = 4;
+				else if ((bgPriorityAppo[0][x] == 1) && (((subScreenDesignation & 0x1f) & (1 << 0)) > 0) && (!bgIsTransparentAppo[0][x])) finalColSub = 0;
+				else if (objPriorityAppo[x] == 2 && (!objIsTransparentAppo[x])) finalColSub = 4;
+				else if ((bgPriorityAppo[1][x] == 1) && (((subScreenDesignation & 0x1f) & (1 << 1)) > 0) && (!bgIsTransparentAppo[1][x])) finalColSub = 1;
+				else if (objPriorityAppo[x] == 1 && (!objIsTransparentAppo[x])) finalColSub = 4;
+				else if ((bgPriorityAppo[0][x] == 0) && (((subScreenDesignation & 0x1f) & (1 << 0)) > 0) && (!bgIsTransparentAppo[0][x])) finalColSub = 0;
+				else if (objPriorityAppo[x] == 0 && (!objIsTransparentAppo[x])) finalColSub = 4;
+				else if ((bgPriorityAppo[1][x] == 0) && (((subScreenDesignation & 0x1f) & (1 << 1)) > 0) && (!bgIsTransparentAppo[1][x])) finalColSub = 1;
+			}
+		}
+
+		unsigned char redm=0, greenm=0, bluem=0;
+		unsigned char reds=0, greens=0, blues=0;
+
+		//2130h - CGWSEL - Color Math Control Register A(W)
+		//	7 - 6  Force Main Screen Black(3 = Always, 2 = MathWindow, 1 = NotMathWin, 0 = Never)
+
+		if ((cgwSel & 0xc0) == 0xc0)
+		{
+		}
+		else if (finalColMain == -1)
+		{
+			redm = palarrLookup[0];
+			greenm = palarrLookup[1];
+			bluem = palarrLookup[2];
+		}
+		else if (finalColMain < 4)
+		{
+			redm = bgColorAppo[finalColMain][(x * 4) + 0];
+			greenm = bgColorAppo[finalColMain][(x * 4) + 1];
+			bluem = bgColorAppo[finalColMain][(x * 4) + 2];
+		}
+		else if (finalColMain == 4)
+		{
+			redm = objColorAppo[(x * 4) + 0];
+			greenm = objColorAppo[(x * 4) + 1];
+			bluem = objColorAppo[(x * 4) + 2];
+		}
+
+		bool subScreenEnabled = (cgwSel & 0x02) == 0x02;
+
+		if (
+			(((cgwSel & 0x30) != 0x30)) && 
+				(
+					(((cgwSel & 0x30) == 0) ) || 
+					( (!isWindowEnabled) && ((cgwSel&0x10)) )  ||
+					( (!isWindowEnabled) && ((cgwSel&0x20)) )
+				)
+			)
+		{
+			// we have color math enabled, let's mix the colors
+			if ((finalColSub == -1)||(!subScreenEnabled))
+			{
+				reds = coldataColor[0];
+				greens = coldataColor[1];
+				blues = coldataColor[2];
+			}
+			else if (finalColSub < 4)
+			{
+				reds = bgColorAppo[finalColSub][(x * 4) + 0];
+				greens = bgColorAppo[finalColSub][(x * 4) + 1];
+				blues = bgColorAppo[finalColSub][(x * 4) + 2];
+			}
+			else if (finalColSub == 4)
+			{
+				reds = objColorAppo[(x * 4) + 0];
+				greens = objColorAppo[(x * 4) + 1];
+				blues = objColorAppo[(x * 4) + 2];
+			}
+
+			unsigned char red, green, blue;
+			doColorMath(finalColMain,finalColSub, redm, greenm, bluem, reds, greens, blues, red, green, blue, objPaletteAppo[x]);
+
+			*pfbuf = red; pfbuf++;
+			*pfbuf = green; pfbuf++;
+			*pfbuf = blue; pfbuf++;
+			*pfbuf = 0xff; pfbuf++;
+		}
+		else
+		{
+			// no color math
+			*pfbuf = redm; pfbuf++;
+			*pfbuf = greenm; pfbuf++;
+			*pfbuf = bluem; pfbuf++;
+			*pfbuf = 0xff; pfbuf++;
+		}
+
+	}
+}
+
 void ppu::renderScanline(int scanlinenum)
 {
-	if ((scanlinenum < 0) || (scanlinenum >= 223)) return;
+	if ((scanlinenum < 0) || (scanlinenum >= (ppuResolutionY-1))) return;
 
 	/*
 		7-2  SC Base Address in VRAM (in 1K-word steps, aka 2K-byte steps)
@@ -1474,14 +1819,11 @@ void ppu::renderScanline(int scanlinenum)
 	if (screenMode == 0)
 	{
 		// 0      4-color     4-color     4-color     4-color   ;Normal   
-		for (int bg = 3;bg >= 0;bg--)
+		for (int bg = 0;bg < 4;bg++)
 		{
-			//if (bg == 1)
+			if ( (((mainScreenDesignation & 0x1f) & (1 << bg)) > 0) || (((subScreenDesignation & 0x1f) & (1 << bg)) > 0) )
 			{
-				if (((mainScreenDesignation & 0x1f) & (1 << bg)) > 0)
-				{
-					renderBGScanline(bg, 2, scanlinenum+1);
-				}
+				renderBGScanline(bg, 2, scanlinenum+1);
 			}
 		}
 
@@ -1490,288 +1832,64 @@ void ppu::renderScanline(int scanlinenum)
 			renderSpritesScanline(scanlinenum);
 		}
 
-		unsigned char* pfbuf = &screenFramebuffer[scanlinenum * ppuResolutionX * 4];
-		for (int x = 0;x < 256;x++)
-		{
-			int finalCol = -1;
-
-			applyWindow(x, finalCol);
-
-			if (objPriorityAppo[x] == 3 && (!objIsTransparentAppo[x])) finalCol = 4;
-			else if ((bgPriorityAppo[0][x] == 1) && (!bgIsTransparentAppo[0][x])) finalCol = 0;
-			else if ((bgPriorityAppo[1][x] == 1) && (!bgIsTransparentAppo[1][x])) finalCol = 1;
-			else if (objPriorityAppo[x] == 2 && (!objIsTransparentAppo[x])) finalCol = 4;
-			else if ((bgPriorityAppo[0][x] == 0) && (!bgIsTransparentAppo[0][x])) finalCol = 0;
-			else if ((bgPriorityAppo[1][x] == 0) && (!bgIsTransparentAppo[1][x])) finalCol = 1;
-			else if (objPriorityAppo[x] == 1 && (!objIsTransparentAppo[x])) finalCol = 4;
-			else if ((bgPriorityAppo[2][x] == 1) && (!bgIsTransparentAppo[2][x])) finalCol = 2;
-			else if ((bgPriorityAppo[3][x] == 1) && (!bgIsTransparentAppo[3][x])) finalCol = 3;
-			else if (objPriorityAppo[x] == 0 && (!objIsTransparentAppo[x])) finalCol = 4;
-			else if ((bgPriorityAppo[2][x] == 0) && (!bgIsTransparentAppo[2][x])) finalCol = 2;
-			else if ((bgPriorityAppo[3][x] == 0) && (!bgIsTransparentAppo[3][x])) finalCol = 3;
-
-			if (finalCol == -1)
-			{
-				*pfbuf = palarrLookup[0]; pfbuf++;
-				*pfbuf = palarrLookup[1]; pfbuf++;
-				*pfbuf = palarrLookup[2]; pfbuf++;
-				*pfbuf = 0xff; pfbuf++;
-			}
-			else if (finalCol < 4)
-			{
-				*pfbuf = bgColorAppo[finalCol][(x * 4) + 0]; pfbuf++;
-				*pfbuf = bgColorAppo[finalCol][(x * 4) + 1]; pfbuf++;
-				*pfbuf = bgColorAppo[finalCol][(x * 4) + 2]; pfbuf++;
-				*pfbuf = 0xff; pfbuf++;
-			}
-			else if (finalCol == 4)
-			{
-				*pfbuf = objColorAppo[(x * 4) + 0]; pfbuf++;
-				*pfbuf = objColorAppo[(x * 4) + 1]; pfbuf++;
-				*pfbuf = objColorAppo[(x * 4) + 2]; pfbuf++;
-				*pfbuf = 0xff; pfbuf++;
-			}
-		}
-
+		mixLayers(scanlinenum, screenMode);
 		upskaleToHires(scanlinenum);
 	}
 	else if (screenMode == 0x01)
 	{
 		// 1      16-color    16-color    4-color     -         ;Normal
 
-		if ( ((((mainScreenDesignation & 0x1f) & (1 << 2)) > 0)) && isBgActive[2] ) renderBGScanline(2, 2, scanlinenum + 1);
-		if ( ( (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1))) ) && isBgActive[1] ) renderBGScanline(1, 4, scanlinenum+1);
+		if (((((mainScreenDesignation & 0x1f) & (1 << 2)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 2)))) && isBgActive[2] ) renderBGScanline(2, 2, scanlinenum + 1);
+		if (((((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1)))) && isBgActive[1] ) renderBGScanline(1, 4, scanlinenum+1);
 		if (((((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 0)))) && isBgActive[0]) renderBGScanline(0, 4, scanlinenum + 1);
-
+		
 		if ((mainScreenDesignation & 0x10)|| (subScreenDesignation & 0x10))
 		{
 			renderSpritesScanline(scanlinenum);
 		}
 
-		bool bg3_priority = (bgMode & 0x08) != 0;
-		unsigned char* pfbuf = &screenFramebuffer[scanlinenum* ppuResolutionX * 4];
-		for (int x = 0;x < 256;x++)
-		{
-			int finalCol=-1;
-
-			applyWindow(x, finalCol);
-
-			if ((bgPriorityAppo[2][x] == 1) && bg3_priority && (!bgIsTransparentAppo[2][x])) finalCol = 2;
-			else if (objPriorityAppo[x] == 3 && (!objIsTransparentAppo[x])) finalCol =4;
-			else if ((bgPriorityAppo[0][x] == 1) && (!bgIsTransparentAppo[0][x])) finalCol=0;
-			else if ((bgPriorityAppo[1][x] == 1) && (!bgIsTransparentAppo[1][x])) finalCol=1;
-			else if (objPriorityAppo[x] == 2 && (!objIsTransparentAppo[x])) finalCol = 4;
-			else if ((bgPriorityAppo[0][x] == 0) && (!bgIsTransparentAppo[0][x])) finalCol = 0;
-			else if ((bgPriorityAppo[1][x] == 0) && (!bgIsTransparentAppo[1][x])) finalCol = 1;
-			else if (objPriorityAppo[x] == 1 && (!objIsTransparentAppo[x])) finalCol = 4;
-			else if ((bgPriorityAppo[2][x] == 1) && (!bg3_priority) && (!bgIsTransparentAppo[2][x])) finalCol = 2;
-			else if (objPriorityAppo[x] == 0 && (!objIsTransparentAppo[x])) finalCol = 4;
-			else if ((bgPriorityAppo[2][x] == 0) && bg3_priority && (!bgIsTransparentAppo[2][x])) finalCol = 2;
-			else if ((bgPriorityAppo[2][x] == 0) && (!bg3_priority) && (!bgIsTransparentAppo[2][x])) finalCol = 2;
-
-			if (finalCol == -1)
-			{
-				//unsigned int backdropColor;
-				
-				//if (((subScreenDesignation & 0x1f) & (1 << 1)))
-				//{
-				//	backdropColor = coldataColor;
-				//}
-				//else
-				//{
-				//	backdropColor= (((int)(cgram[1] & 0x7f)) << 8) | cgram[0];
-				//}
-				
-				*pfbuf = palarrLookup[0]; pfbuf++;
-				*pfbuf = palarrLookup[1]; pfbuf++;
-				*pfbuf = palarrLookup[2]; pfbuf++;
-				*pfbuf = 0xff; pfbuf++;
-			}
-			else if (finalCol < 4)
-			{
-				*pfbuf = bgColorAppo[finalCol][(x * 4) + 0]; pfbuf++;
-				*pfbuf = bgColorAppo[finalCol][(x * 4) + 1]; pfbuf++;
-				*pfbuf = bgColorAppo[finalCol][(x * 4) + 2]; pfbuf++;
-				*pfbuf = 0xff; pfbuf++;
-			}
-			else if (finalCol == 4)
-			{
-				*pfbuf = objColorAppo[(x * 4) + 0]; pfbuf++;
-				*pfbuf = objColorAppo[(x * 4) + 1]; pfbuf++;
-				*pfbuf = objColorAppo[(x * 4) + 2]; pfbuf++;
-				*pfbuf = 0xff; pfbuf++;
-			}
-		}
-
+		mixLayers(scanlinenum, screenMode);
 		upskaleToHires(scanlinenum);
 	}
 	else if (screenMode == 0x02)
 	{
 		// 1      16-color    16-color    opt     -         ;Normal
 		if ((((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1)) > 0)) renderBGScanline(1, 4, scanlinenum+1);
-		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBGScanline(0, 4, scanlinenum+1);
+		if ((((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 0)) > 0)) renderBGScanline(0, 4, scanlinenum+1);
 
 		if ((mainScreenDesignation & 0x10) || (subScreenDesignation & 0x10))
 		{
 			renderSpritesScanline(scanlinenum);
 		}
 
-		unsigned char* pfbuf = &screenFramebuffer[scanlinenum* ppuResolutionX * 4];
-		for (int x = 0;x < 256;x++)
-		{
-			int finalCol = -1;
-
-			applyWindow(x, finalCol);
-
-			if (objPriorityAppo[x] == 3 && (!objIsTransparentAppo[x])) finalCol = 4;
-			else if ((bgPriorityAppo[0][x] == 1) && (!bgIsTransparentAppo[0][x])) finalCol = 0;
-			else if (objPriorityAppo[x] == 2 && (!objIsTransparentAppo[x])) finalCol = 4;
-			else if ((bgPriorityAppo[1][x] == 1) && (!bgIsTransparentAppo[1][x])) finalCol = 1;
-			else if (objPriorityAppo[x] == 1 && (!objIsTransparentAppo[x])) finalCol = 4;
-			else if ((bgPriorityAppo[0][x] == 0) && (!bgIsTransparentAppo[0][x])) finalCol = 0;
-			else if (objPriorityAppo[x] == 0 && (!objIsTransparentAppo[x])) finalCol = 4;
-			else if ((bgPriorityAppo[1][x] == 0) && (!bgIsTransparentAppo[1][x])) finalCol = 1;
-
-			if (finalCol == -1)
-			{
-				//unsigned int backdropColor = (((int)(cgram[1] & 0x7f)) << 8) | cgram[0];
-				unsigned int backdropColor = coldataColor;
-				unsigned char red = backdropColor & 0x1f; red <<= 3;
-				unsigned char green = (backdropColor >> 5) & 0x1f; green <<= 3;
-				unsigned char blue = (backdropColor >> 10) & 0x1f; blue <<= 3;
-				*pfbuf = red; pfbuf++;
-				*pfbuf = green; pfbuf++;
-				*pfbuf = blue; pfbuf++;
-				*pfbuf = 0xff; pfbuf++;
-			}
-			else if (finalCol < 4)
-			{
-				*pfbuf = bgColorAppo[finalCol][(x * 4) + 0]; pfbuf++;
-				*pfbuf = bgColorAppo[finalCol][(x * 4) + 1]; pfbuf++;
-				*pfbuf = bgColorAppo[finalCol][(x * 4) + 2]; pfbuf++;
-				*pfbuf = 0xff; pfbuf++;
-			}
-			else if (finalCol == 4)
-			{
-				*pfbuf = objColorAppo[(x * 4) + 0]; pfbuf++;
-				*pfbuf = objColorAppo[(x * 4) + 1]; pfbuf++;
-				*pfbuf = objColorAppo[(x * 4) + 2]; pfbuf++;
-				*pfbuf = 0xff; pfbuf++;
-			}
-		}
-
+		mixLayers(scanlinenum, screenMode);
 		upskaleToHires(scanlinenum);
 	}
 	else if (screenMode == 0x03)
 	{
 		// 3      256-color   16-color    -           -         ;Normal   
-		if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBGScanline(1, 4, scanlinenum+1);
-		//if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBGScanline(0, 8, scanlinenum);
-		if ((((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 0)))) renderBGScanline(0, 8, scanlinenum+1);
+		if ( ( (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1))) ) && isBgActive[1]) renderBGScanline(1, 4, scanlinenum+1);
+		if ( ((((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 0)))) && isBgActive[0]) renderBGScanline(0, 8, scanlinenum+1);
 
 		if ((mainScreenDesignation & 0x10) || (subScreenDesignation & 0x10))
 		{
 			renderSpritesScanline(scanlinenum);
 		}
 
-		unsigned char* pfbuf = &screenFramebuffer[scanlinenum * ppuResolutionX * 4];
-		for (int x = 0;x < 256;x++)
-		{
-			int finalCol = -1;
-
-			applyWindow(x, finalCol);
-
-			if (objPriorityAppo[x] == 3 && (!objIsTransparentAppo[x])) finalCol = 4;
-			else if ((bgPriorityAppo[0][x] == 1) && (!bgIsTransparentAppo[0][x])) finalCol = 0;
-			else if (objPriorityAppo[x] == 2 && (!objIsTransparentAppo[x])) finalCol = 4;
-			else if ((bgPriorityAppo[1][x] == 1) && (!bgIsTransparentAppo[1][x])) finalCol = 1;
-			else if (objPriorityAppo[x] == 1 && (!objIsTransparentAppo[x])) finalCol = 4;
-			else if ((bgPriorityAppo[0][x] == 0) && (!bgIsTransparentAppo[0][x])) finalCol = 0;
-			else if (objPriorityAppo[x] == 0 && (!objIsTransparentAppo[x])) finalCol = 4;
-			else if ((bgPriorityAppo[1][x] == 0) && (!bgIsTransparentAppo[1][x])) finalCol = 1;
-
-			if (finalCol == -1)
-			{
-				unsigned int backdropColor = (((int)(cgram[1] & 0x7f)) << 8) | cgram[0];
-				unsigned char red = backdropColor & 0x1f; red <<= 3;
-				unsigned char green = (backdropColor >> 5) & 0x1f; green <<= 3;
-				unsigned char blue = (backdropColor >> 10) & 0x1f; blue <<= 3;
-				*pfbuf = red; pfbuf++;
-				*pfbuf = green; pfbuf++;
-				*pfbuf = blue; pfbuf++;
-				*pfbuf = 0xff; pfbuf++;
-			}
-			else if (finalCol < 4)
-			{
-				*pfbuf = bgColorAppo[finalCol][(x * 4) + 0]; pfbuf++;
-				*pfbuf = bgColorAppo[finalCol][(x * 4) + 1]; pfbuf++;
-				*pfbuf = bgColorAppo[finalCol][(x * 4) + 2]; pfbuf++;
-				*pfbuf = 0xff; pfbuf++;
-			}
-			else if (finalCol == 4)
-			{
-				*pfbuf = objColorAppo[(x * 4) + 0]; pfbuf++;
-				*pfbuf = objColorAppo[(x * 4) + 1]; pfbuf++;
-				*pfbuf = objColorAppo[(x * 4) + 2]; pfbuf++;
-				*pfbuf = 0xff; pfbuf++;
-			}
-		}
-
+		mixLayers(scanlinenum, screenMode);
 		upskaleToHires(scanlinenum);
 	}
 	else if (screenMode == 0x04)
 	{
-		if (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) renderBGScanline(1, 2, scanlinenum+1);
-		if (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) renderBGScanline(0, 8, scanlinenum+1);
+		if ( (((mainScreenDesignation & 0x1f) & (1 << 1)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 1)) > 0) ) renderBGScanline(1, 2, scanlinenum+1);
+		if ( (((mainScreenDesignation & 0x1f) & (1 << 0)) > 0) || (((subScreenDesignation & 0x1f) & (1 << 0)) > 0) ) renderBGScanline(0, 8, scanlinenum+1);
 
 		if ((mainScreenDesignation & 0x10) || (subScreenDesignation & 0x10))
 		{
 			renderSpritesScanline(scanlinenum);
 		}
 
-		unsigned char* pfbuf = &screenFramebuffer[scanlinenum * ppuResolutionX * 4];
-		for (int x = 0;x < 256;x++)
-		{
-			int finalCol = -1;
-
-			applyWindow(x, finalCol);
-
-			if (objPriorityAppo[x] == 3 && (!objIsTransparentAppo[x])) finalCol = 4;
-			else if ((bgPriorityAppo[0][x] == 1) && (!bgIsTransparentAppo[0][x])) finalCol = 0;
-			else if (objPriorityAppo[x] == 2 && (!objIsTransparentAppo[x])) finalCol = 4;
-			else if ((bgPriorityAppo[1][x] == 1) && (!bgIsTransparentAppo[1][x])) finalCol = 1;
-			else if (objPriorityAppo[x] == 1 && (!objIsTransparentAppo[x])) finalCol = 4;
-			else if ((bgPriorityAppo[0][x] == 0) && (!bgIsTransparentAppo[0][x])) finalCol = 0;
-			else if (objPriorityAppo[x] == 0 && (!objIsTransparentAppo[x])) finalCol = 4;
-			else if ((bgPriorityAppo[1][x] == 0) && (!bgIsTransparentAppo[1][x])) finalCol = 1;
-
-			if (finalCol == -1)
-			{
-				unsigned int backdropColor = (((int)(cgram[1] & 0x7f)) << 8) | cgram[0];
-				unsigned char red = backdropColor & 0x1f; red <<= 3;
-				unsigned char green = (backdropColor >> 5) & 0x1f; green <<= 3;
-				unsigned char blue = (backdropColor >> 10) & 0x1f; blue <<= 3;
-				*pfbuf = red; pfbuf++;
-				*pfbuf = green; pfbuf++;
-				*pfbuf = blue; pfbuf++;
-				*pfbuf = 0xff; pfbuf++;
-			}
-			else if (finalCol < 4)
-			{
-				*pfbuf = bgColorAppo[finalCol][(x * 4) + 0]; pfbuf++;
-				*pfbuf = bgColorAppo[finalCol][(x * 4) + 1]; pfbuf++;
-				*pfbuf = bgColorAppo[finalCol][(x * 4) + 2]; pfbuf++;
-				*pfbuf = 0xff; pfbuf++;
-			}
-			else if (finalCol == 4)
-			{
-				*pfbuf = objColorAppo[(x * 4) + 0]; pfbuf++;
-				*pfbuf = objColorAppo[(x * 4) + 1]; pfbuf++;
-				*pfbuf = objColorAppo[(x * 4) + 2]; pfbuf++;
-				*pfbuf = 0xff; pfbuf++;
-			}
-		}
-
+		mixLayers(scanlinenum, screenMode);
 		upskaleToHires(scanlinenum);
 	}
 	else if (screenMode == 0x05)
@@ -1949,34 +2067,17 @@ void ppu::renderScanline(int scanlinenum)
 
 	if (brightness != 15)
 	{
-		//if (screenMode == 0x05)
+		const unsigned int pos = (scanlinenum*2) * ppuResolutionX*2 * 4;
+		unsigned char* pFrameBuf = &screenFramebufferHires[pos];
+		for (unsigned int x = 0;x < ppuResolutionX*2*2;x++)
 		{
-			const unsigned int pos = (scanlinenum*2) * ppuResolutionX*2 * 4;
-			unsigned char* pFrameBuf = &screenFramebufferHires[pos];
-			for (unsigned int x = 0;x < ppuResolutionX*2*2;x++)
-			{
-				*pFrameBuf = brightnessLookup[((*pFrameBuf) * 16) + brightness];
-				pFrameBuf++;
-				*pFrameBuf = brightnessLookup[((*pFrameBuf) * 16) + brightness];
-				pFrameBuf++;
-				*pFrameBuf = brightnessLookup[((*pFrameBuf) * 16) + brightness];
-				pFrameBuf += 2;
-			}
+			*pFrameBuf = brightnessLookup[((*pFrameBuf) * 16) + brightness];
+			pFrameBuf++;
+			*pFrameBuf = brightnessLookup[((*pFrameBuf) * 16) + brightness];
+			pFrameBuf++;
+			*pFrameBuf = brightnessLookup[((*pFrameBuf) * 16) + brightness];
+			pFrameBuf += 2;
 		}
-		/*else
-		{
-			const unsigned int pos = scanlinenum * ppuResolutionX * 4;
-			unsigned char* pFrameBuf = &screenFramebuffer[pos];
-			for (unsigned int x = 0;x < ppuResolutionX;x++)
-			{
-				*pFrameBuf = brightnessLookup[((*pFrameBuf) * 16) + brightness];
-				pFrameBuf++;
-				*pFrameBuf = brightnessLookup[((*pFrameBuf) * 16) + brightness];
-				pFrameBuf++;
-				*pFrameBuf = brightnessLookup[((*pFrameBuf) * 16) + brightness];
-				pFrameBuf += 2;
-			}
-		}*/
 	}
 }
 

@@ -225,6 +225,8 @@ void mmu::DMAstart(unsigned char val)
 
 void mmu::resetHDMA(bool midFrame)
 {
+	midFrame = midFrame;
+
 	bool hdmaEnabled = false;
 	for (int i = 0; i < 8; i++) 
 	{
@@ -502,7 +504,7 @@ void mmu::write8(unsigned int address, unsigned char val)
 			}
 
 			// this fixes the capcom games
-			int scanline = pPPU->getCurrentScanline();
+			//int scanline = pPPU->getCurrentScanline();
 			if (atLeastOne) resetHDMA(true);
 			//if ((atLeastOne)&&(scanline>=240)) resetHDMA(false);
 
@@ -577,18 +579,24 @@ void mmu::write8(unsigned int address, unsigned char val)
 			pPPU->writeRegister(0x2129, val);
 			return;
 		}
+		else if (adr == 0x212d)
+		{
+			// write to sub screen designation 
+			pPPU->writeRegister(0x212d, val);
+			return;
+			}
 		else if (adr == 0x212e)
 		{
 			// main screen layer window enable
 			pPPU->writeRegister(0x212e, val);
 			return;
 		}
-		else if (adr == 0x212d)
+		else if (adr == 0x212f)
 		{
-			// write to sub screen designation 
-			pPPU->writeRegister(0x212d, val);
+			// subscreen layer window enable
+			pPPU->writeRegister(0x212f, val);
 			return;
-		}
+			}
 		else if (adr == 0x2115)
 		{
 			//glbTheLogger.logMsg("Writing [" + std::to_string(val) + "] to 0x2115 (VRAM Address Increment Mode)");
@@ -674,6 +682,12 @@ void mmu::write8(unsigned int address, unsigned char val)
 		{
 			// 2130h - CGWSEL - Color Math Control Register A (W)
 			pPPU->setCGWSEL(val);
+			return;
+		}
+		else if (adr == 0x2131)
+		{
+			// 2131h - CGADSUB - Color Math Control Register B (W)
+			pPPU->setCGADDSUB(val);
 			return;
 		}
 		else if (adr == 0x2132)

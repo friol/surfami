@@ -109,8 +109,16 @@ void audioSystem::feedAudiobuf(float l, float r)
 		Sleep(1);
 	}
 
-	audioQueue.push_back(l);
-	audioQueue.push_back(r);
+	if (outputAudio)
+	{
+		audioQueue.push_back(l);
+		audioQueue.push_back(r);
+	}
+	else
+	{
+		audioQueue.push_back(0);
+		audioQueue.push_back(0);
+	}
 }
 
 audioSystem::~audioSystem()

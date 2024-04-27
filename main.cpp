@@ -695,7 +695,7 @@ void displayMemoryWindow(mmu& theMMU,ppu& thePPU,int& baseAddress)
     ImGui::End();
 }
 
-void displayAppoWindow(cpu5a22& theCPU,ppu& thePPU, mmu& ourMMU, debugger5a22& theDebugger5a22, debuggerSPC700& theDebuggerSPC, ImGui::FileBrowser& fileDialog, std::vector<std::string>& romLoadingLog,int& emustatus,bool& isInitialOpening)
+void displayAppoWindow(cpu5a22& theCPU,ppu& thePPU, mmu& ourMMU, debugger5a22& theDebugger5a22, debuggerSPC700& theDebuggerSPC, ImGui::FileBrowser& fileDialog, std::vector<std::string>& romLoadingLog,int& emustatus,bool& isInitialOpening,bool& isMusicOn)
 {
     ImGui::Begin("Appo and tests window");
     ImGui::Text("surFami emu: Super Nintendo lives");
@@ -835,8 +835,13 @@ void displayAppoWindow(cpu5a22& theCPU,ppu& thePPU, mmu& ourMMU, debugger5a22& t
     }
 
     ImGui::SameLine();
-    std::string reg4200 = "Reg 0x4200: " + std::to_string(ourMMU.get4200());
-    ImGui::Text(reg4200.c_str());
+
+    if (ImGui::Checkbox("Music", &isMusicOn))
+    {
+    }
+    
+    //std::string reg4200 = "Reg 0x4200: " + std::to_string(ourMMU.get4200());
+    //ImGui::Text(reg4200.c_str());
 
     ImGui::End();
 }
@@ -945,6 +950,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
     //
 
     bool done = false;
+    bool isMusicOn = true;
     bool isDebugWindowFocused = false;
     bool isTVWindowFocused = false;
     char jumpToAppoBuf[256];
@@ -1115,7 +1121,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         bool rushSPC = false;
         unsigned short int rushToSPCAddress = 0;
 
-        displayAppoWindow(theCPU,thePPU, theMMU, theDebugger5a22,theDebuggerSPC700, fileDialog,romLoadingLog, emustatus,isInitialOpening);
+        displayAppoWindow(theCPU,thePPU, theMMU, theDebugger5a22,theDebuggerSPC700, fileDialog,romLoadingLog, emustatus,isInitialOpening,isMusicOn);
         displayRomLoadingLogWindow(romLoadingLog);
         displayDebugWindow(theCPU, theDebugger5a22,theMMU,isDebugWindowFocused,rush,rushToAddress,jumpToAppoBuf,totCPUCycles,emustatus,thePPU);
         displaySPCDebugWindow(thePPU, theMMU, theCPU,theAPU, theDebuggerSPC700,rushSPC,rushToSPCAddress,emustatus,theAudioSys);
@@ -1126,6 +1132,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
         //displayVRAMViewerWindow(vramRenderTexture, thePPU.getVRAMViewerXsize(), thePPU.getVRAMViewerYsize(), thePPU.getVRAMViewerBitmap(),thePPU);
         displaySNESScreenWindow(screenRenderTextureHires,thePPU.getPPUResolutionX(), thePPU.getPPUResolutionY(), isTVWindowFocused,thePPU);
         displayMemoryWindow(theMMU,thePPU,baseMemoryAddress);
+
+        theAudioSys.setAudioOutput(isMusicOn);
 
         if (emustatus == 1)
         {

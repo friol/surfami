@@ -63,6 +63,8 @@ private:
 	int m7startX;
 	int m7startY;
 
+	// 
+
 	const int vramViewerXsize = 256;
 	const int vramViewerYsize = 256;
 	unsigned char* vramViewerBitmap;
@@ -70,7 +72,7 @@ private:
 	void tileViewerRenderTile4bpp(int px, int py, int tileAddr);
 	void tileViewerRenderTile8bpp(int px, int py, int tileAddr);
 
-	unsigned int coldataColor = 0;
+	unsigned char coldataColor[3] = { 0,0,0 };
 	
 	unsigned char bgColorAppo[4][256 * 4];
 	unsigned char bgPriorityAppo[4][256];
@@ -78,6 +80,7 @@ private:
 	unsigned char objColorAppo[256 * 4];
 	unsigned char objPriorityAppo[256];
 	bool objIsTransparentAppo[256];
+	unsigned char objPaletteAppo[256];
 
 	unsigned char bgColorAppoHires[4][512 * 4];
 	unsigned char bgPriorityAppoHires[4][512];
@@ -86,6 +89,13 @@ private:
 	unsigned char objPriorityAppoHires[512];
 	bool objIsTransparentAppoHires[512];
 
+	unsigned char clampAdd(unsigned char a, unsigned char b, bool div2);
+	unsigned char clampSub(unsigned char a, unsigned char b, bool div2);
+	void mixLayers(int scanlinenum,int screenMode);
+	void doColorMath(int maincol, int subcol, unsigned char redm, unsigned char greenm, unsigned char bluem,
+		unsigned char reds, unsigned char greens, unsigned char blues,
+		unsigned char& red, unsigned char& green, unsigned char& blue,
+		unsigned char objPalette);
 	void upskaleToHires(unsigned int scanlinenn);
 
 	void resetAppoBuffers();
@@ -118,10 +128,11 @@ private:
 	bool opvctFlipFlop = false;
 	bool oamPriRot = false;
 
-	int applyWindow(int x, int finalCol);
+	bool applyWindow(int x);
 
 	int windowxpos[2][2];
 	unsigned char windowTMW=0;
+	unsigned char windowTSW=0;
 	unsigned char w12sel = 0;
 	unsigned char w34sel = 0;
 	unsigned char wobjsel = 0;
@@ -163,8 +174,14 @@ public:
 		cgwSel = val; 
 		if (cgwSel & 0x01)
 		{
-			glbTheLogger.logMsg("CGWSEL bit 0 direct color");
+			//glbTheLogger.logMsg("CGWSEL bit 0 direct color");
 		}
+	}
+
+	unsigned char cgaddsub = 0;
+	void setCGADDSUB(unsigned char val)
+	{
+		cgaddsub = val;
 	}
 
 	unsigned char setini = 0;
