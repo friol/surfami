@@ -1053,7 +1053,6 @@ void apu::dspCycle(signed short int& sampleOutL, signed short int& sampleOutR, f
 void apu::step(audioSystem& theAudioSys)
 {
 	if (apufcounter>=9.4)
-	//if ((apuCycles%8) == 0) 
 	{
 		apufcounter = 0.0;
 

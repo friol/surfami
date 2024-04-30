@@ -330,12 +330,6 @@ void ppu::writeRegister(int reg, unsigned char val)
 		// 2118h - VMDATAL - VRAM Data Write (lower 8bit) (W)
 		// 2119h - VMDATAH - VRAM Data Write (upper 8bit) (W)
 
-		/*if (scanline <= vblankStartScanline)
-		{
-			bool noWrites = true;
-			return;
-		}*/
-
 		unsigned short int vramAddr = (vramAddressLower | (vramAddressUpper << 8));
 		unsigned short int writeAddr = vramAddr;
 		unsigned char _v_hi_lo = vmainVRAMAddrIncrMode >> 7;
@@ -393,10 +387,11 @@ void ppu::writeRegister(int reg, unsigned char val)
 			vramAddressUpper = (nextAddr >> 8) & 0xff;
 		}
 
-		if (vramAddr == 0x6060)
+		/*if ((scanline != 0) && (scanline <= vblankStartScanline))
 		{
-			writeBreakpoint = true;
-		}
+			bool noWrites = true;
+			return;
+		}*/
 
 		if (reg == 0x2118)
 		{
@@ -1385,7 +1380,7 @@ void ppu::renderMode7Scanline(int scanlinenum)
 bool ppu::applyWindow(int x)
 {
 	bool isMathWindowEnabled = false;
-	if ( (!(windowTMW & 0x0f)) && (!(windowTSW & 0x0f)) ) return isMathWindowEnabled;
+	//if ( (!(windowTMW & 0x0f)) && (!(windowTSW & 0x0f)) ) return isMathWindowEnabled;
 
 	bool invert1[4] = { false,false,false,false };
 	bool invertObj = false;
@@ -1720,7 +1715,14 @@ void ppu::mixLayers(int scanlinenum, int screenMode)
 		//2130h - CGWSEL - Color Math Control Register A(W)
 		//	7 - 6  Force Main Screen Black(3 = Always, 2 = MathWindow, 1 = NotMathWin, 0 = Never)
 
-		if ((cgwSel & 0xc0) == 0xc0)
+		if (
+			(((cgwSel & 0xc0) != 0x0)) &&
+			(
+				(((cgwSel & 0xc0) == 0xc0)) ||
+				((!isWindowEnabled) && ((cgwSel & 0xc0) == 0x40)) ||
+				((isWindowEnabled) && ((cgwSel & 0xc0) == 0x80))
+				)
+			)
 		{
 		}
 		else if (finalColMain == -1)
@@ -1748,8 +1750,8 @@ void ppu::mixLayers(int scanlinenum, int screenMode)
 			(((cgwSel & 0x30) != 0x30)) && 
 				(
 					(((cgwSel & 0x30) == 0) ) || 
-					( (!isWindowEnabled) && ((cgwSel&0x10)) )  ||
-					( (!isWindowEnabled) && ((cgwSel&0x20)) )
+					( (!isWindowEnabled) && ((cgwSel&0x10)==0x10) )  ||
+					( (!isWindowEnabled) && ((cgwSel&0x20)==0x20) )
 				)
 			)
 		{
@@ -1795,7 +1797,7 @@ void ppu::mixLayers(int scanlinenum, int screenMode)
 
 void ppu::renderScanline(int scanlinenum)
 {
-	if ((scanlinenum < 0) || (scanlinenum >= (ppuResolutionY-1))) return;
+	if ((scanlinenum < 0) || (scanlinenum >= (int)(ppuResolutionY-1))) return;
 
 	/*
 		7-2  SC Base Address in VRAM (in 1K-word steps, aka 2K-byte steps)
@@ -2081,7 +2083,7 @@ void ppu::renderScanline(int scanlinenum)
 	}
 }
 
-void ppu::step(int numCycles, mmu& theMMU, cpu5a22& theCPU)
+bool ppu::step(int numCycles, mmu& theMMU, cpu5a22& theCPU)
 {
 	int hPos = internalCyclesCounter / 4;
 
@@ -2131,8 +2133,11 @@ void ppu::step(int numCycles, mmu& theMMU, cpu5a22& theCPU)
 			scanline = 0;
 			theMMU.clearNMIFlag();
 			theMMU.resetHDMA(false);
+			return true;
 		}
 	}
+
+	return false;
 }
 
 ppu::~ppu()

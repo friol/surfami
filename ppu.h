@@ -245,7 +245,7 @@ public:
 
 	void toggleBgActive(int bgnum) { isBgActive[bgnum] = !isBgActive[bgnum]; }
 
-	void step(int numCycles,mmu& theMMU,cpu5a22& theCPU);
+	bool step(int numCycles,mmu& theMMU,cpu5a22& theCPU);
 	bool isVBlankActive() { return scanline >= vblankStartScanline; }
 	int getInternalCyclesCounter() { return internalCyclesCounter; }
 

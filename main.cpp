@@ -714,7 +714,6 @@ void displayAppoWindow(cpu5a22& theCPU,ppu& thePPU, mmu& ourMMU, debugger5a22& t
 
     fileDialog.SetTitle("Load SNES ROM");
     fileDialog.SetTypeFilters({ ".smc", ".sfc" });
-    //fileDialog.SetPwd("d:\\prova\\");
     fileDialog.SetPwd("d:\\prova\\snes\\");
     //fileDialog.SetPwd("D:\\romz\\nintendo\\snes\\USA\\");
     //fileDialog.SetPwd("D:\\romz\\nintendo\\snes\\0hRoms\\");
@@ -1137,14 +1136,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,PSTR lpCmdLine, 
 
         if (emustatus == 1)
         {
+            bool redraw = false;
             int inst = 0;
             while ((inst < 16666)&&(emustatus==1))
+            //while ((redraw==false)&&(emustatus==1))
             {
                 int cycs= theCPU.stepOne();
                 if (cycs!=-1)
                 {
                     totCPUCycles += cycs;
-                    thePPU.step(cycs,theMMU, theCPU);
+                    redraw=thePPU.step(cycs,theMMU, theCPU);
                 }
                 else
                 {
